@@ -481,6 +481,47 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+-- 5. BOTÃO SIMPLES (Toggle TP Knife to player)
+local TPKnifeToggle = Instance.new("TextButton")
+local TPKnifeCorner = Instance.new("UICorner")
+local TPKnifeIndicator = Instance.new("Frame")
+local TPKnifeIndicatorCorner = Instance.new("UICorner")
+
+TPKnifeToggle.Name = "TPKnifeToggle"
+TPKnifeToggle.Parent = MurdererPage
+TPKnifeToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+TPKnifeToggle.Size = UDim2.new(1, -6, 0, 35)
+TPKnifeToggle.Font = Enum.Font.Gotham
+TPKnifeToggle.Text = "  TP Knife to player"
+TPKnifeToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+TPKnifeToggle.TextSize = 13
+TPKnifeToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+TPKnifeCorner.CornerRadius = UDim.new(0, 4)
+TPKnifeCorner.Parent = TPKnifeToggle
+
+TPKnifeIndicator.Name = "TPKnifeIndicator"
+TPKnifeIndicator.Parent = TPKnifeToggle
+TPKnifeIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TPKnifeIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+TPKnifeIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+TPKnifeIndicatorCorner.CornerRadius = UDim.new(0, 3)
+TPKnifeIndicatorCorner.Parent = TPKnifeIndicator
+
+_G.TPKnifeActive = false
+
+TPKnifeToggle.MouseButton1Click:Connect(function()
+    _G.TPKnifeActive = not _G.TPKnifeActive
+    if _G.TPKnifeActive then
+        TPKnifeIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        TPKnifeToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        TPKnifeIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        TPKnifeToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
 -- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
 -- =============================================================================
