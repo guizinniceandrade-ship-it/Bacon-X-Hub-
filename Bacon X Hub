@@ -522,6 +522,47 @@ TPKnifeToggle.MouseButton1Click:Connect(function()
     end
 end)
 
+-- 6. BOTÃO (Toggle Auto Equipped Knife)
+local AutoEquipToggle = Instance.new("TextButton")
+local AutoEquipCorner = Instance.new("UICorner")
+local AutoEquipIndicator = Instance.new("Frame")
+local AutoEquipIndicatorCorner = Instance.new("UICorner")
+
+AutoEquipToggle.Name = "AutoEquipToggle"
+AutoEquipToggle.Parent = MurdererPage
+AutoEquipToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+AutoEquipToggle.Size = UDim2.new(1, -6, 0, 35)
+AutoEquipToggle.Font = Enum.Font.Gotham
+AutoEquipToggle.Text = "  Auto Equipped Knife"
+AutoEquipToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+AutoEquipToggle.TextSize = 13
+AutoEquipToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+AutoEquipCorner.CornerRadius = UDim.new(0, 4)
+AutoEquipCorner.Parent = AutoEquipToggle
+
+AutoEquipIndicator.Name = "AutoEquipIndicator"
+AutoEquipIndicator.Parent = AutoEquipToggle
+AutoEquipIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+AutoEquipIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+AutoEquipIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+AutoEquipIndicatorCorner.CornerRadius = UDim.new(0, 3)
+AutoEquipIndicatorCorner.Parent = AutoEquipIndicator
+
+_G.AutoEquipKnifeActive = false
+
+AutoEquipToggle.MouseButton1Click:Connect(function()
+    _G.AutoEquipKnifeActive = not _G.AutoEquipKnifeActive
+    if _G.AutoEquipKnifeActive then
+        AutoEquipIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        AutoEquipToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        AutoEquipIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        AutoEquipToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
 -- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
 -- =============================================================================
