@@ -1,0 +1,259 @@
+-- [[ Bacon X Hub - Interface Customizada com Nomes e Linhas em Degradê ]]
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local BaconXHub = Instance.new("ScreenGui")
+
+-- Garante a execução segura no Executor Mobile
+BaconXHub.Name = "BaconXHub"
+pcall(function()
+    BaconXHub.Parent = game:GetService("CoreGui")
+end)
+if not BaconXHub.Parent then
+    BaconXHub.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+end
+BaconXHub.ResetOnSpawn = false
+
+-- =============================================================================
+-- SISTEMA DE NOTIFICAÇÃO
+-- =============================================================================
+local NotifyFrame = Instance.new("Frame")
+local NotifyCorner = Instance.new("UICorner")
+local NotifyTitle = Instance.new("TextLabel")
+local NotifyText = Instance.new("TextLabel")
+local NotifyStroke = Instance.new("UIStroke")
+
+NotifyFrame.Name = "NotifyFrame"
+NotifyFrame.Parent = BaconXHub
+NotifyFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+NotifyFrame.Position = UDim2.new(1, 20, 0.85, 0)
+NotifyFrame.Size = UDim2.new(0, 220, 0, 65)
+
+NotifyCorner.CornerRadius = UDim.new(0, 5)
+NotifyCorner.Parent = NotifyFrame
+
+NotifyStroke.Parent = NotifyFrame
+NotifyStroke.Color = Color3.fromRGB(0, 170, 255)
+NotifyStroke.Thickness = 1
+
+NotifyTitle.Name = "NotifyTitle"
+NotifyTitle.Parent = NotifyFrame
+NotifyTitle.BackgroundTransparency = 1
+NotifyTitle.Position = UDim2.new(0, 12, 0, 8)
+NotifyTitle.Size = UDim2.new(1, -24, 0, 20)
+NotifyTitle.Font = Enum.Font.GothamBold
+NotifyTitle.Text = "Bacon X Hub"
+NotifyTitle.TextColor3 = Color3.fromRGB(0, 170, 255)
+NotifyTitle.TextSize = 14
+NotifyTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+NotifyText.Name = "NotifyText"
+NotifyText.Parent = NotifyFrame
+NotifyText.BackgroundTransparency = 1
+NotifyText.Position = UDim2.new(0, 12, 0, 28)
+NotifyText.Size = UDim2.new(1, -24, 0, 25)
+NotifyText.Font = Enum.Font.Gotham
+NotifyText.Text = "Script carregando..."
+NotifyText.TextColor3 = Color3.fromRGB(255, 255, 255)
+NotifyText.TextSize = 12
+NotifyText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- =============================================================================
+-- INTERFACE PRINCIPAL
+-- =============================================================================
+local MainFrame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local Header = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local TitleGradient = Instance.new("UIGradient")
+local Divider = Instance.new("Frame")
+local DividerGradient = Instance.new("UIGradient")
+local TabsContainer = Instance.new("Frame")
+local UIListLayoutTabs = Instance.new("UIListLayout")
+local PagesContainer = Instance.new("Frame")
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = BaconXHub
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.Position = UDim2.new(0.5, -195, 1, 50)
+MainFrame.Size = UDim2.new(0, 390, 0, 270)
+MainFrame.Active = true
+MainFrame.Visible = false
+
+UICorner.CornerRadius = UDim.new(0, 6)
+UICorner.Parent = MainFrame
+
+Header.Name = "Header"
+Header.Parent = MainFrame
+Header.BackgroundTransparency = 1
+Header.Size = UDim2.new(1, 0, 0, 40)
+
+-- Nome encostado na esquerda com o Degradê idêntico à linha
+Title.Name = "Title"
+Title.Parent = Header
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Size = UDim2.new(0, 200, 1, 0)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "Bacon X Hub"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255) -- Necessário branco puro para o degradê funcionar
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+TitleGradient.Parent = Title
+TitleGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)), -- Começa Azul Neon
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 85, 128)), -- Transiciona no meio
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))       -- Termina em Preto
+})
+
+-- Linha Divisória debaixo do nome com Degradê
+Divider.Name = "Divider"
+Divider.Parent = MainFrame
+Divider.BorderSizePixel = 0
+Divider.Position = UDim2.new(0, 10, 0, 38)
+Divider.Size = UDim2.new(1, -20, 0, 2)
+
+DividerGradient.Parent = Divider
+DividerGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 85, 128)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+})
+
+TabsContainer.Name = "TabsContainer"
+TabsContainer.Parent = MainFrame
+TabsContainer.BackgroundTransparency = 1
+TabsContainer.Position = UDim2.new(0, 10, 0, 48)
+TabsContainer.Size = UDim2.new(0, 110, 1, -58)
+
+UIListLayoutTabs.Parent = TabsContainer
+UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayoutTabs.Padding = UDim.new(0, 5)
+
+PagesContainer.Name = "PagesContainer"
+PagesContainer.Parent = MainFrame
+PagesContainer.BackgroundTransparency = 1
+PagesContainer.Position = UDim2.new(0, 130, 0, 48)
+PagesContainer.Size = UDim2.new(1, -140, 1, -58)
+
+local tabsNames = {"Murderer", "Sheriff", "Auto Farm", "ESP", "Local Player", "Status do Servidor"}
+local pages = {}
+
+for i, name in ipairs(tabsNames) do
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Name = name .. "Tab"
+    TabBtn.Parent = TabsContainer
+    TabBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    TabBtn.Size = UDim2.new(1, 0, 0, 32)
+    TabBtn.Font = Enum.Font.Gotham
+    TabBtn.Text = name
+    TabBtn.TextColor3 = i == 1 and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(180, 180, 180)
+    TabBtn.TextSize = 12
+    
+    local TabCorner = Instance.new("UICorner")
+    TabCorner.CornerRadius = UDim.new(0, 4)
+    TabCorner.Parent = TabBtn
+    
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name .. "Page"
+    Page.Parent = PagesContainer
+    Page.BackgroundTransparency = 1
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.CanvasSize = UDim2.new(0, 0, 3, 0)
+    Page.ScrollBarThickness = 3
+    Page.ScrollBarImageColor3 = Color3.fromRGB(0, 170, 255)
+    Page.Visible = i == 1 and true or false
+    
+    local PageLayout = Instance.new("UIListLayout")
+    PageLayout.Parent = Page
+    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    PageLayout.Padding = UDim.new(0, 6)
+    
+    pages[name] = Page
+    
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, p in pairs(pages) do
+            p.Visible = false
+        end
+        for _, b in pairs(TabsContainer:GetChildren()) do
+            if b:IsA("TextButton") then
+                b.TextColor3 = Color3.fromRGB(180, 180, 180)
+            end
+        end
+        Page.Visible = true
+        TabBtn.TextColor3 = Color3.fromRGB(0, 170, 255)
+    end)
+end
+
+-- =============================================================================
+-- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
+-- =============================================================================
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    local tween = TweenService:Create(MainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    })
+    tween:Play()
+end
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- =============================================================================
+-- EXECUÇÃO DAS ANIMAÇÕES
+-- =============================================================================
+task.spawn(function()
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    
+    -- 1. Notificação entra na tela
+    local entryNotify = TweenService:Create(NotifyFrame, tweenInfo, {Position = UDim2.new(1, -240, 0.85, 0)})
+    entryNotify:Play()
+    
+    task.wait(2.0)
+    
+    -- 2. Atualiza texto da notificação
+    NotifyText.Text = "Script carregado com sucesso!"
+    NotifyText.TextColor3 = Color3.fromRGB(0, 170, 255)
+    
+    -- 3. Sobe a interface principal do baixo para o centro com animação
+    MainFrame.Visible = true
+    local entryMain = TweenService:Create(MainFrame, tweenInfo, {Position = UDim2.new(0.5, -195, 0.5, -135)})
+    entryMain:Play()
+    
+    task.wait(2.5)
+    
+    -- 4. Remove a notificação de forma suave
+    local exitNotify = TweenService:Create(NotifyFrame, tweenInfo, {Position = UDim2.new(1, 20, 0.85, 0)})
+    exitNotify:Play()
+    exitNotify.Completed:Connect(function()
+        NotifyFrame:Destroy()
+    end)
+end)
