@@ -189,6 +189,161 @@ for i, name in ipairs(tabsNames) do
 end
 
 -- =============================================================================
+-- ELEMENTOS DA ABA MURDERER (Colocar dentro da página "MurdererPage")
+-- =============================================================================
+local MurdererPage = pages["Murderer"]
+
+-- 1. BOTÃO DE LIGAR/DESLIGAR (Toggle Kill Aura)
+local KillAuraToggle = Instance.new("TextButton")
+local ToggleCorner = Instance.new("UICorner")
+local ToggleIndicator = Instance.new("Frame")
+local IndicatorCorner = Instance.new("UICorner")
+
+KillAuraToggle.Name = "KillAuraToggle"
+KillAuraToggle.Parent = MurdererPage
+KillAuraToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+KillAuraToggle.Size = UDim2.new(1, -6, 0, 35) -- Encaixa na largura interna da página
+KillAuraToggle.Font = Enum.Font.Gotham
+KillAuraToggle.Text = "  Kill Aura"
+KillAuraToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+KillAuraToggle.TextSize = 13
+KillAuraToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+ToggleCorner.CornerRadius = UDim.new(0, 4)
+ToggleCorner.Parent = KillAuraToggle
+
+-- Indicador visual se está ligado ou desligado (quadradinho no canto)
+ToggleIndicator.Name = "ToggleIndicator"
+ToggleIndicator.Parent = KillAuraToggle
+ToggleIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Desativado (Cinza)
+ToggleIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+IndicatorCorner.CornerRadius = UDim.new(0, 3)
+IndicatorCorner.Parent = ToggleIndicator
+
+-- Lógica do Toggle (Ligar / Desligar)
+local _G = _G or {}
+_G.KillAuraActive = false
+
+KillAuraToggle.MouseButton1Click:Connect(function()
+    _G.KillAuraActive = not _G.KillAuraActive
+    if _G.KillAuraActive then
+        -- Quando liga: fica azul neon
+        ToggleIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        KillAuraToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        -- Quando desliga: volta a ser cinza escuro
+        ToggleIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        KillAuraToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
+
+-- 2. BARRA DE AJUSTE (Slider de Distância)
+local DistanceSlider = Instance.new("Frame")
+local SliderCorner = Instance.new("UICorner")
+local SliderTitle = Instance.new("TextLabel")
+local SliderValue = Instance.new("TextLabel")
+local SlideBarMain = Instance.new("TextButton")
+local SlideBarCorner = Instance.new("UICorner")
+local SlideFill = Instance.new("Frame")
+local SlideFillCorner = Instance.new("UICorner")
+
+DistanceSlider.Name = "DistanceSlider"
+DistanceSlider.Parent = MurdererPage
+DistanceSlider.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+DistanceSlider.Size = UDim2.new(1, -6, 0, 50) -- Um pouco mais alto para caber a barra
+
+SliderCorner.CornerRadius = UDim.new(0, 4)
+SliderCorner.Parent = DistanceSlider
+
+-- Título do Ajuste
+SliderTitle.Name = "SliderTitle"
+SliderTitle.Parent = DistanceSlider
+SliderTitle.BackgroundTransparency = 1
+SliderTitle.Position = UDim2.new(0, 10, 0, 6)
+SliderTitle.Size = UDim2.new(0, 150, 0, 15)
+SliderTitle.Font = Enum.Font.Gotham
+SliderTitle.Text = "Distância do Kill Aura"
+SliderTitle.TextColor3 = Color3.fromRGB(180, 180, 180)
+SliderTitle.TextSize = 12
+SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Texto do Valor Atual (Studs)
+SliderValue.Name = "SliderValue"
+SliderValue.Parent = DistanceSlider
+SliderValue.BackgroundTransparency = 1
+SliderValue.Position = UDim2.new(1, -60, 0, 6)
+SliderValue.Size = UDim2.new(0, 50, 0, 15)
+SliderValue.Font = Enum.Font.GothamBold
+SliderValue.Text = "15 studs" -- Começa em 15 por padrão
+SliderValue.TextColor3 = Color3.fromRGB(0, 170, 255)
+SliderValue.TextSize = 12
+SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+
+-- Linha base do Slider onde o dedo arrasta
+SlideBarMain.Name = "SlideBarMain"
+SlideBarMain.Parent = DistanceSlider
+SlideBarMain.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+SlideBarMain.Position = UDim2.new(0, 10, 0, 30)
+SlideBarMain.Size = UDim2.new(1, -20, 0, 6)
+SlideBarMain.Text = ""
+
+SlideBarCorner.CornerRadius = UDim.new(0, 3)
+SlideBarCorner.Parent = SlideBarMain
+
+-- Preenchimento Azul da barra
+SlideFill.Name = "SlideFill"
+SlideFill.Parent = SlideBarMain
+SlideFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+SlideFill.Size = UDim2.new(0.4, 0, 1, 0) -- Começa preenchendo 40% (equivale a 15 studs)
+
+SlideFillCorner.CornerRadius = UDim.new(0, 3)
+SlideFillCorner.Parent = SlideFill
+
+-- Valores de limite do alcance da faca
+local minDistance = 5
+local maxDistance = 30
+_G.KillAuraRange = 15
+
+-- Lógica para arrastar e ajustar no celular de forma suave
+local UserInputService = game:GetService("UserInputService")
+local sliding = false
+
+local function updateSlider(input)
+    local mousePos = input.Position.X
+    local barPos = SlideBarMain.AbsolutePosition.X
+    local barWidth = SlideBarMain.AbsoluteSize.X
+    local percentage = math.clamp((mousePos - barPos) / barWidth, 0, 1)
+    
+    SlideFill.Size = UDim2.new(percentage, 0, 1, 0)
+    
+    local calculatedValue = math.round(minDistance + (percentage * (maxDistance - minDistance)))
+    _G.KillAuraRange = calculatedValue
+    SliderValue.Text = tostring(calculatedValue) .. " studs"
+end
+
+SlideBarMain.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliding = true
+        updateSlider(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateSlider(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliding = false
+    end
+end)
+
+-- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
 -- =============================================================================
 local dragging, dragInput, dragStart, startPos
