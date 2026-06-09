@@ -870,6 +870,28 @@ if ESPLayout then
 end
 
 -- =============================================================================
+-- SEÇÃO: BOX (ESP)
+-- =============================================================================
+
+-- Título de Seção: BOX
+local SectionBox = Instance.new("TextLabel")
+SectionBox.Name = "SectionBox"
+SectionBox.Parent = ESPPage
+SectionBox.BackgroundTransparency = 1
+SectionBox.Size = UDim2.new(1, -6, 0, 25)
+SectionBox.Position = UDim2.new(0, 0, 0, 0) -- Posição relativa ao layout
+SectionBox.Font = Enum.Font.GothamBold
+SectionBox.Text = "BOX (CAIXA)"
+SectionBox.TextColor3 = Color3.fromRGB(0, 170, 255) -- Azul Neon
+SectionBox.TextSize = 12
+SectionBox.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Criando os botões de Box:
+CreateESPToggle("BoxMurderer", "Box Murderer")
+CreateESPToggle("BoxSheriff", "Box Sheriff")
+CreateESPToggle("BoxInnocent", "Box Innocent")
+
+-- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
 -- =============================================================================
 local dragging, dragInput, dragStart, startPos
