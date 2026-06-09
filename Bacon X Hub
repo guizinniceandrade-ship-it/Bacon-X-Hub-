@@ -1234,6 +1234,89 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+-- 6. BOTÃO (Toggle Infinito Jump)
+local InfiniteJumpToggle = Instance.new("TextButton")
+local InfiniteJumpCorner = Instance.new("UICorner")
+local InfiniteJumpIndicator = Instance.new("Frame")
+local InfiniteJumpIndCorner = Instance.new("UICorner")
+
+InfiniteJumpToggle.Name = "InfiniteJumpToggle"
+InfiniteJumpToggle.Parent = LocalPlayerPage
+InfiniteJumpToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+InfiniteJumpToggle.Size = UDim2.new(1, -6, 0, 35)
+InfiniteJumpToggle.Font = Enum.Font.Gotham
+InfiniteJumpToggle.Text = "  Infinito Jump"
+InfiniteJumpToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+InfiniteJumpToggle.TextSize = 13
+InfiniteJumpToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+InfiniteJumpCorner.CornerRadius = UDim.new(0, 4)
+InfiniteJumpCorner.Parent = InfiniteJumpToggle
+
+InfiniteJumpIndicator.Name = "InfiniteJumpIndicator"
+InfiniteJumpIndicator.Parent = InfiniteJumpToggle
+InfiniteJumpIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+InfiniteJumpIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+InfiniteJumpIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+InfiniteJumpIndCorner.CornerRadius = UDim.new(0, 3)
+InfiniteJumpIndCorner.Parent = InfiniteJumpIndicator
+
+_G.InfiniteJumpActive = false
+
+InfiniteJumpToggle.MouseButton1Click:Connect(function()
+    _G.InfiniteJumpActive = not _G.InfiniteJumpActive
+    if _G.InfiniteJumpActive then
+        InfiniteJumpIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        InfiniteJumpToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        InfiniteJumpIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        InfiniteJumpToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
+
+-- 7. BOTÃO (Toggle Noclip)
+local NoclipToggle = Instance.new("TextButton")
+local NoclipCorner = Instance.new("UICorner")
+local NoclipIndicator = Instance.new("Frame")
+local NoclipIndCorner = Instance.new("UICorner")
+
+NoclipToggle.Name = "NoclipToggle"
+NoclipToggle.Parent = LocalPlayerPage
+NoclipToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+NoclipToggle.Size = UDim2.new(1, -6, 0, 35)
+NoclipToggle.Font = Enum.Font.Gotham
+NoclipToggle.Text = "  Noclip"
+NoclipToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+NoclipToggle.TextSize = 13
+NoclipToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+NoclipCorner.CornerRadius = UDim.new(0, 4)
+NoclipCorner.Parent = NoclipToggle
+
+NoclipIndicator.Name = "NoclipIndicator"
+NoclipIndicator.Parent = NoclipToggle
+NoclipIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+NoclipIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+NoclipIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+NoclipIndCorner.CornerRadius = UDim.new(0, 3)
+NoclipIndCorner.Parent = NoclipIndicator
+
+_G.NoclipActive = false
+
+NoclipToggle.MouseButton1Click:Connect(function()
+    _G.NoclipActive = not _G.NoclipActive
+    if _G.NoclipActive then
+        NoclipIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        NoclipToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        NoclipIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        NoclipToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
 -- =============================================================================
 -- SEÇÃO: NAME (ESP)
 -- =============================================================================
