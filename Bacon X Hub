@@ -522,7 +522,7 @@ TPKnifeToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- 6. BOTÃO (Toggle Auto Equipped Knife)
+-- 6. BOTÃO (Toggle Auto Equipped Knife - Forçado)
 local AutoEquipToggle = Instance.new("TextButton")
 local AutoEquipCorner = Instance.new("UICorner")
 local AutoEquipIndicator = Instance.new("Frame")
@@ -562,6 +562,15 @@ AutoEquipToggle.MouseButton1Click:Connect(function()
         AutoEquipToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
     end
 end)
+
+-- Força a rolagem da página a recalcular o tamanho e atualizar no Delta
+local PageLayout = MurdererPage:FindFirstChildOfClass("UIListLayout")
+if PageLayout then
+    MurdererPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
+    PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        MurdererPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
+    end)
+end
 
 -- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
