@@ -1,3 +1,15 @@
+-- =============================================================================
+-- TRAVA DE SEGURANÇA: DELETA A VERSÃO ANTERIOR SE RE-EXECUTADO
+-- =============================================================================
+local CoreGui = game:GetService("CoreGui")
+
+-- Procura se já existe um menu com o nome do seu projeto no CoreGui
+local TelaAntiga = CoreGui:FindFirstChild("BaconXHub_ScreenGui") or game.Players.LocalPlayer.PlayerGui:FindFirstChild("BaconXHub_ScreenGui")
+if TelaAntiga then
+    TelaAntiga:Destroy() -- Deleta a tela antiga na hora!
+    task.wait(0.1)
+end
+
 -- [[ Bacon X Hub - Interface Customizada com Nomes e Linhas em Degradê ]]
 
 local TweenService = game:GetService("TweenService")
