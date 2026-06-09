@@ -1095,6 +1095,145 @@ if LocalPlayerLayout then
     end)
 end
 
+-- 4. BOTÃO DE LIGAR/DESLIGAR (Toggle JumpPower)
+local JumpToggle = Instance.new("TextButton")
+local JumpToggleCorner = Instance.new("UICorner")
+local JumpIndicator = Instance.new("Frame")
+local JumpIndicatorCorner = Instance.new("UICorner")
+
+JumpToggle.Name = "JumpToggle"
+JumpToggle.Parent = LocalPlayerPage
+JumpToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+JumpToggle.Size = UDim2.new(1, -6, 0, 35)
+JumpToggle.Font = Enum.Font.Gotham
+JumpToggle.Text = "  Ativar Pulo Modificado"
+JumpToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+JumpToggle.TextSize = 13
+JumpToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+JumpToggleCorner.CornerRadius = UDim.new(0, 4)
+JumpToggleCorner.Parent = JumpToggle
+
+JumpIndicator.Name = "JumpIndicator"
+JumpIndicator.Parent = JumpToggle
+JumpIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+JumpIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+JumpIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+JumpIndicatorCorner.CornerRadius = UDim.new(0, 3)
+JumpIndicatorCorner.Parent = JumpIndicator
+
+_G.JumpActive = false
+
+JumpToggle.MouseButton1Click:Connect(function()
+    _G.JumpActive = not _G.JumpActive
+    if _G.JumpActive then
+        JumpIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        JumpToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        JumpIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        JumpToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
+
+-- 5. BARRA DE AJUSTE (Slider de Força do Pulo)
+local JumpSlider = Instance.new("Frame")
+local JumpSliderCorner = Instance.new("UICorner")
+local JumpSliderTitle = Instance.new("TextLabel")
+local JumpSliderValue = Instance.new("TextLabel")
+local JumpSlideBarMain = Instance.new("TextButton")
+local JumpSlideBarCorner = Instance.new("UICorner")
+local JumpSlideFill = Instance.new("Frame")
+local JumpSlideFillCorner = Instance.new("UICorner")
+
+JumpSlider.Name = "JumpSlider"
+JumpSlider.Parent = LocalPlayerPage
+JumpSlider.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+JumpSlider.Size = UDim2.new(1, -6, 0, 50)
+
+JumpSliderCorner.CornerRadius = UDim.new(0, 4)
+JumpSliderCorner.Parent = JumpSlider
+
+JumpSliderTitle.Name = "JumpSliderTitle"
+JumpSliderTitle.Parent = JumpSlider
+JumpSliderTitle.BackgroundTransparency = 1
+JumpSliderTitle.Position = UDim2.new(0, 10, 0, 6)
+JumpSliderTitle.Size = UDim2.new(0, 150, 0, 15)
+JumpSliderTitle.Font = Enum.Font.Gotham
+JumpSliderTitle.Text = "Altura do Pulo"
+JumpSliderTitle.TextColor3 = Color3.fromRGB(180, 180, 180)
+JumpSliderTitle.TextSize = 12
+JumpSliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+JumpSliderValue.Name = "JumpSliderValue"
+JumpSliderValue.Parent = JumpSlider
+JumpSliderValue.BackgroundTransparency = 1
+JumpSliderValue.Position = UDim2.new(1, -60, 0, 6)
+JumpSliderValue.Size = UDim2.new(0, 50, 0, 15)
+JumpSliderValue.Font = Enum.Font.GothamBold
+JumpSliderValue.Text = "50 studs" -- Padrão de JumpPower do Roblox costuma ser 50
+JumpSliderValue.TextColor3 = Color3.fromRGB(0, 170, 255)
+JumpSliderValue.TextSize = 12
+JumpSliderValue.TextXAlignment = Enum.TextXAlignment.Right
+
+JumpSlideBarMain.Name = "JumpSlideBarMain"
+JumpSlideBarMain.Parent = JumpSlider
+JumpSlideBarMain.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+JumpSlideBarMain.Position = UDim2.new(0, 10, 0, 30)
+JumpSlideBarMain.Size = UDim2.new(1, -20, 0, 6)
+JumpSlideBarMain.Text = ""
+
+JumpSlideBarCorner.CornerRadius = UDim.new(0, 3)
+JumpSlideBarCorner.Parent = JumpSlideBarMain
+
+JumpSlideFill.Name = "JumpSlideFill"
+JumpSlideFill.Parent = JumpSlideBarMain
+JumpSlideFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+JumpSlideFill.Size = UDim2.new(0.2, 0, 1, 0) -- Proporção inicial para os 50 studs
+
+JumpSlideFillCorner.CornerRadius = UDim.new(0, 3)
+JumpSlideFillCorner.Parent = JumpSlideFill
+
+-- Limites do pulo ajustáveis
+local minJump = 50
+local maxJump = 250
+_G.JumpPowerValue = 50
+
+local jumpSliding = false
+
+local function updateJumpSlider(input)
+    local mousePos = input.Position.X
+    local barPos = JumpSlideBarMain.AbsolutePosition.X
+    local barWidth = JumpSlideBarMain.AbsoluteSize.X
+    local percentage = math.clamp((mousePos - barPos) / barWidth, 0, 1)
+    
+    JumpSlideFill.Size = UDim2.new(percentage, 0, 1, 0)
+    
+    local calculatedValue = math.round(minJump + (percentage * (maxJump - minJump)))
+    _G.JumpPowerValue = calculatedValue
+    JumpSliderValue.Text = tostring(calculatedValue) .. " studs"
+end
+
+JumpSlideBarMain.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        jumpSliding = true
+        updateJumpSlider(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if jumpSliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateJumpSlider(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        jumpSliding = false
+    end
+end)
+
 -- =============================================================================
 -- SEÇÃO: NAME (ESP)
 -- =============================================================================
