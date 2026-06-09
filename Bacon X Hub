@@ -666,10 +666,86 @@ end
 -- =============================================================================
 
 
+-- =============================================================================
+-- [BACON X HUB V1] - ABA ESP (VISUAL ORGANIZADO)
+-- =============================================================================
+local ESPPage = pages["ESP"]
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- =============================================================================
--- [BACON X HUB V1] - ABA ESP COMPLETA (HIGHLIGHTS NATIVOS)
--- =============================================================================
+-- Função para criar o título "Highlight"
+local function CriarTitulo(texto)
+    local Label = Instance.new("TextLabel")
+    Label.Parent = ESPPage
+    Label.Size = UDim2.new(1, -6, 0, 30)
+    Label.BackgroundTransparency = 1
+    Label.Text = "  " .. texto
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 16
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+-- Criando o título
+CriarTitulo("Highlight")
+
+-- Função para criar os botões (Botão 1, 2, 3)
+local function CriarBotaoESP(texto, cor, tipo)
+    local Botao = Instance.new("TextButton")
+    Botao.Name = "Btn_" .. tipo
+    Botao.Parent = ESPPage
+    Botao.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Botao.Size = UDim2.new(1, -6, 0, 40)
+    Botao.Text = "  " .. texto
+    Botao.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Botao.Font = Enum.Font.GothamBold
+    Botao.TextSize = 14
+    Botao.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(0, 6)
+    
+    local Ativo = false
+    Botao.MouseButton1Click:Connect(function()
+        Ativo = not Ativo
+        Botao.BackgroundColor3 = Ativo and Color3.fromRGB(30, 30, 30) or Color3.fromRGB(15, 15, 15)
+        Botao.TextColor3 = Ativo and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+    end)
+    return Botao, Ativo
+end
+
+-- Criando os 3 botões
+local Btn1, Ativo1 = CriarBotaoESP("Highlight Murderer", Color3.fromRGB(255, 0, 0), "Murderer")
+local Btn2, Ativo2 = CriarBotaoESP("Highlight Sheriff", Color3.fromRGB(0, 170, 255), "Sheriff")
+local Btn3, Ativo3 = CriarBotaoESP("Highlight Innocent", Color3.fromRGB(0, 255, 100), "Innocent")
+
+-- Motor de execução (O código que faz funcionar)
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                -- Limpa highlights antigos
+                for _, obj in pairs(p.Character:GetChildren()) do if obj:IsA("Highlight") then obj:Destroy() end end
+                
+                local temFaca = p.Character:FindFirstChild("Knife") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Knife"))
+                local temArma = p.Character:FindFirstChild("Gun") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Gun"))
+                
+                -- Se botão 1 ligado e é Murderer
+                if Btn1.BackgroundColor3 == Color3.fromRGB(30, 30, 30) and temFaca then
+                    local h = Instance.new("Highlight", p.Character)
+                    h.FillColor = Color3.fromRGB(255, 0, 0)
+                -- Se botão 2 ligado e é Sheriff
+                elseif Btn2.BackgroundColor3 == Color3.fromRGB(30, 30, 30) and temArma then
+                    local h = Instance.new("Highlight", p.Character)
+                    h.FillColor = Color3.fromRGB(0, 170, 255)
+                -- Se botão 3 ligado e é Innocent
+                elseif Btn3.BackgroundColor3 == Color3.fromRGB(30, 30, 30) and not temFaca and not temArma then
+                    local h = Instance.new("Highlight", p.Character)
+                    h.FillColor = Color3.fromRGB(0, 255, 100)
+                end
+            end
+        end
+    end
+end)
 
 
 -- =============================================================================
