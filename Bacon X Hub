@@ -1529,3 +1529,84 @@ task.spawn(function()
     end)
 end)
 
+-- =============================================================================
+-- LOGICA DE FUNCIONAMENTO - LOCAL PLAYER (FAZENDO FUNCIONAR DE VERDADE)
+-- =============================================================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Função estável para pegar o Character e o Humanoid do jogador
+local function GetCharacterElements()
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local root = char:FindFirstChild("HumanoidRootPart")
+        return char, hum, root
+    end
+    return nil, nil, nil
+end
+
+-- 1 & 2. FUNCIONAMENTO DA VELOCIDADE (WalkSpeed)
+task.spawn(function()
+    while task.wait(0.1) do
+        local _, hum, _ = GetCharacterElements()
+        if hum then
+            if _G.SpeedActive then
+                hum.WalkSpeed = _G.WalkSpeedValue or 16
+            else
+                -- Se desligar o botão, volta ao padrão do Roblox (16)
+                if hum.WalkSpeed ~= 16 and not _G.SpeedActive then
+                    hum.WalkSpeed = 16
+                end
+            end
+        end
+    end
+end)
+
+-- 3 & 4. FUNCIONAMENTO DO PULO (JumpPower)
+task.spawn(function()
+    while task.wait(0.1) do
+        local _, hum, _ = GetCharacterElements()
+        if hum then
+            -- Garante que o jogo aceita mudança de pulo por força (JumpPower)
+            hum.UseJumpPower = true 
+            
+            if _G.JumpActive then
+                hum.JumpPower = _G.JumpPowerValue or 50
+            else
+                -- Se desligar o botão, volta ao padrão do Roblox (50)
+                if hum.JumpPower ~= 50 and not _G.JumpActive then
+                    hum.JumpPower = 50
+                end
+            end
+        end
+    end
+end)
+
+-- 5. FUNCIONAMENTO DO JUMP INFINITO (Infinite Jump)
+local UserInputService = game:GetService("UserInputService")
+UserInputService.JumpRequest:Connect(function()
+    if _G.InfiniteJumpActive then
+        local _, hum, _ = GetCharacterElements()
+        if hum then
+            -- Força o estado de pulo mesmo se o jogador já estiver no ar
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- 6. FUNCIONAMENTO DO NOCLIP (Atravessar Paredes)
+RunService.Stepped:Connect(function()
+    if _G.NoclipActive then
+        local char, _, _ = GetCharacterElements()
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide == true then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
