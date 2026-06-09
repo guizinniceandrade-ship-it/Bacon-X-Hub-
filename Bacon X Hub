@@ -1298,6 +1298,15 @@ NoclipToggle.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Força a rolagem da página Local Player a recalcular o tamanho e atualizar no Delta
+local LPLayout = LocalPlayerPage:FindFirstChildOfClass("UIListLayout")
+if LPLayout then
+    LocalPlayerPage.CanvasSize = UDim2.new(0, 0, 0, LPLayout.AbsoluteContentSize.Y + 20)
+    LPLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        LocalPlayerPage.CanvasSize = UDim2.new(0, 0, 0, LPLayout.AbsoluteContentSize.Y + 20)
+    end)
+end
+
 -- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
 -- =============================================================================
