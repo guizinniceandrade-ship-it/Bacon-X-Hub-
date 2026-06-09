@@ -1380,10 +1380,159 @@ NoclipToggle.MouseButton1Click:Connect(function()
 end)
 
 -- =============================================================================
--- [BACON X HUB V1] - MENU DE TELEPORTES CORRIGIDO (GO TO = PERSEGUIR)
+-- [BACON X HUB V1] - TELEPORTE PLAYER (CORRIGIDO E APERFEIÇOADO)
 -- =============================================================================
+local LocalPlayerPage = pages["Local Player"]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
+local targetPlayer = nil -- Guarda o player selecionado
+local perseguindo = false -- Controla o Go to
+local conexaoPerseguicao = nil -- Guarda a execução do Go to
 
+-- Função para criar o título da categoria
+local function CriarTitulo(texto)
+    local Titulo = Instance.new("TextLabel", LocalPlayerPage)
+    Titulo.Size = UDim2.new(1, -6, 0, 25)
+    Titulo.BackgroundTransparency = 1
+    Titulo.Text = "  " .. texto
+    Titulo.TextColor3 = Color3.fromRGB(0, 170, 255) -- Seu Azul Neon padrão
+    Titulo.Font = Enum.Font.GothamBold
+    Titulo.TextSize = 14
+    Titulo.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+CriarTitulo("Teleporte Player")
+
+-- Caixa de Lista (Dropdown de Players)
+local Dropdown = Instance.new("ScrollingFrame", LocalPlayerPage)
+Dropdown.Size = UDim2.new(1, -6, 0, 110)
+Dropdown.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Dropdown.ScrollBarThickness = 4
+Dropdown.CanvasSize = UDim2.new(0, 0, 0, 0)
+Instance.new("UICorner", Dropdown).CornerRadius = UDim.new(0, 6)
+
+local ListLayout = Instance.new("UIListLayout", Dropdown)
+ListLayout.SortOrder = Enum.SortOrder.Name
+ListLayout.Padding = UDim.new(0, 4)
+
+-- Função para resetar visualmente a seleção de todos os botões da lista
+local function LimparSelecaoVisual()
+    for _, b in pairs(Dropdown:GetChildren()) do 
+        if b:IsA("TextButton") then 
+            b.BackgroundColor3 = Color3.fromRGB(25, 25, 25) 
+        end 
+    end
+end
+
+-- Função para atualizar a lista de quem está no servidor
+local function AtualizarDropdown()
+    for _, child in pairs(Dropdown:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local pBtn = Instance.new("TextButton", Dropdown)
+            pBtn.Text = "   " .. p.DisplayName
+            pBtn.Size = UDim2.new(1, -5, 0, 30)
+            pBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+            pBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+            pBtn.Font = Enum.Font.Gotham
+            pBtn.TextSize = 13
+            pBtn.TextXAlignment = Enum.TextXAlignment.Left
+            Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
+            
+            pBtn.MouseButton1Click:Connect(function() 
+                targetPlayer = p 
+                LimparSelecaoVisual()
+                pBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255) -- Marca em azul neon
+            end)
+        end
+    end
+    Dropdown.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
+end
+
+-- Criador de Botões de Ação padrão
+local function CriarBotaoAcao(texto, callback)
+    local Btn = Instance.new("TextButton", LocalPlayerPage)
+    Btn.Size = UDim2.new(1, -6, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Btn.Font = Enum.Font.GothamBold
+    Btn.Text = "  " .. texto
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextSize = 14
+    Btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+    Btn.MouseButton1Click:Connect(callback)
+    return Btn
+end
+
+-- BOTÃO 1: Teleporte Único (Desmarca o player na hora)
+CriarBotaoAcao("Teleporte para player", function()
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local meuRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if meuRoot then
+            meuRoot.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+        end
+    end
+    -- Limpa a seleção imediatamente após usar
+    targetPlayer = nil
+    LimparSelecaoVisual()
+end)
+
+-- BOTÃO 2: GO TO (Perseguição Colada e Funcional)
+local BtnGoTo = CriarBotaoAcao("Go to", function()
+    if targetPlayer and not perseguindo then
+        perseguindo = true
+        BtnGoTo.TextColor3 = Color3.fromRGB(0, 170, 255) -- Botão Go To acende indicando que está ativo
+        
+        -- Limpa a marcação azul da lista na hora, mas mantém o alvo na memória para perseguir
+        LimparSelecaoVisual()
+        
+        -- Motor de perseguição ultra rápido usando RenderStepped (Não erra o alvo)
+        conexaoPerseguicao = RunService.RenderStepped:Connect(function()
+            if perseguindo and targetPlayer and targetPlayer.Character then
+                pcall(function()
+                    local meuRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    local alvoRoot = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    
+                    if meuRoot and alvoRoot then
+                        -- Te prende diretamente nas costas do player alvo
+                        meuRoot.CFrame = alvoRoot.CFrame * CFrame.new(0, 0, 2)
+                    end
+                 pcall)
+            else
+                -- Se o player sair do jogo ou a perseguição desligar, finaliza a conexão
+                if conexaoPerseguicao then
+                    conexaoPerseguicao:Disconnect()
+                    conexaoPerseguicao = nil
+                end
+            end
+        end)
+    end
+end)
+
+-- BOTÃO 3: Para perseguição
+CriarBotaoAcao("Para perseguição", function()
+    perseguindo = false
+    if conexaoPerseguicao then
+        conexaoPerseguicao:Disconnect()
+        conexaoPerseguicao = nil
+    end
+    targetPlayer = nil
+    BtnGoTo.TextColor3 = Color3.fromRGB(200, 200, 200) -- Apaga o azul do Go To
+    LimparSelecaoVisual()
+end)
+
+-- Atualização da lista de jogadores
+Players.PlayerAdded:Connect(AtualizarDropdown)
+Players.PlayerRemoving:Connect(AtualizarDropdown)
+AtualizarDropdown()
+
+-- Ajuste de rolagem da aba
+local PageLayout = LocalPlayerPage:FindFirstChildOfClass("UIListLayout")
+if PageLayout then
+    LocalPlayerPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
+end
 
 -- =============================================================================
 -- ABA STATUS DO SERVIDOR (CORRIGIDO PARA: Status do Servidor)
@@ -1460,129 +1609,3 @@ task.spawn(function()
     end)
 end)
 
--- =============================================================================
--- LOGICA DE FUNCIONAMENTO - LOCAL PLAYER (FAZENDO FUNCIONAR DE VERDADE)
--- =============================================================================
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-
--- Função estável para pegar o Character e o Humanoid do jogador
-local function GetCharacterElements()
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        local root = char:FindFirstChild("HumanoidRootPart")
-        return char, hum, root
-    end
-    return nil, nil, nil
-end
-
--- 1 & 2. FUNCIONAMENTO DA VELOCIDADE (WalkSpeed)
-task.spawn(function()
-    while task.wait(0.1) do
-        local _, hum, _ = GetCharacterElements()
-        if hum then
-            if _G.SpeedActive then
-                hum.WalkSpeed = _G.WalkSpeedValue or 16
-            else
-                -- Se desligar o botão, volta ao padrão do Roblox (16)
-                if hum.WalkSpeed ~= 16 and not _G.SpeedActive then
-                    hum.WalkSpeed = 16
-                end
-            end
-        end
-    end
-end)
-
--- 3 & 4. FUNCIONAMENTO DO PULO (JumpPower)
-task.spawn(function()
-    while task.wait(0.1) do
-        local _, hum, _ = GetCharacterElements()
-        if hum then
-            -- Garante que o jogo aceita mudança de pulo por força (JumpPower)
-            hum.UseJumpPower = true 
-            
-            if _G.JumpActive then
-                hum.JumpPower = _G.JumpPowerValue or 50
-            else
-                -- Se desligar o botão, volta ao padrão do Roblox (50)
-                if hum.JumpPower ~= 50 and not _G.JumpActive then
-                    hum.JumpPower = 50
-                end
-            end
-        end
-    end
-end)
-
--- 5. FUNCIONAMENTO DO JUMP INFINITO (Infinite Jump)
-local UserInputService = game:GetService("UserInputService")
-UserInputService.JumpRequest:Connect(function()
-    if _G.InfiniteJumpActive then
-        local _, hum, _ = GetCharacterElements()
-        if hum then
-            -- Força o estado de pulo mesmo se o jogador já estiver no ar
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end
-end)
-
--- 6. FUNCIONAMENTO DO NOCLIP (Atravessar Paredes)
-RunService.Stepped:Connect(function()
-    if _G.NoclipActive then
-        local char, _, _ = GetCharacterElements()
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") and part.CanCollide == true then
-                    part.CanCollide = false
-                end
-            end
-        end
-    end
-end)
-
--- =============================================================================
--- MOTOR DE LÓGICA: AUTO FARM DE MOEDAS (VERSÃO ULTRA OTIMIZADA)
--- =============================================================================
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
-
-task.spawn(function()
-    while task.wait(0.2) do
-        -- Corrigido para LocalPlayer e checagem de vida
-        if _G.AutoFarmMoedas and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            pcall(function()
-                local root = LocalPlayer.Character.HumanoidRootPart
-                local target, minDist = nil, math.huge
-                
-                -- Busca a moeda válida mais próxima no mapa
-                for _, v in pairs(workspace:GetDescendants()) do
-                    if v:IsA("BasePart") and (v.Name:find("Coin") or v.Name:find("Token")) and v.Transparency < 1 then
-                        local d = (root.Position - v.Position).Magnitude
-                        if d < minDist then 
-                            minDist = d
-                            target = v 
-                        end
-                    end
-                end
-                
-                if target then
-                    -- Ativa noclip temporário para não bater nas paredes durante o deslize
-                    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                        if part:IsA("BasePart") then part.CanCollide = false end
-                    end
-                    
-                    -- Se a moeda estiver muito longe (ex: nasceu no andar de cima), teleporta direto
-                    if minDist > 35 then 
-                        root.CFrame = target.CFrame * CFrame.new(0, 1, 0)
-                    else
-                        -- Se estiver perto, vai deslizando rápido (Velocidade ajustada: 38)
-                        local tween = TweenService:Create(root, TweenInfo.new(minDist/38, Enum.EasingStyle.Linear), {CFrame = target.CFrame})
-                        tween:Play()
-                    end
-                end
-            end)
-        end
-    end
-end)
