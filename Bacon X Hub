@@ -1611,68 +1611,47 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =============================================================================
--- LOGICA DO AUTO FARM DE MOEDAS (COLOCAR NO FINAL DE TUDO)
+-- MOTOR DE LÓGICA: AUTO FARM DE MOEDAS (VERSÃO ULTRA OTIMIZADA)
 -- =============================================================================
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
--- Função para encontrar todas as moedas geradas no mapa do MM2
-local function GetCoinContainer()
-    -- O MM2 costuma gerar as moedas dentro do modelo do mapa atual
-    local map = workspace:FindFirstChild("Normal") or workspace:FindFirstChild("Map")
-    if map then
-        -- Geralmente ficam em uma pasta chamada "CoinContainer" ou "CoinContainerRoot"
-        local container = map:FindFirstChild("CoinContainer") or map:FindFirstChild("CoinContainerRoot")
-        if container then
-            return container
-        end
-        -- Segunda tentativa: Procura direto no mapa por modelos chamados Coin_Token ou Coin
-        return map
-    end
-    return nil
-end
-
 task.spawn(function()
-    while task.wait(0.3) do -- Checa a cada frações de segundo para não dar lag
-        if _G.AutoFarmActive then
-            local char = LocalPlayer.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            
-            -- Só farma se você estiver vivo e não for o Murderer (para não estragar a partida)
-            if root and hum and hum.Health > 0 then
-                local coinContainer = GetCoinContainer()
+    while task.wait(0.2) do
+        -- Corrigido para LocalPlayer e checagem de vida
+        if _G.AutoFarmMoedas and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            pcall(function()
+                local root = LocalPlayer.Character.HumanoidRootPart
+                local target, minDist = nil, math.huge
                 
-                if coinContainer then
-                    -- Procura a moeda mais próxima
-                    local closestCoin = nil
-                    local shortestDistance = math.huge
-                    
-                    for _, child in ipairs(coinContainer:GetDescendants()) do
-                        -- Moedas do MM2 geralmente são "Coin_Token", "Coin" ou têm um TouchTransmitter
-                        if child:IsA("BasePart") and (child.Name:find("Coin") or child.Name:find("Token")) then
-                            local distance = (root.Position - child.Position).Magnitude
-                            if distance < shortestDistance then
-                                shortestDistance = distance
-                                closestCoin = child
-                            end
+                -- Busca a moeda válida mais próxima no mapa
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("BasePart") and (v.Name:find("Coin") or v.Name:find("Token")) and v.Transparency < 1 then
+                        local d = (root.Position - v.Position).Magnitude
+                        if d < minDist then 
+                            minDist = d
+                            target = v 
                         end
-                    end
-                    
-                    -- Se achou uma moeda, leva o personagem até ela de forma segura
-                    if closestCoin then
-                        -- Ativa o Noclip temporariamente para não travar nas paredes enquanto farma
-                        for _, part in ipairs(char:GetDescendants()) do
-                            if part:IsA("BasePart") then
-                                part.CanCollide = false
-                            end
-                        end
-                        
-                        -- Teleporta diretamente para a posição da moeda (levemente acima para coletar)
-                        root.CFrame = closestCoin.CFrame * CFrame.new(0, 1, 0)
                     end
                 end
-            end
+                
+                if target then
+                    -- Ativa noclip temporário para não bater nas paredes durante o deslize
+                    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then part.CanCollide = false end
+                    end
+                    
+                    -- Se a moeda estiver muito longe (ex: nasceu no andar de cima), teleporta direto
+                    if minDist > 35 then 
+                        root.CFrame = target.CFrame * CFrame.new(0, 1, 0)
+                    else
+                        -- Se estiver perto, vai deslizando rápido (Velocidade ajustada: 38)
+                        local tween = TweenService:Create(root, TweenInfo.new(minDist/38, Enum.EasingStyle.Linear), {CFrame = target.CFrame})
+                        tween:Play()
+                    end
+                end
+            end)
         end
     end
 end)
