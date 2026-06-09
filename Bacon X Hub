@@ -662,8 +662,254 @@ if SheriffLayout then
 end
 
 -- =============================================================================
--- [BACON X HUB V1] - AUTO FARM ANTI-BAN (COM SLIDER ATÉ 30)
+-- [BACON X HUB V1] - AUTO FARM COIN (COM CONTROLE DE POSIÇÃO Y)
 -- =============================================================================
+local AutoFarmPage = pages["Auto Farm"] -- Nome exato da sua aba
+
+-- VARIÁVEIS DE CONTROLE DO SLIDER E FUNÇÕES
+local velocidadeSegura = 1
+local posicaoYAtiva = false -- Controla o novo botão de altura segura
+
+-- =============================================================================
+-- NOVO: TÍTULO DA SEÇÃO EM AZUL NEON (Como você pediu)
+-- =============================================================================
+local CategoriaTitulo = Instance.new("TextLabel")
+CategoriaTitulo.Name = "CategoriaTitulo"
+CategoriaTitulo.Parent = AutoFarmPage
+CategoriaTitulo.Size = UDim2.new(1, -6, 0, 25)
+CategoriaTitulo.BackgroundTransparency = 1
+CategoriaTitulo.Text = "Auto Farm Coin"
+CategoriaTitulo.TextColor3 = Color3.fromRGB(0, 170, 255) -- Azul Neon padrão do Hub
+CategoriaTitulo.Font = Enum.Font.GothamBold
+CategoriaTitulo.TextSize = 14
+CategoriaTitulo.TextXAlignment = Enum.TextXAlignment.Left
+
+-- =============================================================================
+-- 1. CRIANDO O BOTÃO VISUAL DO AUTO FARM
+-- =============================================================================
+local AutoFarmToggle = Instance.new("TextButton")
+local AutoFarmCorner = Instance.new("UICorner")
+local AutoFarmIndicator = Instance.new("Frame")
+local AutoFarmIndCorner = Instance.new("UICorner")
+
+AutoFarmToggle.Name = "AutoFarmToggle"
+AutoFarmToggle.Parent = AutoFarmPage
+AutoFarmToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+AutoFarmToggle.Size = UDim2.new(1, -6, 0, 40)
+AutoFarmToggle.Font = Enum.Font.GothamBold
+AutoFarmToggle.Text = "  Auto Farm de Moedas"
+AutoFarmToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+AutoFarmToggle.TextSize = 14
+AutoFarmToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+AutoFarmCorner.CornerRadius = UDim.new(0, 6)
+AutoFarmCorner.Parent = AutoFarmToggle
+
+AutoFarmIndicator.Name = "AutoFarmIndicator"
+AutoFarmIndicator.Parent = AutoFarmToggle
+AutoFarmIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+AutoFarmIndicator.Position = UDim2.new(1, -30, 0.5, -9)
+AutoFarmIndicator.Size = UDim2.new(0, 18, 0, 18)
+
+AutoFarmIndCorner.CornerRadius = UDim.new(0, 4)
+AutoFarmIndCorner.Parent = AutoFarmIndicator
+
+-- =============================================================================
+-- NOVO: BOTÃO VISUAL "POSIÇÃO Y" (Design idêntico ao de cima)
+-- =============================================================================
+local YPositionToggle = Instance.new("TextButton")
+local YPositionCorner = Instance.new("UICorner")
+local YPositionIndicator = Instance.new("Frame")
+local YPositionIndCorner = Instance.new("UICorner")
+
+YPositionToggle.Name = "YPositionToggle"
+YPositionToggle.Parent = AutoFarmPage
+YPositionToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+YPositionToggle.Size = UDim2.new(1, -6, 0, 40)
+YPositionToggle.Font = Enum.Font.GothamBold
+YPositionToggle.Text = "  Posição Y"
+YPositionToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+YPositionToggle.TextSize = 14
+YPositionToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+YPositionCorner.CornerRadius = UDim.new(0, 6)
+YPositionCorner.Parent = YPositionToggle
+
+YPositionIndicator.Name = "YPositionIndicator"
+YPositionIndicator.Parent = YPositionToggle
+YPositionIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+YPositionIndicator.Position = UDim2.new(1, -30, 0.5, -9)
+YPositionIndicator.Size = UDim2.new(0, 18, 0, 18)
+
+YPositionIndCorner.CornerRadius = UDim.new(0, 4)
+YPositionIndCorner.Parent = YPositionIndicator
+
+YPositionToggle.MouseButton1Click:Connect(function()
+    posicaoYAtiva = not posicaoYAtiva
+    YPositionIndicator.BackgroundColor3 = posicaoYAtiva and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(40, 40, 40)
+    YPositionToggle.TextColor3 = posicaoYAtiva and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+end)
+
+-- =============================================================================
+-- SLIDER DE VELOCIDADE (Mantido perfeitamente)
+-- =============================================================================
+local BoxSlider = Instance.new("Frame")
+BoxSlider.Name = "BoxSlider"
+BoxSlider.Parent = AutoFarmPage
+BoxSlider.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+BoxSlider.Size = UDim2.new(1, -6, 0, 50)
+local BoxCorner = Instance.new("UICorner", BoxSlider)
+BoxCorner.CornerRadius = UDim.new(0, 6)
+
+local TituloVelocidade = Instance.new("TextLabel")
+TituloVelocidade.Parent = BoxSlider
+TituloVelocidade.BackgroundTransparency = 1
+TituloVelocidade.Position = UDim2.new(0, 10, 0, 4)
+TituloVelocidade.Size = UDim2.new(0.5, 0, 0, 20)
+TituloVelocidade.Text = "Velocidade do Farm"
+TituloVelocidade.TextColor3 = Color3.fromRGB(200, 200, 200)
+TituloVelocidade.Font = Enum.Font.Gotham
+TituloVelocidade.TextSize = 14
+TituloVelocidade.TextXAlignment = Enum.TextXAlignment.Left
+
+local ValorVelocidade = Instance.new("TextLabel")
+ValorVelocidade.Parent = BoxSlider
+ValorVelocidade.BackgroundTransparency = 1
+ValorVelocidade.Position = UDim2.new(0.5, -10, 0, 4)
+ValorVelocidade.Size = UDim2.new(0.5, 0, 0, 20)
+ValorVelocidade.Text = "1 studs"
+ValorVelocidade.TextColor3 = Color3.fromRGB(0, 170, 255)
+ValorVelocidade.Font = Enum.Font.GothamBold
+ValorVelocidade.TextSize = 13
+ValorVelocidade.TextXAlignment = Enum.TextXAlignment.Right
+
+local SliderBg = Instance.new("TextButton")
+SliderBg.Parent = BoxSlider
+SliderBg.Position = UDim2.new(0, 10, 0, 32)
+SliderBg.Size = UDim2.new(1, -20, 0, 6)
+SliderBg.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+SliderBg.Text = ""
+Instance.new("UICorner", SliderBg).CornerRadius = UDim.new(0, 3)
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Parent = SliderBg
+SliderFill.Size = UDim2.new(0.03, 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 3)
+
+SliderBg.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        local posRelativa = (input.Position.X - SliderBg.AbsolutePosition.X) / SliderBg.AbsoluteSize.X
+        posRelativa = math.clamp(posRelativa, 0, 1)
+        
+        velocidadeSegura = math.floor(posRelativa * 30)
+        if velocidadeSegura == 0 then velocidadeSegura = 1 end
+        
+        SliderFill.Size = UDim2.new(posRelativa, 0, 1, 0)
+        ValorVelocidade.Text = velocidadeSegura .. " studs"
+    end
+end)
+
+-- =============================================================================
+-- MOTOR DO AUTO FARM ATUALIZADO (SISTEMA FLUTUANTE Y)
+-- =============================================================================
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+local isFarming = false
+local farmLoop = nil
+
+local function FindAllCoins()
+    local found = {}
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and (v.Name:find("Coin") or v.Name:find("Token")) and v.Transparency < 1 then
+            table.insert(found, v)
+        end
+    end
+    return found
+end
+
+AutoFarmToggle.MouseButton1Click:Connect(function()
+    isFarming = not isFarming
+    
+    if isFarming then
+        AutoFarmIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        AutoFarmToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        
+        farmLoop = task.spawn(function()
+            while isFarming do
+                task.wait(0.1)
+                
+                local char = LocalPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                
+                if root and hum and hum.Health > 0 then
+                    local coins = FindAllCoins()
+                    
+                    if #coins > 0 then
+                        local targetCoin = nil
+                        local closestDistance = math.huge
+                        
+                        for _, part in ipairs(coins) do
+                            local distance = (root.Position - part.Position).Magnitude
+                            if distance < closestDistance then
+                                closestDistance = distance
+                                targetCoin = part
+                            end
+                        end
+                        
+                        if targetCoin then
+                            pcall(function()
+                                -- Ativa Noclip para evitar colisões
+                                for _, bodyPart in pairs(char:GetDescendants()) do
+                                    if bodyPart:IsA("BasePart") then bodyPart.CanCollide = false end
+                                end
+                                
+                                -- Lógica de cálculo da Posição Y (Flutuar acima para não ser atacado)
+                                local offsetAltura = posicaoYAtiva and 12 or 1.3
+                                local targetCFrame = targetCoin.CFrame * CFrame.new(0, offsetAltura, 0)
+                                
+                                if closestDistance > 300 then
+                                    -- SE ESTIVER MUITO LONGE: Teleporta direto na moeda
+                                    root.CFrame = targetCoin.CFrame
+                                    task.wait(0.05)
+                                else
+                                    -- SE ESTIVER NA DISTÂNCIA NORMAL: Voa até ela usando a velocidade do Slider
+                                    local duration = closestDistance / velocidadeSegura
+                                    local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
+                                    tween:Play()
+                                    tween.Completed:Wait() -- Espera chegar no ponto exato
+                                    
+                                    -- SE A POSIÇÃO Y ESTIVER ATIVA: Dá o microteleporte para baixo para pegar e sobe na hora
+                                    if posicaoYAtiva then
+                                        root.CFrame = targetCoin.CFrame
+                                        task.wait(0.05)
+                                    end
+                                end
+                            end)
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        AutoFarmIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        AutoFarmToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+        
+        if farmLoop then
+            task.cancel(farmLoop)
+            farmLoop = nil
+        end
+    end
+end)
+
+-- 4. AJUSTE DE ROLAGEM AUTOMÁTICA DA ABA
+local PageLayout = AutoFarmPage:FindFirstChildOfClass("UIListLayout")
+if PageLayout then
+    AutoFarmPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
+end
 
 -- =============================================================================
 -- [BACON X HUB V1] - ABA ESP (VISUAL ORGANIZADO)
