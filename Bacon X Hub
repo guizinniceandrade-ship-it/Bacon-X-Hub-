@@ -1308,6 +1308,93 @@ if LPLayout then
 end
 
 -- =============================================================================
+-- ABA STATUS DO SERVIDOR (Cole dentro da sua página de Status)
+-- =============================================================================
+local StatusPage = pages["Status"] -- Certifique-se que o nome da página no seu hub seja "Status"
+
+-- Função para criar a linha de status (Texto na esquerda, Valor em azul na direita)
+local function CreateStatusLabel(labelText, defaultValue)
+    local Frame = Instance.new("Frame")
+    local Corner = Instance.new("UICorner")
+    local Title = Instance.new("TextLabel")
+    local Value = Instance.new("TextLabel")
+
+    Frame.Parent = StatusPage
+    Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Frame.Size = UDim2.new(1, -6, 0, 35)
+
+    Corner.CornerRadius = UDim.new(0, 4)
+    Corner.Parent = Frame
+
+    Title.Parent = Frame
+    Title.BackgroundTransparency = 1
+    Title.Size = UDim2.new(0.6, 0, 1, 0)
+    Title.Font = Enum.Font.Gotham
+    Title.Text = "  " .. labelText
+    Title.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Title.TextSize = 13
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+
+    Value.Parent = Frame
+    Value.BackgroundTransparency = 1
+    Value.Position = UDim2.new(0.6, 0, 0, 0)
+    Value.Size = UDim2.new(0.4, -10, 1, 0)
+    Value.Font = Enum.Font.GothamBold
+    Value.Text = defaultValue
+    Value.TextColor3 = Color3.fromRGB(0, 170, 255) -- Azul Neon
+    Value.TextSize = 13
+    Value.TextXAlignment = Enum.TextXAlignment.Right
+    
+    return Value
+end
+
+-- Criando os campos
+local LblMurderer   = CreateStatusLabel("Murderer:", "...")
+local LblSheriff    = CreateStatusLabel("Sheriff:", "...")
+local LblServerTime = CreateStatusLabel("Tempo servidor:", "00h 00m 00s")
+local LblYourTime   = CreateStatusLabel("Seu tempo:", "00h 00m 00s")
+local LblPing       = CreateStatusLabel("Ping:", "0ms")
+local LblFPS        = CreateStatusLabel("FPS:", "60")
+local LblPlayers    = CreateStatusLabel("Players:", "0")
+
+-- Loop de atualização
+local Players = game:GetService("Players")
+local Stats = game:GetService("Stats")
+local startTime = os.time()
+
+task.spawn(function()
+    while task.wait(1) do
+        -- Atualizar contagem
+        LblPlayers.Text = tostring(#Players:GetPlayers())
+        
+        -- Atualizar Ping e FPS (aproximado)
+        LblPing.Text = math.floor(Stats.Network.ServerToClientPing:GetValue() * 1000) .. "ms"
+        
+        -- Atualizar tempos
+        local myTime = os.time() - startTime
+        local svTime = math.floor(workspace.DistributedGameTime)
+        
+        LblYourTime.Text = string.format("%02dh %02dm %02ds", myTime/3600, (myTime%3600)/60, myTime%60)
+        LblServerTime.Text = string.format("%02dh %02dm %02ds", svTime/3600, (svTime%3600)/60, svTime%60)
+        
+        -- Detectar Murderer/Sheriff (lógica simples)
+        local m, s = "Ninguém", "Ninguém"
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and (p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife")) then m = p.Name end
+            if p.Character and (p.Character:FindFirstChild("Gun") or p.Backpack:FindFirstChild("Gun")) then s = p.Name end
+        end
+        LblMurderer.Text = m
+        LblSheriff.Text = s
+    end
+end)
+
+-- Ajuste de Rolagem (Obrigatório para aparecer tudo!)
+local Layout = StatusPage:FindFirstChildOfClass("UIListLayout")
+if Layout then
+    StatusPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+end
+
+-- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
 -- =============================================================================
 local dragging, dragInput, dragStart, startPos
