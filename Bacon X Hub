@@ -931,6 +931,171 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- =============================================================================
+-- ELEMENTOS DA ABA LOCAL PLAYER (Colocar dentro da página "Local PlayerPage")
+-- =============================================================================
+local LocalPlayerPage = pages["Local Player"]
+
+-- 1. SEÇÃO: MOVIMENT (MOD)
+local SectionMoviment = Instance.new("TextLabel")
+SectionMoviment.Name = "SectionMoviment"
+SectionMoviment.Parent = LocalPlayerPage
+SectionMoviment.BackgroundTransparency = 1
+SectionMoviment.Size = UDim2.new(1, -6, 0, 25)
+SectionMoviment.Font = Enum.Font.GothamBold
+SectionMoviment.Text = "MOVIMENT (MOD)"
+SectionMoviment.TextColor3 = Color3.fromRGB(0, 170, 255) -- Azul Neon do Bacon X Hub
+SectionMoviment.TextSize = 12
+SectionMoviment.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 2. BOTÃO DE LIGAR/DESLIGAR (Toggle WalkSpeed)
+local SpeedToggle = Instance.new("TextButton")
+local SpeedToggleCorner = Instance.new("UICorner")
+local SpeedIndicator = Instance.new("Frame")
+local SpeedIndicatorCorner = Instance.new("UICorner")
+
+SpeedToggle.Name = "SpeedToggle"
+SpeedToggle.Parent = LocalPlayerPage
+SpeedToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SpeedToggle.Size = UDim2.new(1, -6, 0, 35)
+SpeedToggle.Font = Enum.Font.Gotham
+SpeedToggle.Text = "  Ativar Velocidade"
+SpeedToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+SpeedToggle.TextSize = 13
+SpeedToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+SpeedToggleCorner.CornerRadius = UDim.new(0, 4)
+SpeedToggleCorner.Parent = SpeedToggle
+
+SpeedIndicator.Name = "SpeedIndicator"
+SpeedIndicator.Parent = SpeedToggle
+SpeedIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SpeedIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+SpeedIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+SpeedIndicatorCorner.CornerRadius = UDim.new(0, 3)
+SpeedIndicatorCorner.Parent = SpeedIndicator
+
+_G.SpeedActive = false
+
+SpeedToggle.MouseButton1Click:Connect(function()
+    _G.SpeedActive = not _G.SpeedActive
+    if _G.SpeedActive then
+        SpeedIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        SpeedToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        SpeedIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        SpeedToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
+
+-- 3. BARRA DE AJUSTE (Slider de Velocidade)
+local SpeedSlider = Instance.new("Frame")
+local SpeedSliderCorner = Instance.new("UICorner")
+local SpeedSliderTitle = Instance.new("TextLabel")
+local SpeedSliderValue = Instance.new("TextLabel")
+local SpeedSlideBarMain = Instance.new("TextButton")
+local SpeedSlideBarCorner = Instance.new("UICorner")
+local SpeedSlideFill = Instance.new("Frame")
+local SpeedSlideFillCorner = Instance.new("UICorner")
+
+SpeedSlider.Name = "SpeedSlider"
+SpeedSlider.Parent = LocalPlayerPage
+SpeedSlider.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SpeedSlider.Size = UDim2.new(1, -6, 0, 50)
+
+SpeedSliderCorner.CornerRadius = UDim.new(0, 4)
+SpeedSliderCorner.Parent = SpeedSlider
+
+SpeedSliderTitle.Name = "SpeedSliderTitle"
+SpeedSliderTitle.Parent = SpeedSlider
+SpeedSliderTitle.BackgroundTransparency = 1
+SpeedSliderTitle.Position = UDim2.new(0, 10, 0, 6)
+SpeedSliderTitle.Size = UDim2.new(0, 150, 0, 15)
+SpeedSliderTitle.Font = Enum.Font.Gotham
+SpeedSliderTitle.Text = "Velocidade de Caminhada"
+SpeedSliderTitle.TextColor3 = Color3.fromRGB(180, 180, 180)
+SpeedSliderTitle.TextSize = 12
+SpeedSliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+SpeedSliderValue.Name = "SpeedSliderValue"
+SpeedSliderValue.Parent = SpeedSlider
+SpeedSliderValue.BackgroundTransparency = 1
+SpeedSliderValue.Position = UDim2.new(1, -60, 0, 6)
+SpeedSliderValue.Size = UDim2.new(0, 50, 0, 15)
+SpeedSliderValue.Font = Enum.Font.GothamBold
+SpeedSliderValue.Text = "16 studs" -- Velocidade padrão do Roblox é 16
+SpeedSliderValue.TextColor3 = Color3.fromRGB(0, 170, 255)
+SpeedSliderValue.TextSize = 12
+SpeedSliderValue.TextXAlignment = Enum.TextXAlignment.Right
+
+SpeedSlideBarMain.Name = "SpeedSlideBarMain"
+SpeedSlideBarMain.Parent = SpeedSlider
+SpeedSlideBarMain.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+SpeedSlideBarMain.Position = UDim2.new(0, 10, 0, 30)
+SpeedSlideBarMain.Size = UDim2.new(1, -20, 0, 6)
+SpeedSlideBarMain.Text = ""
+
+SpeedSlideBarCorner.CornerRadius = UDim.new(0, 3)
+SpeedSlideBarCorner.Parent = SpeedSlideBarMain
+
+SpeedSlideFill.Name = "SpeedSlideFill"
+SpeedSlideFill.Parent = SpeedSlideBarMain
+SpeedSlideFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+SpeedSlideFill.Size = UDim2.new(0.16, 0, 1, 0) -- Inicia preenchendo proporcionalmente aos 16 iniciais
+
+SpeedSlideFillCorner.CornerRadius = UDim.new(0, 3)
+SpeedSlideFillCorner.Parent = SpeedSlideFill
+
+-- Limites de velocidade ajustáveis
+local minSpeed = 16
+local maxSpeed = 150
+_G.WalkSpeedValue = 16
+
+local speedSliding = false
+
+local function updateSpeedSlider(input)
+    local mousePos = input.Position.X
+    local barPos = SpeedSlideBarMain.AbsolutePosition.X
+    local barWidth = SpeedSlideBarMain.AbsoluteSize.X
+    local percentage = math.clamp((mousePos - barPos) / barWidth, 0, 1)
+    
+    SpeedSlideFill.Size = UDim2.new(percentage, 0, 1, 0)
+    
+    local calculatedValue = math.round(minSpeed + (percentage * (maxSpeed - minSpeed)))
+    _G.WalkSpeedValue = calculatedValue
+    SpeedSliderValue.Text = tostring(calculatedValue) .. " studs"
+end
+
+SpeedSlideBarMain.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        speedSliding = true
+        updateSpeedSlider(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if speedSliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateSpeedSlider(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        speedSliding = false
+    end
+end)
+
+-- Sistema de auto-ajuste de rolagem para garantir o funcionamento suave no Delta
+local LocalPlayerLayout = LocalPlayerPage:FindFirstChildOfClass("UIListLayout")
+if LocalPlayerLayout then
+    LocalPlayerPage.CanvasSize = UDim2.new(0, 0, 0, LocalPlayerLayout.AbsoluteContentSize.Y + 20)
+    LocalPlayerLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        LocalPlayerPage.CanvasSize = UDim2.new(0, 0, 0, LocalPlayerLayout.AbsoluteContentSize.Y + 20)
+    end)
+end
+
+-- =============================================================================
 -- SEÇÃO: NAME (ESP)
 -- =============================================================================
 
