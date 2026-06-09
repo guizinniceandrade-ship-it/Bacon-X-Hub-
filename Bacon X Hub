@@ -1379,6 +1379,171 @@ NoclipToggle.MouseButton1Click:Connect(function()
     end
 end)
 
+-- =============================================================================
+-- [BACON X HUB V1] - MENU DE TELEPORTES CORRIGIDO (GO TO = PERSEGUIR)
+-- =============================================================================
+local LocalPlayerPage = pages["Local Player"]
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local targetPlayer = nil -- Guarda o player que foi clicado na lista
+local perseguindo = false -- Controla se o Go to está ativo ou não
+
+-- Função utilitária para criar títulos da categoria
+local function CriarTitulo(texto)
+    local Titulo = Instance.new("TextLabel", LocalPlayerPage)
+    Titulo.Size = UDim2.new(1, -6, 0, 25)
+    Titulo.BackgroundTransparency = 1
+    Titulo.Text = "  " .. texto
+    Titulo.TextColor3 = Color3.fromRGB(0, 170, 255) -- Azul Neon padrão do Hub
+    Titulo.Font = Enum.Font.GothamBold
+    Titulo.TextSize = 14
+    Titulo.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+-- =============================================================================
+-- SEÇÃO 1: TELEPORTE PLAYER
+-- =============================================================================
+CriarTitulo("Teleporte player")
+
+-- Caixa de Lista (Dropdown de Players)
+local Dropdown = Instance.new("ScrollingFrame", LocalPlayerPage)
+Dropdown.Size = UDim2.new(1, -6, 0, 110)
+Dropdown.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Dropdown.ScrollBarThickness = 4
+Dropdown.CanvasSize = UDim2.new(0, 0, 0, 0)
+Instance.new("UICorner", Dropdown).CornerRadius = UDim.new(0, 6)
+
+local ListLayout = Instance.new("UIListLayout", Dropdown)
+ListLayout.SortOrder = Enum.SortOrder.Name
+ListLayout.Padding = UDim.new(0, 4)
+
+-- Função para atualizar a lista de quem está no servidor
+local function AtualizarDropdown()
+    for _, child in pairs(Dropdown:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local pBtn = Instance.new("TextButton", Dropdown)
+            pBtn.Text = "   " .. p.DisplayName
+            pBtn.Size = UDim2.new(1, -5, 0, 30)
+            pBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+            pBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+            pBtn.Font = Enum.Font.Gotham
+            pBtn.TextSize = 13
+            pBtn.TextXAlignment = Enum.TextXAlignment.Left
+            Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 4)
+            
+            pBtn.MouseButton1Click:Connect(function() 
+                targetPlayer = p 
+                -- Limpa a cor dos outros e deixa o selecionado em azul neon
+                for _, b in pairs(Dropdown:GetChildren()) do if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(25, 25, 25) end end
+                pBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255) 
+            end)
+        end
+    end
+    Dropdown.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
+end
+
+-- Criador de Botões de Ação padrão do Bacon X Hub
+local function CriarBotaoAcao(texto, callback)
+    local Btn = Instance.new("TextButton", LocalPlayerPage)
+    Btn.Size = UDim2.new(1, -6, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Btn.Font = Enum.Font.GothamBold
+    Btn.Text = "  " .. texto
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextSize = 14
+    Btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+    Btn.MouseButton1Click:Connect(callback)
+    return Btn
+end
+
+-- Botão 1: Apenas teleporta uma vez para o player
+local BtnTP = CriarBotaoAcao("Teleporte para player", function()
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local meuRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if meuRoot then
+            meuRoot.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+        end
+    end
+end)
+
+-- Botão 2: GO TO (Persegue o jogador sem parar)
+local BtnGoTo = CriarBotaoAcao("Go to", function()
+    if not perseguindo and targetPlayer then
+        perseguindo = true
+        BtnGoTo.TextColor3 = Color3.fromRGB(0, 170, 255) -- Fica azul indicando que está perseguindo
+        
+        task.spawn(function()
+            while perseguindo and targetPlayer and targetPlayer.Character do
+                local meuRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local alvoRoot = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                
+                if meuRoot and alvoRoot then
+                    -- Fica grudado nas costas do player alvo
+                    meuRoot.CFrame = alvoRoot.CFrame * CFrame.new(0, 0, 2)
+                end
+                task.wait(0.1) -- Atualização rápida para ele não fugir de você
+            end
+        end)
+    end
+end)
+
+-- Botão 3: Para perseguição (Desliga o Go to)
+CriarBotaoAcao("Para perseguição", function()
+    perseguindo = false
+    BtnGoTo.TextColor3 = Color3.fromRGB(200, 200, 200) -- Volta a cor normal do Go To
+end)
+
+-- =============================================================================
+-- SEÇÃO 2: TELEPORTE LOBBY/MAPA
+-- =============================================================================
+CriarTitulo("Teleporte lobby/mapa")
+
+local autoLobbyAtivo = false
+local autoMapaAtivo = false
+
+local BtnAutoLobby = CriarBotaoAcao("Auto teleporte lobby", function()
+    autoLobbyAtivo = not autoLobbyAtivo
+    BtnAutoLobby.TextColor3 = autoLobbyAtivo and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(200, 200, 200)
+    
+    if autoLobbyAtivo then
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local lobby = workspace:FindFirstChild("Lobby")
+        if root and lobby then
+            root.CFrame = lobby:GetModelCFrame() or CFrame.new(15, 11, -10)
+        end
+    end
+end)
+
+local BtnAutoMapa = CriarBotaoAcao("Auto teleporte mapa", function()
+    autoMapaAtivo = not autoMapaAtivo
+    BtnAutoMapa.TextColor3 = autoMapaAtivo and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(200, 200, 200)
+    
+    if autoMapaAtivo then
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local mapa = workspace:FindFirstChild("Normal") or workspace:FindFirstChild("MainMap")
+        if root and mapa then
+            local spawnPart = mapa:FindFirstChildDescendant("SpawnLocation") or mapa:FindFirstChildOfClass("BasePart")
+            if spawnPart then
+                root.CFrame = spawnPart.CFrame * CFrame.new(0, 3, 0)
+            end
+        end
+    end
+end)
+
+-- Mantém a lista atualizada caso entrem novos players
+Players.PlayerAdded:Connect(AtualizarDropdown)
+Players.PlayerRemoving:Connect(AtualizarDropdown)
+AtualizarDropdown()
+
+-- Ajuste de rolagem da página inteira do Local Player
+local PageLayout = LocalPlayerPage:FindFirstChildOfClass("UIListLayout")
+if PageLayout then
+    LocalPlayerPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
+end
+
 -- Força a rolagem da página Local Player a recalcular o tamanho e atualizar no Delta
 local LPLayout = LocalPlayerPage:FindFirstChildOfClass("UIListLayout")
 if LPLayout then
