@@ -910,8 +910,243 @@ local PageLayout = AutoFarmPage:FindFirstChildOfClass("UIListLayout")
 if PageLayout then
     AutoFarmPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
 end
+-- =============================================================
+-- [ ABA ESP HIGHLIGHT ETC ]
+-- =============================================================
+local ESPPage = pages["ESP"]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
---------------------
+-- Garante que a página use Grid ou ListLayout correto para organizar as seções
+local UIList = ESPPage:FindFirstChildOfClass("UIListLayout") or Instance.new("UIListLayout", ESPPage)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.Padding = UDim.new(0, 8)
+
+-- =============================================================================
+-- TABELA DE CONFIGURAÇÃO REMODELADA (Sem misturar os botões!)
+-- =============================================================================
+local ESP_Config = {
+    -- Murderer
+    M_Highlight = false, M_Funcao = false, M_Distancia = false, M_Tracer = false,
+    -- Sheriff
+    S_Highlight = false, S_Funcao = false, S_Distancia = false, S_Tracer = false,
+    -- Innocent
+    I_Highlight = false, I_Funcao = false, I_Distancia = false, I_Tracer = false,
+}
+
+-- =============================================================================
+-- FUNÇÃO PARA CRIAR A SEÇÃO COM OS BOTÕES QUADRADOS
+-- =============================================================================
+local function CriarCategoriaESP(tituloTexto, prefixoChave)
+    -- Container para segurar o texto e a fileira de botões
+    local Container = Instance.new("Frame")
+    Container.Parent = ESPPage
+    Container.Size = UDim2.new(1, -6, 0, 75)
+    Container.BackgroundTransparency = 1
+    
+    -- Texto da Categoria (Ex: Esp Murderer)
+    local Titulo = Instance.new("TextLabel")
+    Titulo.Parent = Container
+    Titulo.Size = UDim2.new(1, 0, 0, 25)
+    Titulo.BackgroundTransparency = 1
+    Titulo.Text = tituloTexto
+    Titulo.TextColor3 = Color3.fromRGB(0, 170, 255) -- Azul Neon do Bacon X Hub
+    Titulo.Font = Enum.Font.GothamBold
+    Titulo.TextSize = 14
+    Titulo.TextXAlignment = Enum.TextXAlignment.Left
+    
+    -- Alinhamento horizontal para os botões ficarem um do lado do outro
+    local RowFrame = Instance.new("Frame")
+    RowFrame.Parent = Container
+    RowFrame.Position = UDim2.new(0, 0, 0, 28)
+    RowFrame.Size = UDim2.new(1, 0, 0, 42)
+    RowFrame.BackgroundTransparency = 1
+    
+    local UIGrid = Instance.new("UIGridLayout")
+    UIGrid.Parent = RowFrame
+    UIGrid.CellSize = UDim2.new(0.23, 0, 0, 40) -- Define o formato QUADRADO para caber 4 na linha
+    UIGrid.CellPadding = UDim2.new(0.02, 0, 0, 0)
+    UIGrid.SortOrder = Enum.SortOrder.LayoutOrder
+
+    -- Função interna para fabricar o quadradinho
+    local function CriarQuadradinho(nomeBotao, chaveEspecifica)
+        local Btn = Instance.new("TextButton")
+        Btn.Parent = RowFrame
+        Btn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+        Btn.Text = nomeBotao
+        Btn.TextColor3 = Color3.fromRGB(180, 180, 180)
+        Btn.Font = Enum.Font.GothamBold
+        Btn.TextSize = 11 -- Ajustado para não cortar nos quadradinhos móveis
+        Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
+        
+        Btn.MouseButton1Click:Connect(function()
+            ESP_Config[chaveEspecifica] = not ESP_Config[chaveEspecifica]
+            
+            if ESP_Config[chaveEspecifica] then
+                Btn.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+                Btn.TextColor3 = Color3.fromRGB(0, 170, 255)
+            else
+                Btn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                Btn.TextColor3 = Color3.fromRGB(180, 180, 180)
+            end
+        end)
+    end
+
+    -- Cria os 4 mini botões de forma consecutiva
+    CriarQuadradinho("HighLt", prefixoChave .. "_Highlight")
+    CriarQuadradinho("Função", prefixoChave .. "_Funcao")
+    CriarQuadradinho("Dist", prefixoChave .. "_Distancia")
+    CriarQuadradinho("Tracer", prefixoChave .. "_Tracer")
+end
+
+-- Gerando a interface limpa e compacta
+CriarCategoriaESP("Esp Murderer", "M")
+CriarCategoriaESP("Esp Sheriff", "S")
+CriarCategoriaESP("Esp Innocent", "I")
+
+
+-- =============================================================================
+-- MOTOR DE RENDERIZAÇÃO CORRIGIDO (Fim da Bipolaridade)
+-- =============================================================================
+local LinhasAtivas = {}
+
+RunService.RenderStepped:Connect(function()
+    -- Limpeza total dos tracers anteriores
+    for _, linha in pairs(LinhasAtivas) do linha:Remove() end
+    table.clear(LinhasAtivas)
+    
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local Char = p.Character
+            local Root = Char.HumanoidRootPart
+            local Hum = Char:FindFirstChildOfClass("Humanoid")
+            
+            -- Se o player resetou/morreu, deleta as artes visuais dele imediatamente
+            if Hum and Hum.Health <= 0 then
+                if Char:FindFirstChild("Bacon_H") then Char.Bacon_H:Destroy() end
+                if Char:FindFirstChild("Bacon_T") then Char.Bacon_T:Destroy() end
+                continue
+            end
+            
+            -- Reconhecimento de Inventário Preciso
+            local temFaca = Char:FindFirstChild("Knife") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Knife"))
+            local temArma = Char:FindFirstChild("Gun") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Gun"))
+            
+            -- Separação matemática rígida dos cargos
+            local corAlvo, toggleHighlight, toggleFuncao, toggleDistancia, toggleTracer, textoAlvo
+            
+            if temFaca then
+                corAlvo = Color3.fromRGB(255, 0, 50)
+                toggleHighlight = ESP_Config.M_Highlight
+                toggleFuncao = ESP_Config.M_Funcao
+                toggleDistancia = ESP_Config.M_Distancia
+                toggleTracer = ESP_Config.M_Tracer
+                textoAlvo = "MURDERER"
+            elseif temArma then
+                corAlvo = Color3.fromRGB(0, 170, 255)
+                toggleHighlight = ESP_Config.S_Highlight
+                toggleFuncao = ESP_Config.S_Funcao
+                toggleDistancia = ESP_Config.S_Distancia
+                toggleTracer = ESP_Config.S_Tracer
+                textoAlvo = "SHERIFF"
+            else
+                corAlvo = Color3.fromRGB(0, 255, 100)
+                toggleHighlight = ESP_Config.I_Highlight
+                toggleFuncao = ESP_Config.I_Funcao
+                toggleDistancia = ESP_Config.I_Distancia
+                toggleTracer = ESP_Config.I_Tracer
+                textoAlvo = "INNOCENT"
+            end
+
+            -- 1. APLICAÇÃO DO HIGHLIGHT
+            local existH = Char:FindFirstChild("Bacon_H")
+            if toggleHighlight then
+                if not existH then
+                    local h = Instance.new("Highlight")
+                    h.Name = "Bacon_H"
+                    h.Parent = Char
+                    h.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    h.OutlineTransparency = 0
+                    h.FillTransparency = 0.5
+                    h.FillColor = corAlvo
+                else
+                    existH.FillColor = corAlvo -- Altera a cor dinamicamente se coletar a arma do chão
+                end
+            else
+                if existH then existH:Destroy() end
+            end
+            
+            -- 2. APLICAÇÃO DOS TEXTOS (BillboardGui)
+            local Billboard = Char:FindFirstChild("Bacon_T")
+            if toggleFuncao or toggleDistancia then
+                if not Billboard then
+                    Billboard = Instance.new("BillboardGui", Char)
+                    Billboard.Name = "Bacon_T"
+                    Billboard.AlwaysOnTop = true
+                    Billboard.ExtentsOffset = Vector3.new(0, 3, 0)
+                    Billboard.Size = UDim2.new(0, 150, 0, 50)
+                    
+                    local lf = Instance.new("TextLabel", Billboard)
+                    lf.Name = "TxtF"
+                    lf.Size = UDim2.new(1, 0, 0, 20)
+                    lf.BackgroundTransparency = 1
+                    lf.Font = Enum.Font.GothamBold
+                    lf.TextSize = 13
+                    lf.TextStrokeTransparency = 0
+                    
+                    local ld = Instance.new("TextLabel", Billboard)
+                    ld.Name = "TxtD"
+                    ld.Size = UDim2.new(1, 0, 0, 20)
+                    ld.Position = UDim2.new(0, 0, 0, 18)
+                    ld.BackgroundTransparency = 1
+                    ld.Font = Enum.Font.GothamBold
+                    ld.TextSize = 11
+                    ld.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    ld.TextStrokeTransparency = 0
+                end
+                
+                Billboard.TxtF.Text = toggleFuncao and textoAlvo or ""
+                Billboard.TxtF.TextColor3 = corAlvo
+                
+                if toggleDistancia and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local mag = (LocalPlayer.Character.HumanoidRootPart.Position - Root.Position).Magnitude
+                    Billboard.TxtD.Text = math.round(mag) .. "m"
+                else
+                    Billboard.TxtD.Text = ""
+                end
+            else
+                if Billboard then Billboard:Destroy() end
+            end
+            
+            -- 3. APLICAÇÃO DOS TRACERS
+            if toggleTracer then
+                local RootScreenPos, OnScreen = Camera:WorldToViewportPoint(Root.Position)
+                if OnScreen then
+                    local LinhaTracer = Drawing.new("Line")
+                    LinhaTracer.Visible = true
+                    LinhaTracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                    LinhaTracer.To = Vector2.new(RootScreenPos.X, RootScreenPos.Y)
+                    LinhaTracer.Color = corAlvo
+                    LinhaTracer.Thickness = 1.5
+                    LinhaTracer.Transparency = 1
+                    
+                    table.insert(LinhasAtivas, LinhaTracer)
+                end
+            end
+            
+        end
+    end
+end)
+
+-- Sistema de rolagem da tela (Canvas) adequado para mobile
+if UIList then
+    ESPPage.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
+    UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        ESPPage.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
+    end)
+end
 
 -- =============================================================================
 -- DECLARAÇÃO DOS SERVIÇOS VITAIS (Evita que o script quebre após a limpeza)
