@@ -905,12 +905,6 @@ AutoFarmToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- 4. AJUSTE DE ROLAGEM AUTOMÁTICA DA ABA
-local PageLayout = AutoFarmPage:FindFirstChildOfClass("UIListLayout")
-if PageLayout then
-    AutoFarmPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
-end
-
 -- =============================================================
 -- [ ABA ESP HIGHLIGHT ETC ]
 -- =============================================================
