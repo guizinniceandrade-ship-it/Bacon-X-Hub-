@@ -779,79 +779,208 @@ if PageLayout then
 end
 
 -- =============================================================================
--- ELEMENTOS DA ABA ESP (Colocar dentro da página "ESPPage")
+-- [BACON X HUB V1] - ABA ESP COMPLETA (HIGHLIGHTS NATIVOS)
 -- =============================================================================
-local ESPPage = pages["ESP"]
+local ESPPage = pages["ESP"] -- Nome exato da sua aba ESP
 
--- Título de Seção: HIGHLIGHT
-local SectionHighlight = Instance.new("TextLabel")
-SectionHighlight.Name = "SectionHighlight"
-SectionHighlight.Parent = ESPPage
-SectionHighlight.BackgroundTransparency = 1
-SectionHighlight.Size = UDim2.new(1, -6, 0, 25)
-SectionHighlight.Font = Enum.Font.GothamBold
-SectionHighlight.Text = "HIGHLIGHT"
-SectionHighlight.TextColor3 = Color3.fromRGB(0, 170, 255) -- Azul Neon do Bacon X Hub
-SectionHighlight.TextSize = 12
-SectionHighlight.TextXAlignment = Enum.TextXAlignment.Left
+-- SERVIÇOS DO ROBLOX
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- Função auxiliar para criar os Toggles do ESP rapidamente
-local function CreateESPToggle(name, text)
-    local Toggle = Instance.new("TextButton")
+-- VARIÁVEIS DE CONTROLE DO MOTOR
+local espMurderAtivo = false
+local espSheriffAtivo = false
+local espInnocentAtivo = false
+
+local loopMurder, loopSheriff, loopInnocent
+
+-- FUNÇÃO PARA CRIAR BOTÕES PADRONIZADOS (Estilo Bacon X Hub v1)
+local function CriarBotaoESP(nome, texto, corAtivo)
+    local Botao = Instance.new("TextButton")
     local Corner = Instance.new("UICorner")
-    local Indicator = Instance.new("Frame")
+    local Indicador = Instance.new("Frame")
     local IndCorner = Instance.new("UICorner")
 
-    Toggle.Name = name
-    Toggle.Parent = ESPPage
-    Toggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    Toggle.Size = UDim2.new(1, -6, 0, 35)
-    Toggle.Font = Enum.Font.Gotham
-    Toggle.Text = "  " .. text
-    Toggle.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Toggle.TextSize = 13
-    Toggle.TextXAlignment = Enum.TextXAlignment.Left
+    Botao.Name = nome
+    Botao.Parent = ESPPage
+    Botao.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Botao.Size = UDim2.new(1, -6, 0, 40)
+    Botao.Font = Enum.Font.GothamBold
+    Botao.Text = "  " .. texto
+    Botao.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Botao.TextSize = 14
+    Botao.TextXAlignment = Enum.TextXAlignment.Left
 
-    Corner.CornerRadius = UDim.new(0, 4)
-    Corner.Parent = Toggle
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Botao
 
-    Indicator.Name = "Indicator"
-    Indicator.Parent = Toggle
-    Indicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    Indicator.Position = UDim2.new(1, -27, 0.5, -8)
-    Indicator.Size = UDim2.new(0, 16, 0, 16)
+    Indicador.Name = "Indicador"
+    Indicador.Parent = Botao
+    Indicador.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Indicador.Position = UDim2.new(1, -30, 0.5, -9)
+    Indicador.Size = UDim2.new(0, 18, 0, 18)
 
-    IndCorner.CornerRadius = UDim.new(0, 3)
-    IndCorner.Parent = Indicator
+    IndCorner.CornerRadius = UDim.new(0, 4)
+    IndCorner.Parent = Indicador
 
-    _G[name .. "Active"] = false
-
-    Toggle.MouseButton1Click:Connect(function()
-        _G[name .. "Active"] = not _G[name .. "Active"]
-        if _G[name .. "Active"] then
-            Indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255) -- Ativado (Azul)
-            Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-        else
-            Indicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Desativado
-            Toggle.TextColor3 = Color3.fromRGB(200, 200, 200)
-        end
-    end)
-    
-    return Toggle
+    return Botao, Indicador
 end
 
--- Criando os 3 botões da seção Highlight:
-CreateESPToggle("HighlightMurderer", "Highlight Murderer")
-CreateESPToggle("HighlightSheriff", "Highlight Sheriff")
-CreateESPToggle("HighlightInnocent", "Highlight Innocent")
+-- CRIANDO OS TRÊS BOTÕES NA TELA
+local BtnMurder, IndMurder = CriarBotaoESP("BtnMurder", "ESP Murderer (Vermelho)", Color3.fromRGB(255, 0, 0))
+local BtnSheriff, IndSheriff = CriarBotaoESP("BtnSheriff", "ESP Sheriff / Hero (Azul)", Color3.fromRGB(0, 170, 255))
+local BtnInnocent, IndInnocent = CriarBotaoESP("BtnInnocent", "ESP Inocentes (Verde)", Color3.fromRGB(0, 255, 100))
 
--- Sistema de auto-ajuste de rolagem para a aba ESP
-local ESPLayout = ESPPage:FindFirstChildOfClass("UIListLayout")
-if ESPLayout then
-    ESPPage.CanvasSize = UDim2.new(0, 0, 0, ESPLayout.AbsoluteContentSize.Y + 20)
-    ESPLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        ESPPage.CanvasSize = UDim2.new(0, 0, 0, ESPLayout.AbsoluteContentSize.Y + 20)
-    end)
+-- FUNÇÃO LIMPADORA (Remove Highlights antigos para não bugar)
+local function LimparHighlightsPorNome(nomeTag)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Character then
+            local antigo = p.Character:FindFirstChild(nomeTag)
+            if antigo then antigo:Destroy() end
+        end
+    end
+end
+
+-- =============================================================================
+-- 1. MOTOR DO ESP MURDERER (Detecta Faca no Inventário ou na Mão)
+-- =============================================================================
+BtnMurder.MouseButton1Click:Connect(function()
+    espMurderAtivo = not espMurderAtivo
+    
+    if espMurderAtivo then
+        IndMurder.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Fica Vermelho
+        BtnMurder.TextColor3 = Color3.fromRGB(255, 255, 255)
+        
+        loopMurder = task.spawn(function()
+            while espMurderAtivo do
+                task.wait(0.5)
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        -- Verifica se o player tem a Faca na mão ou na mochila
+                        local temFaca = p.Character:FindFirstChild("Knife") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Knife"))
+                        local jaTemEsp = p.Character:FindFirstChild("MurderHighlight")
+                        
+                        if temFaca and not jaTemEsp then
+                            -- Remove outros ESPs dele para não misturar as cores
+                            local a = p.Character:FindFirstChild("SheriffHighlight") or p.Character:FindFirstChild("InnocentHighlight")
+                            if a then a:Destroy() end
+                            
+                            local hl = Instance.new("Highlight")
+                            hl.Name = "MurderHighlight"
+                            hl.FillColor = Color3.fromRGB(255, 0, 0)
+                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                            hl.FillTransparency = 0.5
+                            hl.Parent = p.Character
+                        elseif death or not temFaca and jaTemEsp then
+                            jaTemEsp:Destroy()
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        IndMurder.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        BtnMurder.TextColor3 = Color3.fromRGB(200, 200, 200)
+        if loopMurder then task.cancel(loopMurder) end
+        LimparHighlightsPorNome("MurderHighlight")
+    end
+end)
+
+-- =============================================================================
+-- 2. MOTOR DO ESP SHERIFF (Detecta Arma no Inventário ou na Mão)
+-- =============================================================================
+BtnSheriff.MouseButton1Click:Connect(function()
+    espSheriffAtivo = not espSheriffAtivo
+    
+    if espSheriffAtivo then
+        IndSheriff.BackgroundColor3 = Color3.fromRGB(0, 170, 255) -- Fica Azul Neon
+        BtnSheriff.TextColor3 = Color3.fromRGB(255, 255, 255)
+        
+        loopSheriff = task.spawn(function()
+            while espSheriffAtivo do
+                task.wait(0.5)
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        -- Verifica se tem a Pistola (Gun) na mão ou mochila
+                        local temArma = p.Character:FindFirstChild("Gun") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Gun"))
+                        local jaTemEsp = p.Character:FindFirstChild("SheriffHighlight")
+                        
+                        if temArma and not jaTemEsp then
+                            local a = p.Character:FindFirstChild("MurderHighlight") or p.Character:FindFirstChild("InnocentHighlight")
+                            if a then a:Destroy() end
+                            
+                            local hl = Instance.new("Highlight")
+                            hl.Name = "SheriffHighlight"
+                            hl.FillColor = Color3.fromRGB(0, 170, 255)
+                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                            hl.FillTransparency = 0.5
+                            hl.Parent = p.Character
+                        elseif not temArma and jaTemEsp then
+                            jaTemEsp:Destroy()
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        IndSheriff.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        BtnSheriff.TextColor3 = Color3.fromRGB(200, 200, 200)
+        if loopSheriff then task.cancel(loopSheriff) end
+        LimparHighlightsPorNome("SheriffHighlight")
+    end
+end)
+
+-- =============================================================================
+-- 3. MOTOR DO ESP INOCENTES (Põe contorno verde em quem sobrou)
+-- =============================================================================
+BtnInnocent.MouseButton1Click:Connect(function()
+    espInnocentAtivo = not espInnocentAtivo
+    
+    if espInnocentAtivo then
+        IndInnocent.BackgroundColor3 = Color3.fromRGB(0, 255, 100) -- Fica Verde
+        BtnInnocent.TextColor3 = Color3.fromRGB(255, 255, 255)
+        
+        loopInnocent = task.spawn(function()
+            while espInnocentAtivo do
+                task.wait(0.6)
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        -- Se não é Murder e não é Sheriff, é Inocente
+                        local temFaca = p.Character:FindFirstChild("Knife") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Knife"))
+                        local temArma = p.Character:FindFirstChild("Gun") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Gun"))
+                        
+                        local jaTemEsp = p.Character:FindFirstChild("InnocentHighlight")
+                        
+                        if not temFaca and not temArma and not jaTemEsp then
+                            -- Só coloca se ele não tiver nenhum outro destaque ativo
+                            if not p.Character:FindFirstChild("MurderHighlight") and not p.Character:FindFirstChild("SheriffHighlight") then
+                                local hl = Instance.new("Highlight")
+                                hl.Name = "InnocentHighlight"
+                                hl.FillColor = Color3.fromRGB(0, 255, 100)
+                                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                                hl.FillTransparency = 0.6
+                                hl.Parent = p.Character
+                            end
+                        elseif (temFaca or temArma) and jaTemEsp then
+                            -- Se ele pegou a arma ou faca do chão no meio da partida, tira o verde
+                            jaTemEsp:Destroy()
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        IndInnocent.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        BtnInnocent.TextColor3 = Color3.fromRGB(200, 200, 200)
+        if loopInnocent then task.cancel(loopInnocent) end
+        LimparHighlightsPorNome("InnocentHighlight")
+    end
+end)
+
+-- AJUSTE DE ROLAGEM DA ABA ESP
+local PageLayout = ESPPage:FindFirstChildOfClass("UIListLayout")
+if PageLayout then
+    ESPPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
 end
 
 -- =============================================================================
