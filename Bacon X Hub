@@ -916,81 +916,228 @@ end
 -- =============================================================================
 local ESPPage = pages["ESP"]
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
--- Função para criar o título "Highlight"
-local function CriarTitulo(texto)
-    local Label = Instance.new("TextLabel")
-    Label.Parent = ESPPage
-    Label.Size = UDim2.new(1, -6, 0, 30)
-    Label.BackgroundTransparency = 1
-    Label.Text = "  " .. texto
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 16
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-end
+-- =============================================================================
+-- CRIAÇÃO DO LAYOUT ORGANIZADO (Interface do Bacon X Hub)
+-- =============================================================================
 
--- Criando o título
-CriarTitulo("Highlight")
+-- Título Principal da Seção
+local SecaoTitulo = Instance.new("TextLabel")
+SecaoTitulo.Parent = ESPPage
+SecaoTitulo.Size = UDim2.new(1, -6, 0, 30)
+SecaoTitulo.BackgroundTransparency = 1
+SecaoTitulo.Text = "Esp Murderer"
+SecaoTitulo.TextColor3 = Color3.fromRGB(0, 170, 255) -- Azul Neon padrão do Hub
+SecaoTitulo.Font = Enum.Font.GothamBold
+SecaoTitulo.TextSize = 16
+SecaoTitulo.TextXAlignment = Enum.TextXAlignment.Left
 
--- Função para criar os botões (Botão 1, 2, 3)
-local function CriarBotaoESP(texto, cor, tipo)
+-- Tabela para guardar os estados de ativação de cada botão
+local ESP_Config = {
+    Highlight = false,
+    Funcao = false,
+    Distancia = false,
+    Tracer = false
+}
+
+-- Função padrão para criar os botões idênticos aos anteriores
+local function CriarBotaoDesign(texto, chaveConfig)
     local Botao = Instance.new("TextButton")
-    Botao.Name = "Btn_" .. tipo
     Botao.Parent = ESPPage
     Botao.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    Botao.Size = UDim2.new(1, -6, 0, 40)
+    Botao.Size = UDim2.new(1, -6, 0, 38)
     Botao.Text = "  " .. texto
     Botao.TextColor3 = Color3.fromRGB(200, 200, 200)
     Botao.Font = Enum.Font.GothamBold
-    Botao.TextSize = 14
+    Botao.TextSize = 13
     Botao.TextXAlignment = Enum.TextXAlignment.Left
-    Instance.new("UICorner", Botao).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(0, 5)
     
-    local Ativo = false
     Botao.MouseButton1Click:Connect(function()
-        Ativo = not Ativo
-        Botao.BackgroundColor3 = Ativo and Color3.fromRGB(30, 30, 30) or Color3.fromRGB(15, 15, 15)
-        Botao.TextColor3 = Ativo and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+        ESP_Config[chaveConfig] = not ESP_Config[chaveConfig]
+        
+        -- Efeito visual de ligado/desligado (Azul Neon quando ativo)
+        if ESP_Config[chaveConfig] then
+            Botao.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+            Botao.TextColor3 = Color3.fromRGB(0, 170, 255)
+        else
+            Botao.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+            Botao.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
     end)
-    return Botao, Ativo
+    return Botao
 end
 
--- Criando os 3 botões
-local Btn1, Ativo1 = CriarBotaoESP("Highlight Murderer", Color3.fromRGB(255, 0, 0), "Murderer")
-local Btn2, Ativo2 = CriarBotaoESP("Highlight Sheriff", Color3.fromRGB(0, 170, 255), "Sheriff")
-local Btn3, Ativo3 = CriarBotaoESP("Highlight Innocent", Color3.fromRGB(0, 255, 100), "Innocent")
+-- Criando os 4 botões na ordem exata solicitada
+CriarBotaoDesign("Highlight", "Highlight")
+CriarBotaoDesign("Função", "Funcao")
+CriarBotaoDesign("Distância", "Distancia")
+CriarBotaoDesign("Tracer", "Tracer")
 
--- Motor de execução (O código que faz funcionar)
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                -- Limpa highlights antigos
-                for _, obj in pairs(p.Character:GetChildren()) do if obj:IsA("Highlight") then obj:Destroy() end end
-                
-                local temFaca = p.Character:FindFirstChild("Knife") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Knife"))
-                local temArma = p.Character:FindFirstChild("Gun") or (p:FindFirstChild("Backpack") and p.Backpack:FindFirstChild("Gun"))
-                
-                -- Se botão 1 ligado e é Murderer
-                if Btn1.BackgroundColor3 == Color3.fromRGB(30, 30, 30) and temFaca then
-                    local h = Instance.new("Highlight", p.Character)
-                    h.FillColor = Color3.fromRGB(255, 0, 0)
-                -- Se botão 2 ligado e é Sheriff
-                elseif Btn2.BackgroundColor3 == Color3.fromRGB(30, 30, 30) and temArma then
-                    local h = Instance.new("Highlight", p.Character)
-                    h.FillColor = Color3.fromRGB(0, 170, 255)
-                -- Se botão 3 ligado e é Innocent
-                elseif Btn3.BackgroundColor3 == Color3.fromRGB(30, 30, 30) and not temFaca and not temArma then
-                    local h = Instance.new("Highlight", p.Character)
-                    h.FillColor = Color3.fromRGB(0, 255, 100)
+
+-- =============================================================================
+-- SISTEMA DE DETECÇÃO DO MURDERER
+-- =============================================================================
+local function VerificarSeEMurderer(player)
+    if player and player.Character then
+        -- Verifica se a faca está na mão ou na mochila do jogador
+        local temFaca = player.Character:FindFirstChild("Knife") or (player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("Knife"))
+        if temFaca then
+            return true
+        end
+    end
+    return false
+end
+
+
+-- =============================================================================
+-- MOTOR DE EXECUÇÃO EM TEMPO REAL (Renderização de Linhas e Textos 2D/3D)
+-- =============================================================================
+
+-- Tabela para gerenciar e limpar osTracers (Linhas de desenho da tela)
+local LinhasAtivas = {}
+
+RunService.RenderStepped:Connect(function()
+    -- Limpa todas as linhas antigas da tela antes de desenhar as novas (Evita rastros fantasma)
+    for _, linha in pairs(LinhasAtivas) do
+        linha:Remove()
+    end
+    table.clear(LinhasAtivas)
+    
+    -- Varre todos os players do servidor
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChildOfClass("Humanoid") then
+            local Char = p.Character
+            local Root = Char.HumanoidRootPart
+            local Hum = Char:FindFirstChildOfClass("Humanoid")
+            
+            -- Se o humanoid morreu, remove qualquer resquício de modificação visual
+            if Hum.Health <= 0 then
+                if Char:FindFirstChild("BaconHighlight") then Char.BaconHighlight:Destroy() end
+                if Char:FindFirstChild("BaconESP_Tag") then Char.BaconESP_Tag:Destroy() end
+                continue
+            end
+            
+            -- Verifica se o cara é o dono da faca
+            local eMurderer = VerificarSeEMurderer(p)
+            
+            -- -----------------------------------------------------------------
+            -- MOD 1: HIGHLIGHT (Silhueta Vermelha)
+            -- -----------------------------------------------------------------
+            local existHighlight = Char:FindFirstChild("BaconHighlight")
+            if eMurderer and ESP_Config.Highlight then
+                if not existHighlight then
+                    local h = Instance.new("Highlight")
+                    h.Name = "BaconHighlight"
+                    h.Parent = Char
+                    h.FillColor = Color3.fromRGB(255, 0, 50) -- Vermelho vibrante
+                    h.FillTransparency = 0.5
+                    h.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    h.OutlineTransparency = 0
                 end
+            else
+                if existHighlight then existHighlight:Destroy() end
+            end
+            
+            -- -----------------------------------------------------------------
+            -- MOD 2 e 3: FUNÇÃO (Texto em cima) & DISTÂNCIA (Texto embaixo)
+            -- -----------------------------------------------------------------
+            local Billboard = Char:FindFirstChild("BaconESP_Tag")
+            
+            if eMurderer and (ESP_Config.Funcao or ESP_Config.Distancia) then
+                if not Billboard then
+                    Billboard = Instance.new("BillboardGui")
+                    Billboard.Name = "BaconESP_Tag"
+                    Billboard.Parent = Char
+                    Billboard.AlwaysOnTop = true
+                    Billboard.ExtentsOffset = Vector3.new(0, 3, 0) -- Posição base acima da cabeça
+                    Billboard.Size = UDim2.new(0, 200, 0, 60)
+                    
+                    local LabelFuncao = Instance.new("TextLabel", Billboard)
+                    LabelFuncao.Name = "TxtFuncao"
+                    LabelFuncao.Size = UDim2.new(1, 0, 0, 25)
+                    LabelFuncao.BackgroundTransparency = 1
+                    LabelFuncao.Font = Enum.Font.GothamBold
+                    LabelFuncao.TextSize = 14
+                    LabelFuncao.TextColor3 = Color3.fromRGB(255, 0, 0) -- Texto MURDERER sempre vermelho
+                    LabelFuncao.TextStrokeTransparency = 0
+                    
+                    local LabelDistancia = Instance.new("TextLabel", Billboard)
+                    LabelDistancia.Name = "TxtDistancia"
+                    LabelDistancia.Size = UDim2.new(1, 0, 0, 25)
+                    LabelDistancia.Position = UDim2.new(0, 0, 0, 30) -- Posiciona abaixo do nome/função
+                    LabelDistancia.BackgroundTransparency = 1
+                    LabelDistancia.Font = Enum.Font.GothamBold
+                    LabelDistancia.TextSize = 12
+                    LabelDistancia.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    LabelDistancia.TextStrokeTransparency = 0
+                end
+                
+                -- Atualiza o texto do botão Função
+                if ESP_Config.Funcao then
+                    Billboard.TxtFuncao.Text = "MURDERER"
+                else
+                    Billboard.TxtFuncao.Text = ""
+                end
+                
+                -- Atualiza o texto do botão Distância (Calculando metros/studs reais)
+                if ESP_Config.Distancia and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local mag = (LocalPlayer.Character.HumanoidRootPart.Position - Root.Position).Magnitude
+                    Billboard.TxtDistancia.Text = string.format("%dm", math.round(mag))
+                else
+                    Billboard.TxtDistancia.Text = ""
+                end
+            else
+                if Billboard then Billboard:Destroy() end
+            end
+            
+            -- -----------------------------------------------------------------
+            -- MOD 4: TRACER (Linha saindo do pé da tela até o alvo)
+            -- -----------------------------------------------------------------
+            if eMurderer and ESP_Config.Tracer then
+                -- Transforma a posição 3D do personagem em coordenadas 2D da tela do celular
+                local RootScreenPos, OnScreen = Camera:WorldToViewportPoint(Root.Position)
+                
+                if OnScreen then
+                    local LinhaTracer = Drawing.new("Line")
+                    LinhaTracer.Visible = true
+                    LinhaTracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y) -- Parte inferior central da tela
+                    LinhaTracer.To = Vector2.new(RootScreenPos.X, RootScreenPos.Y)
+                    LinhaTracer.Color = Color3.fromRGB(255, 0, 50) -- Linha vermelha para o assassino
+                    LinhaTracer.Thickness = 1.5
+                    LinhaTracer.Transparency = 1
+                    
+                    table.insert(LinhasAtivas, LinhaTracer)
+                end
+            end
+            
+        else
+            -- Limpeza preventiva caso o player saia ou o personagem resete do nada
+            if p.Character then
+                if p.Character:FindFirstChild("BaconHighlight") then p.Character.BaconHighlight:Destroy() end
+                if p.Character:FindFirstChild("BaconESP_Tag") then p.Character.BaconESP_Tag:Destroy() end
             end
         end
     end
 end)
+
+-- Garante que se o script for descarregado ou reiniciado, as linhas antigas somem da tela do executor
+LocalPlayer.CharacterRemoving:Connect(function()
+    for _, linha in pairs(LinhasAtivas) do linha:Remove() end
+    table.clear(LinhasAtivas)
+end)
+
+-- Atualização automática de rolagem do painel para mobile
+local ESPLayout = ESPPage:FindFirstChildOfClass("UIListLayout")
+if ESPLayout then
+    ESPPage.CanvasSize = UDim2.new(0, 0, 0, ESPLayout.AbsoluteContentSize.Y + 20)
+    ESPLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        ESPPage.CanvasSize = UDim2.new(0, 0, 0, ESPLayout.AbsoluteContentSize.Y + 20)
+    end)
+end
 
 
 -- =============================================================================
