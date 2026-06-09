@@ -481,6 +481,97 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+-- 5. BOTÃO SIMPLES (Toggle TP Knife to player)
+local TPKnifeToggle = Instance.new("TextButton")
+local TPKnifeCorner = Instance.new("UICorner")
+local TPKnifeIndicator = Instance.new("Frame")
+local TPKnifeIndicatorCorner = Instance.new("UICorner")
+
+TPKnifeToggle.Name = "TPKnifeToggle"
+TPKnifeToggle.Parent = MurdererPage
+TPKnifeToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+TPKnifeToggle.Size = UDim2.new(1, -6, 0, 35)
+TPKnifeToggle.Font = Enum.Font.Gotham
+TPKnifeToggle.Text = "  TP Knife to player"
+TPKnifeToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+TPKnifeToggle.TextSize = 13
+TPKnifeToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+TPKnifeCorner.CornerRadius = UDim.new(0, 4)
+TPKnifeCorner.Parent = TPKnifeToggle
+
+TPKnifeIndicator.Name = "TPKnifeIndicator"
+TPKnifeIndicator.Parent = TPKnifeToggle
+TPKnifeIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TPKnifeIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+TPKnifeIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+TPKnifeIndicatorCorner.CornerRadius = UDim.new(0, 3)
+TPKnifeIndicatorCorner.Parent = TPKnifeIndicator
+
+_G.TPKnifeActive = false
+
+TPKnifeToggle.MouseButton1Click:Connect(function()
+    _G.TPKnifeActive = not _G.TPKnifeActive
+    if _G.TPKnifeActive then
+        TPKnifeIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        TPKnifeToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        TPKnifeIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        TPKnifeToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
+-- 6. BOTÃO (Toggle Auto Equipped Knife - Forçado)
+local AutoEquipToggle = Instance.new("TextButton")
+local AutoEquipCorner = Instance.new("UICorner")
+local AutoEquipIndicator = Instance.new("Frame")
+local AutoEquipIndicatorCorner = Instance.new("UICorner")
+
+AutoEquipToggle.Name = "AutoEquipToggle"
+AutoEquipToggle.Parent = MurdererPage
+AutoEquipToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+AutoEquipToggle.Size = UDim2.new(1, -6, 0, 35)
+AutoEquipToggle.Font = Enum.Font.Gotham
+AutoEquipToggle.Text = "  Auto Equipped Knife"
+AutoEquipToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+AutoEquipToggle.TextSize = 13
+AutoEquipToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+AutoEquipCorner.CornerRadius = UDim.new(0, 4)
+AutoEquipCorner.Parent = AutoEquipToggle
+
+AutoEquipIndicator.Name = "AutoEquipIndicator"
+AutoEquipIndicator.Parent = AutoEquipToggle
+AutoEquipIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+AutoEquipIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+AutoEquipIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+AutoEquipIndicatorCorner.CornerRadius = UDim.new(0, 3)
+AutoEquipIndicatorCorner.Parent = AutoEquipIndicator
+
+_G.AutoEquipKnifeActive = false
+
+AutoEquipToggle.MouseButton1Click:Connect(function()
+    _G.AutoEquipKnifeActive = not _G.AutoEquipKnifeActive
+    if _G.AutoEquipKnifeActive then
+        AutoEquipIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        AutoEquipToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        AutoEquipIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        AutoEquipToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
+-- Força a rolagem da página a recalcular o tamanho e atualizar no Delta
+local PageLayout = MurdererPage:FindFirstChildOfClass("UIListLayout")
+if PageLayout then
+    MurdererPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
+    PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        MurdererPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
+    end)
+end
+
 -- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
 -- =============================================================================
