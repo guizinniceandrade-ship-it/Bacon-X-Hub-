@@ -662,7 +662,7 @@ if SheriffLayout then
 end
 
 -- =============================================================================
--- [BACON X HUB V1] - AUTO FARM ANTI-BAN (DISTÂNCIA DE TELEPORTE: 300+)
+-- [BACON X HUB V1] - AUTO FARM INTELIGENTE (TRAVA DE 300M)
 -- =============================================================================
 local AutoFarmPage = pages["Auto Farm"]
 local Players = game:GetService("Players")
@@ -702,11 +702,10 @@ SliderBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Instance.new("UICorner", SliderBg).CornerRadius = UDim.new(0, 5)
 
 local SliderFill = Instance.new("Frame", SliderBg)
-SliderFill.Size = UDim2.new(0.03, 0, 1, 0) -- Começa em 1
+SliderFill.Size = UDim2.new(0.03, 0, 1, 0)
 SliderFill.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
 Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 5)
 
--- Lógica do Slider
 SliderBg.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         local posRelativa = (input.Position.X - SliderBg.AbsolutePosition.X) / SliderBg.AbsoluteSize.X
@@ -718,19 +717,38 @@ SliderBg.InputBegan:Connect(function(input)
     end
 end)
 
--- 3. MOTOR DE COLETA
+-- 3. MOTOR DE COLETA COM SISTEMA DE DISTÂNCIA (MÁXIMO 300 METROS)
 task.spawn(function()
     while true do
-        task.wait(1 / velocidadeFarm) -- Controla a frequência da coleta
+        task.wait(1 / velocidadeFarm)
+        
         if farmAtivo and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            -- Procura moedas (CoinContainer) no mapa
-            local coins = Workspace:FindFirstChild("CoinContainer")
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            local coins = Workspace:FindFirstChild("CoinContainer") or Workspace:FindFirstChild("MainMap") -- Varre onde as moedas nascem no MM2
+            
             if coins then
-                for _, coin in pairs(coins:GetChildren()) do
-                    if coin:FindFirstChild("Coin") and coin.Coin:FindFirstChild("TouchInterest") then
-                        -- Teleporta o personagem para a moeda para coletar
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = coin.Coin.CFrame
-                        task.wait(0.1) -- Delay rápido para não dar ban por teleporte longo
+                for _, coin in pairs(coins:GetDescendants()) do
+                    if coin.Name == "Coin" and coin:IsA("BasePart") and coin:FindFirstChild("TouchInterest") then
+                        -- Calcula a distância exata entre você e a moeda
+                        local distancia = (hrp.Position - coin.Position).Magnitude
+                        
+                        if distancia > 300 then
+                            -- SE ESTIVER A MAIS DE 300 METROS: Dá o teleporte instantâneo
+                            hrp.CFrame = coin.CFrame
+                            task.wait(0.1)
+                        else
+                            -- SE ESTIVER PERTO (MENOS DE 300 METROS): Vai deslizando até ela de forma suave
+                            local tempoVoo = 0.2
+                            local passos = 5
+                            for i = 1, passos do
+                                if not farmAtivo then break end
+                                hrp.CFrame = hrp.CFrame:Lerp(coin.CFrame, i / passos)
+                                task.wait(tempoVoo / passos)
+                            end
+                        end
+                        
+                        -- Pequena pausa para o servidor registrar que você pegou a moeda antes de ir para a próxima
+                        task.wait(0.05)
                     end
                 end
             end
