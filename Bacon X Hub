@@ -1216,7 +1216,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- 6. BOTÃO (Toggle Infinito Jump)
+-- 6. BOTÃO (Toggle Infinito Jump - CORRIGIDO)
 local InfiniteJumpToggle = Instance.new("TextButton")
 local InfiniteJumpCorner = Instance.new("UICorner")
 local InfiniteJumpIndicator = Instance.new("Frame")
@@ -1256,6 +1256,7 @@ InfiniteJumpToggle.MouseButton1Click:Connect(function()
         InfiniteJumpToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
     end
 end)
+
 
 -- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
