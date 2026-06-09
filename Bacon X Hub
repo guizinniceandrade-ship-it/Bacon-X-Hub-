@@ -573,6 +573,83 @@ if PageLayout then
 end
 
 -- =============================================================================
+-- ELEMENTOS DA ABA SHERIFF (Colocar dentro da página "SheriffPage")
+-- =============================================================================
+local SheriffPage = pages["Sheriff"]
+
+-- Título de Seção Vermelho (Igual ao print: SHERIFF/HERO (GUN))
+local SectionTitle = Instance.new("TextLabel")
+SectionTitle.Name = "SectionTitle"
+SectionTitle.Parent = SheriffPage
+SectionTitle.BackgroundTransparency = 1
+SectionTitle.Size = UDim2.new(1, -6, 0, 25)
+SectionTitle.Font = Enum.Font.GothamBold
+SectionTitle.Text = "SHERIFF/HERO (GUN)"
+SectionTitle.TextColor3 = Color3.fromRGB(255, 30, 30) -- Vermelho chamativo
+SectionTitle.TextSize = 12
+SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Função auxiliar para criar os Toggles do Sheriff rapidamente e sem erros
+local function CreateSheriffToggle(name, text)
+    local Toggle = Instance.new("TextButton")
+    local Corner = Instance.new("UICorner")
+    local Indicator = Instance.new("Frame")
+    local IndCorner = Instance.new("UICorner")
+
+    Toggle.Name = name
+    Toggle.Parent = SheriffPage
+    Toggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Toggle.Size = UDim2.new(1, -6, 0, 35)
+    Toggle.Font = Enum.Font.Gotham
+    Toggle.Text = "  " .. text
+    Toggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Toggle.TextSize = 13
+    Toggle.TextXAlignment = Enum.TextXAlignment.Left
+
+    Corner.CornerRadius = UDim.new(0, 4)
+    Corner.Parent = Toggle
+
+    Indicator.Name = "Indicator"
+    Indicator.Parent = Toggle
+    Indicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Indicator.Position = UDim2.new(1, -27, 0.5, -8)
+    Indicator.Size = UDim2.new(0, 16, 0, 16)
+
+    IndCorner.CornerRadius = UDim.new(0, 3)
+    IndCorner.Parent = Indicator
+
+    _G[name .. "Active"] = false
+
+    Toggle.MouseButton1Click:Connect(function()
+        _G[name .. "Active"] = not _G[name .. "Active"]
+        if _G[name .. "Active"] then
+            Indicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255) -- Ativado (Azul do seu Hub)
+            Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            Indicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Desativado
+            Toggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+    end)
+    
+    return Toggle
+end
+
+-- Criando os 4 botões baseados no print do Nexus:
+CreateSheriffToggle("SilentAimButton", "Silent Aim (Button)")
+CreateSheriffToggle("GunSilentAim", "Gun Silent Aim")
+CreateSheriffToggle("AimWallCheck", "Aim WallCheck")
+CreateSheriffToggle("LeadShotPredict", "Lead Shot (Ping Predict)")
+
+-- Força a rolagem da aba Sheriff a calcular o tamanho certo para os 4 botões
+local SheriffLayout = SheriffPage:FindFirstChildOfClass("UIListLayout")
+if SheriffLayout then
+    SheriffPage.CanvasSize = UDim2.new(0, 0, 0, SheriffLayout.AbsoluteContentSize.Y + 20)
+    SheriffLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        SheriffPage.CanvasSize = UDim2.new(0, 0, 0, SheriffLayout.AbsoluteContentSize.Y + 20)
+    end)
+end
+
+-- =============================================================================
 -- ELEMENTOS DA ABA AUTO FARM (Colocar dentro da página "Auto FarmPage")
 -- =============================================================================
 local AutoFarmPage = pages["Auto Farm"]
