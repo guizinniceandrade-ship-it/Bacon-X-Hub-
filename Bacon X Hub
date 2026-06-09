@@ -189,6 +189,299 @@ for i, name in ipairs(tabsNames) do
 end
 
 -- =============================================================================
+-- ELEMENTOS DA ABA MURDERER (Colocar dentro da página "MurdererPage")
+-- =============================================================================
+local MurdererPage = pages["Murderer"]
+
+-- 1. BOTÃO DE LIGAR/DESLIGAR (Toggle Kill Aura)
+local KillAuraToggle = Instance.new("TextButton")
+local ToggleCorner = Instance.new("UICorner")
+local ToggleIndicator = Instance.new("Frame")
+local IndicatorCorner = Instance.new("UICorner")
+
+KillAuraToggle.Name = "KillAuraToggle"
+KillAuraToggle.Parent = MurdererPage
+KillAuraToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+KillAuraToggle.Size = UDim2.new(1, -6, 0, 35) -- Encaixa na largura interna da página
+KillAuraToggle.Font = Enum.Font.Gotham
+KillAuraToggle.Text = "  Kill Aura"
+KillAuraToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+KillAuraToggle.TextSize = 13
+KillAuraToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+ToggleCorner.CornerRadius = UDim.new(0, 4)
+ToggleCorner.Parent = KillAuraToggle
+
+-- Indicador visual se está ligado ou desligado (quadradinho no canto)
+ToggleIndicator.Name = "ToggleIndicator"
+ToggleIndicator.Parent = KillAuraToggle
+ToggleIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Desativado (Cinza)
+ToggleIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+IndicatorCorner.CornerRadius = UDim.new(0, 3)
+IndicatorCorner.Parent = ToggleIndicator
+
+-- Lógica do Toggle (Ligar / Desligar)
+local _G = _G or {}
+_G.KillAuraActive = false
+
+KillAuraToggle.MouseButton1Click:Connect(function()
+    _G.KillAuraActive = not _G.KillAuraActive
+    if _G.KillAuraActive then
+        -- Quando liga: fica azul neon
+        ToggleIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        KillAuraToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        -- Quando desliga: volta a ser cinza escuro
+        ToggleIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        KillAuraToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
+
+-- 2. BARRA DE AJUSTE (Slider de Distância)
+local DistanceSlider = Instance.new("Frame")
+local SliderCorner = Instance.new("UICorner")
+local SliderTitle = Instance.new("TextLabel")
+local SliderValue = Instance.new("TextLabel")
+local SlideBarMain = Instance.new("TextButton")
+local SlideBarCorner = Instance.new("UICorner")
+local SlideFill = Instance.new("Frame")
+local SlideFillCorner = Instance.new("UICorner")
+
+DistanceSlider.Name = "DistanceSlider"
+DistanceSlider.Parent = MurdererPage
+DistanceSlider.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+DistanceSlider.Size = UDim2.new(1, -6, 0, 50) -- Um pouco mais alto para caber a barra
+
+SliderCorner.CornerRadius = UDim.new(0, 4)
+SliderCorner.Parent = DistanceSlider
+
+-- Título do Ajuste
+SliderTitle.Name = "SliderTitle"
+SliderTitle.Parent = DistanceSlider
+SliderTitle.BackgroundTransparency = 1
+SliderTitle.Position = UDim2.new(0, 10, 0, 6)
+SliderTitle.Size = UDim2.new(0, 150, 0, 15)
+SliderTitle.Font = Enum.Font.Gotham
+SliderTitle.Text = "Distância do Kill Aura"
+SliderTitle.TextColor3 = Color3.fromRGB(180, 180, 180)
+SliderTitle.TextSize = 12
+SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Texto do Valor Atual (Studs)
+SliderValue.Name = "SliderValue"
+SliderValue.Parent = DistanceSlider
+SliderValue.BackgroundTransparency = 1
+SliderValue.Position = UDim2.new(1, -60, 0, 6)
+SliderValue.Size = UDim2.new(0, 50, 0, 15)
+SliderValue.Font = Enum.Font.GothamBold
+SliderValue.Text = "15 studs" -- Começa em 15 por padrão
+SliderValue.TextColor3 = Color3.fromRGB(0, 170, 255)
+SliderValue.TextSize = 12
+SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+
+-- Linha base do Slider onde o dedo arrasta
+SlideBarMain.Name = "SlideBarMain"
+SlideBarMain.Parent = DistanceSlider
+SlideBarMain.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+SlideBarMain.Position = UDim2.new(0, 10, 0, 30)
+SlideBarMain.Size = UDim2.new(1, -20, 0, 6)
+SlideBarMain.Text = ""
+
+SlideBarCorner.CornerRadius = UDim.new(0, 3)
+SlideBarCorner.Parent = SlideBarMain
+
+-- Preenchimento Azul da barra
+SlideFill.Name = "SlideFill"
+SlideFill.Parent = SlideBarMain
+SlideFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+SlideFill.Size = UDim2.new(0.4, 0, 1, 0) -- Começa preenchendo 40% (equivale a 15 studs)
+
+SlideFillCorner.CornerRadius = UDim.new(0, 3)
+SlideFillCorner.Parent = SlideFill
+
+-- Valores de limite do alcance da faca
+local minDistance = 5
+local maxDistance = 30
+_G.KillAuraRange = 15
+
+-- Lógica para arrastar e ajustar no celular de forma suave
+local UserInputService = game:GetService("UserInputService")
+local sliding = false
+
+local function updateSlider(input)
+    local mousePos = input.Position.X
+    local barPos = SlideBarMain.AbsolutePosition.X
+    local barWidth = SlideBarMain.AbsoluteSize.X
+    local percentage = math.clamp((mousePos - barPos) / barWidth, 0, 1)
+    
+    SlideFill.Size = UDim2.new(percentage, 0, 1, 0)
+    
+    local calculatedValue = math.round(minDistance + (percentage * (maxDistance - minDistance)))
+    _G.KillAuraRange = calculatedValue
+    SliderValue.Text = tostring(calculatedValue) .. " studs"
+end
+
+SlideBarMain.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliding = true
+        updateSlider(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateSlider(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliding = false
+    end
+end)
+
+-- 3. BOTÃO DE LIGAR/DESLIGAR (Toggle Hitbox)
+local HitboxToggle = Instance.new("TextButton")
+local HitboxToggleCorner = Instance.new("UICorner")
+local HitboxIndicator = Instance.new("Frame")
+local HitboxIndicatorCorner = Instance.new("UICorner")
+
+HitboxToggle.Name = "HitboxToggle"
+HitboxToggle.Parent = MurdererPage
+HitboxToggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+HitboxToggle.Size = UDim2.new(1, -6, 0, 35)
+HitboxToggle.Font = Enum.Font.Gotham
+HitboxToggle.Text = "  Hitbox"
+HitboxToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+HitboxToggle.TextSize = 13
+HitboxToggle.TextXAlignment = Enum.TextXAlignment.Left
+
+HitboxToggleCorner.CornerRadius = UDim.new(0, 4)
+HitboxToggleCorner.Parent = HitboxToggle
+
+HitboxIndicator.Name = "HitboxIndicator"
+HitboxIndicator.Parent = HitboxToggle
+HitboxIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+HitboxIndicator.Position = UDim2.new(1, -27, 0.5, -8)
+HitboxIndicator.Size = UDim2.new(0, 16, 0, 16)
+
+HitboxIndicatorCorner.CornerRadius = UDim.new(0, 3)
+HitboxIndicatorCorner.Parent = HitboxIndicator
+
+_G.HitboxActive = false
+
+HitboxToggle.MouseButton1Click:Connect(function()
+    _G.HitboxActive = not _G.HitboxActive
+    if _G.HitboxActive then
+        HitboxIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        HitboxToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        HitboxIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        HitboxToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end)
+
+
+-- 4. BARRA DE AJUSTE (Slider de Tamanho da Hitbox)
+local HitboxSlider = Instance.new("Frame")
+local HitboxSliderCorner = Instance.new("UICorner")
+local HitboxSliderTitle = Instance.new("TextLabel")
+local HitboxSliderValue = Instance.new("TextLabel")
+local HitboxSlideBarMain = Instance.new("TextButton")
+local HitboxSlideBarCorner = Instance.new("UICorner")
+local HitboxSlideFill = Instance.new("Frame")
+local HitboxSlideFillCorner = Instance.new("UICorner")
+
+HitboxSlider.Name = "HitboxSlider"
+HitboxSlider.Parent = MurdererPage
+HitboxSlider.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+HitboxSlider.Size = UDim2.new(1, -6, 0, 50)
+
+HitboxSliderCorner.CornerRadius = UDim.new(0, 4)
+HitboxSliderCorner.Parent = HitboxSlider
+
+HitboxSliderTitle.Name = "HitboxSliderTitle"
+HitboxSliderTitle.Parent = HitboxSlider
+HitboxSliderTitle.BackgroundTransparency = 1
+HitboxSliderTitle.Position = UDim2.new(0, 10, 0, 6)
+HitboxSliderTitle.Size = UDim2.new(0, 150, 0, 15)
+HitboxSliderTitle.Font = Enum.Font.Gotham
+HitboxSliderTitle.Text = "Tamanho da Hitbox"
+HitboxSliderTitle.TextColor3 = Color3.fromRGB(180, 180, 180)
+HitboxSliderTitle.TextSize = 12
+HitboxSliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+HitboxSliderValue.Name = "HitboxSliderValue"
+HitboxSliderValue.Parent = HitboxSlider
+HitboxSliderValue.BackgroundTransparency = 1
+HitboxSliderValue.Position = UDim2.new(1, -60, 0, 6)
+HitboxSliderValue.Size = UDim2.new(0, 50, 0, 15)
+HitboxSliderValue.Font = Enum.Font.GothamBold
+HitboxSliderValue.Text = "10 studs" -- Padrão começa em 10
+HitboxSliderValue.TextColor3 = Color3.fromRGB(0, 170, 255)
+HitboxSliderValue.TextSize = 12
+HitboxSliderValue.TextXAlignment = Enum.TextXAlignment.Right
+
+HitboxSlideBarMain.Name = "HitboxSlideBarMain"
+HitboxSlideBarMain.Parent = HitboxSlider
+HitboxSlideBarMain.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+HitboxSlideBarMain.Position = UDim2.new(0, 10, 0, 30)
+HitboxSlideBarMain.Size = UDim2.new(1, -20, 0, 6)
+HitboxSlideBarMain.Text = ""
+
+HitboxSlideBarCorner.CornerRadius = UDim.new(0, 3)
+HitboxSlideBarCorner.Parent = HitboxSlideBarMain
+
+HitboxSlideFill.Name = "HitboxSlideFill"
+HitboxSlideFill.Parent = HitboxSlideBarMain
+HitboxSlideFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+HitboxSlideFill.Size = UDim2.new(0.3, 0, 1, 0) -- Preenche equivalente a 10 studs
+
+HitboxSlideFillCorner.CornerRadius = UDim.new(0, 3)
+HitboxSlideFillCorner.Parent = HitboxSlideFill
+
+local minHitbox = 2
+local maxHitbox = 30
+_G.HitboxSize = 10
+
+local hitboxSliding = false
+
+local function updateHitboxSlider(input)
+    local mousePos = input.Position.X
+    local barPos = HitboxSlideBarMain.AbsolutePosition.X
+    local barWidth = HitboxSlideBarMain.AbsoluteSize.X
+    local percentage = math.clamp((mousePos - barPos) / barWidth, 0, 1)
+    
+    HitboxSlideFill.Size = UDim2.new(percentage, 0, 1, 0)
+    
+    local calculatedValue = math.round(minHitbox + (percentage * (maxHitbox - minHitbox)))
+    _G.HitboxSize = calculatedValue
+    HitboxSliderValue.Text = tostring(calculatedValue) .. " studs"
+end
+
+HitboxSlideBarMain.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        hitboxSliding = true
+        updateHitboxSlider(input)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if hitboxSliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateHitboxSlider(input)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        hitboxSliding = false
+    end
+end)
+
+-- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
 -- =============================================================================
 local dragging, dragInput, dragStart, startPos
