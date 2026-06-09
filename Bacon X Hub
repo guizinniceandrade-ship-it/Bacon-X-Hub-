@@ -1372,31 +1372,92 @@ local LblPlayers    = CreateStatusLabel("Players:", "0")
 -- Define um tamanho fixo para a área de rolagem para garantir que apareça no celular
 StatusPage.CanvasSize = UDim2.new(0, 0, 0, 300)
 
--- Loop de atualização dos dados do MM2 e Servidor
+-- =============================================================================
+-- LOOP DE ATUALIZAÇÃO REFORMULADO (BLINDADO CONTRA ERROS)
+-- =============================================================================
 local Players = game:GetService("Players")
 local Stats = game:GetService("Stats")
+local RunService = game:GetService("RunService")
 local startTime = os.time()
 
-task.spawn(function()
-    while task.wait(1) do
-        LblPlayers.Text = tostring(#Players:GetPlayers())
-        LblPing.Text = math.floor(Stats.Network.ServerToClientPing:GetValue() * 1000) .. "ms"
-        
-        local myTime = os.time() - startTime
-        local svTime = math.floor(workspace.DistributedGameTime)
-        
-        LblYourTime.Text = string.format("%02dh %02dm %02ds", myTime/3600, (myTime%3600)/60, myTime%60)
-        LblServerTime.Text = string.format("%02dh %02dm %02ds", svTime/3600, (svTime%3600)/60, svTime%60)
-        
-        local m, s = "Ninguém", "Ninguém"
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and (p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife")) then m = p.Name end
-            if p.Character and (p.Character:FindFirstChild("Gun") or p.Backpack:FindFirstChild("Gun")) then s = p.Name end
-        end
-        LblMurderer.Text = m
-        LblSheriff.Text = s
+-- Variáveis estáveis para o FPS
+local fpsValue = 60
+local fpsCount = 0
+local lastFpsUpdate = os.clock()
+
+-- Conexão separada e segura para o FPS não travar o loop principal
+RunService.RenderStepped:Connect(function()
+    fpsCount = fpsCount + 1
+    local now = os.clock()
+    if now - lastFpsUpdate >= 1 then
+        fpsValue = fpsCount
+        LblFPS.Text = tostring(fpsValue)
+        fpsCount = 0
+        lastFpsUpdate = now
     end
 end)
+
+-- Loop principal protegido por pcall
+task.spawn(function()
+    while task.wait(1) do
+        -- O pcall impede que qualquer erro de leitura pare o cronômetro ou o script
+        local success, err = pcall(function()
+            -- 1. Quantidade de Players
+            LblPlayers.Text = tostring(#Players:GetPlayers())
+            
+            -- 2. Atualizar Ping com checagem de segurança
+            local pingValue = 0
+            if Stats and Stats.Network and Stats.Network.ServerToClientPing then
+                pingValue = math.floor(Stats.Network.ServerToClientPing:GetValue() * 1000)
+            end
+            LblPing.Text = tostring(pingValue) .. "ms"
+            
+            -- 3. Atualizar Tempos (Calculado de forma simples para evitar erro matemático)
+            local myTime = os.time() - startTime
+            local svTime = math.floor(workspace.DistributedGameTime or 0)
+            
+            local myH = math.floor(myTime / 3600)
+            local myM = math.floor((myTime % 3600) / 60)
+            local myS = math.floor(myTime % 60)
+            LblYourTime.Text = string.format("%02dh %02dm %02ds", myH, myM, myS)
+            
+            local svH = math.floor(svTime / 3600)
+            local svM = math.floor((svTime % 3600) / 60)
+            local svS = math.floor(svTime % 60)
+            LblServerTime.Text = string.format("%02dh %02dm %02ds", svH, svM, svS)
+            
+            -- 4. Detectar Murderer e Sheriff no MM2 de forma segura
+            local currentMurderer = "Ninguém"
+            local currentSheriff = "Ninguém"
+            
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p and p.Parent then
+                    -- Procura na mochila (Backpack)
+                    local bp = p:FindFirstChild("Backpack")
+                    -- Procura no personagem vivo (Character)
+                    local char = p.Character
+                    
+                    if (bp and bp:FindFirstChild("Knife")) or (char and char:FindFirstChild("Knife")) then
+                        currentMurderer = p.DisplayName or p.Name
+                    end
+                    
+                    if (bp and bp:FindFirstChild("Gun")) or (char and char:FindFirstChild("Gun")) then
+                        currentSheriff = p.DisplayName or p.Name
+                    end
+                end
+            end
+            
+            LblMurderer.Text = currentMurderer
+            LblSheriff.Text = currentSheriff
+        end)
+        
+        -- Se der algum erro invisível, ele avisa no F9 mas NÃO para o funcionamento da aba
+        if not success then
+            warn("Erro no loop de Status: " .. tostring(err))
+        end
+    end
+end)
+
 
 -- =============================================================================
 -- SISTEMA MODERNIZADO DE ARRASTAR (Smooth Dragging para Celular/PC)
