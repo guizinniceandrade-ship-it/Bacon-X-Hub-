@@ -628,6 +628,74 @@ CriarSlider("Murderer", "Raio de Puxada", 10, 200, 50, function(val)
     _G.DistanciaThrow = val
 end)
 
+-- ========
+-- LOGICA DO AIM LOCK (TRAVA DE MIRA NO JOGADOR MAIS PROXIMO)
+-- ========
+
+_G.AimLockAtivado = false
+_G.DistanciaAimLock = 50
+
+local Camera = workspace.CurrentCamera
+
+-- Função para obter o jogador vivo mais próximo dentro do raio definido
+local function ObterAlvoAimLock()
+    local MaisProximo = nil
+    local MenorDistancia = math.huge
+    local MeuChar = LocalPlayer.Character
+    if not MeuChar or not MeuChar:FindFirstChild("HumanoidRootPart") then return nil end
+
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid") then
+            if v.Character.Humanoid.Health > 0 and not v.Character:FindFirstChild("ForceField") then
+                local Distancia = (MeuChar.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                
+                if Distancia < _G.DistanciaAimLock and Distancia < MenorDistancia then
+                    MenorDistancia = Distancia
+                    MaisProximo = v.Character.HumanoidRootPart
+                end
+            end
+        end
+    end
+    return MaisProximo
+end
+
+-- Loop suave que atualiza o foco da câmera no alvo
+task.spawn(function()
+    while task.wait() do
+        if _G.AimLockAtivado then
+            local AlvoHRP = ObterAlvoAimLock()
+            if AlvoHRP then
+                -- Define a CFrame da Câmera para olhar diretamente para a posição do HumanoidRootPart do alvo
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, AlvoHRP.Position)
+            end
+        end
+    end
+end)
+
+-- Espaçador visual
+local EspacoA = Instance.new("Frame", paginas["Murderer"])
+EspacoA.Size = UDim2.new(1, 0, 0, 10)
+EspacoA.BackgroundTransparency = 1
+
+-- [TEXTO] Título da Seção
+local TituloAimLock = Instance.new("TextLabel", paginas["Murderer"])
+TituloAimLock.Text = " AIM LOCK CAMERA"
+TituloAimLock.Size = UDim2.new(1, 0, 0, 30)
+TituloAimLock.BackgroundTransparency = 1
+TituloAimLock.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloAimLock.Font = Enum.Font.GothamBold
+TituloAimLock.TextSize = 11
+TituloAimLock.TextXAlignment = Enum.TextXAlignment.Left
+
+-- [BOTÃO 1] Liga/Desliga o Aim Lock
+CriarToggle("Murderer", "Ativar Aim Lock", function(state)
+    _G.AimLockAtivado = state
+end)
+
+-- [BOTÃO 2] Escolher Distância Máxima de Trava (Slider)
+CriarSlider("Murderer", "Distância do Lock", 10, 150, 50, function(val)
+    _G.DistanciaAimLock = val
+end)
 
 
 -- ==========================================
