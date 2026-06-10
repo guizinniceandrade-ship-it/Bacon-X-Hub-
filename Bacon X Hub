@@ -15,183 +15,587 @@ pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:FindFirstChildOfClass("PlayerGui") end
 
 -- =============================================================================
--- JANELA PRINCIPAL (550x350 - Toda Preta com Bordas Arredondadas Perfeitas)
+-- JANELA PRINCIPAL (Inicia Invisível para esperar as notificações)
 -- =============================================================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- Toda preta
-MainFrame.Position = UDim2.new(0.5, -275, 1.5, 0) -- Começa embaixo para a animação
-MainFrame.Size = UDim2.new(0, 550, 0, 350)        -- Tamanho exato pedido
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+MainFrame.Position = UDim2.new(0.5, -275, 1.5, 0) -- Começa fora da tela por baixo
+MainFrame.Size = UDim2.new(0, 550, 0, 350)
 MainFrame.ClipsDescendants = true
 MainFrame.Visible = false
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10) -- Arredonda todas as bordas perfeitamente
+MainCorner.CornerRadius = UDim.new(0, 9)
 MainCorner.Parent = MainFrame
 
--- Topo para Arrastar (Transparente para não cobrir o arredondamento dos cantos de cima)
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 1
+MainStroke.Color = Color3.fromRGB(35, 35, 35)
+MainStroke.Parent = MainFrame
+
+-- =============================================================================
+-- BARRA SUPERIOR (TopBar)
+-- =============================================================================
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
 TopBar.BackgroundTransparency = 1
-TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.Size = UDim2.new(1, 0, 0, 45)
+
+local TitleLayout = Instance.new("UIListLayout")
+TitleLayout.Parent = TopBar
+TitleLayout.FillDirection = Enum.FillDirection.Horizontal
+TitleLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TitleLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+TitleLayout.Padding = UDim.new(0, 8)
+
+local TopPadding = Instance.new("UIPadding")
+TopPadding.PaddingLeft = UDim.new(0, 15)
+TopPadding.Parent = TopBar
 
 local HubTitle = Instance.new("TextLabel")
 HubTitle.Parent = TopBar
 HubTitle.BackgroundTransparency = 1
-HubTitle.Position = UDim2.new(0, 15, 0, 0)
-HubTitle.Size = UDim2.new(1, -15, 1, 0)
 HubTitle.Font = Enum.Font.GothamBold
-HubTitle.Text = "Bacon X Hub v1"
+HubTitle.Text = "Bacon X Hub"
 HubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 HubTitle.TextSize = 14
-HubTitle.TextXAlignment = Enum.TextXAlignment.Left
+HubTitle.Size = UDim2.new(0, 90, 0, 20)
+HubTitle.LayoutOrder = 1
 
--- Linha Azul abaixo do título
-local Line = Instance.new("Frame")
-Line.Parent = TopBar
-Line.Position = UDim2.new(0, 10, 1, -2)
-Line.Size = UDim2.new(1, -20, 0, 2)
-Line.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-Line.BorderSizePixel = 0
+local VersionTag = Instance.new("TextLabel")
+VersionTag.Parent = TopBar
+VersionTag.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+VersionTag.Font = Enum.Font.GothamBold
+VersionTag.Text = "v1"
+VersionTag.TextColor3 = Color3.fromRGB(0, 0, 0)
+VersionTag.TextSize = 11
+VersionTag.Size = UDim2.new(0, 32, 0, 18)
+VersionTag.LayoutOrder = 2
+
+local TagCorner = Instance.new("UICorner")
+TagCorner.CornerRadius = UDim.new(0, 9)
+TagCorner.Parent = VersionTag
+
+-- Container de Botões de Controle (Alinhado à direita com margem sutil)
+local ControlsContainer = Instance.new("Frame")
+ControlsContainer.Name = "ControlsContainer"
+ControlsContainer.Parent = MainFrame
+ControlsContainer.BackgroundTransparency = 1
+ControlsContainer.Position = UDim2.new(1, -85, 0, 0) -- Afastado um pouco da borda direita externa
+ControlsContainer.Size = UDim2.new(0, 75, 0, 45)
+
+local ControlsLayout = Instance.new("UIListLayout")
+ControlsLayout.Parent = ControlsContainer
+ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
+ControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+ControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ControlsLayout.Padding = UDim.new(0, 6)
+
+-- Botão Minimizar (—) - Aparece primeiro
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Name = "MinimizeBtn"
+MinimizeBtn.Parent = ControlsContainer
+MinimizeBtn.Size = UDim2.new(0, 28, 0, 28)
+MinimizeBtn.BackgroundTransparency = 1
+MinimizeBtn.Text = "—"
+MinimizeBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+MinimizeBtn.TextSize = 12
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.LayoutOrder = 1
+
+-- Botão Fechar (✕) - Fica encostado à direita (mas com margem do container)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Parent = ControlsContainer
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+CloseBtn.TextSize = 13
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.LayoutOrder = 2
+
+MinimizeBtn.MouseEnter:Connect(function() MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255) end)
+MinimizeBtn.MouseLeave:Connect(function() MinimizeBtn.TextColor3 = Color3.fromRGB(150, 150, 150) end)
+CloseBtn.MouseEnter:Connect(function() CloseBtn.TextColor3 = Color3.fromRGB(240, 70, 70) end)
+CloseBtn.MouseLeave:Connect(function() CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150) end)
+
+local Separator = Instance.new("Frame")
+Separator.Parent = MainFrame
+Separator.Position = UDim2.new(0, 0, 0, 45)
+Separator.Size = UDim2.new(1, 0, 0, 1)
+Separator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Separator.BackgroundTransparency = 0.93
+Separator.BorderSizePixel = 0
 
 -- =============================================================================
--- PAINEL LATERAL ESQUERDO (Rolagem para as 15 Abas)
+-- PAINEL LATERAL ESQUERDO (Abas com Rolagem)
 -- =============================================================================
+local LeftPanel = Instance.new("Frame")
+LeftPanel.Name = "LeftPanel"
+LeftPanel.Parent = MainFrame
+LeftPanel.Position = UDim2.new(0, 0, 0, 46)
+LeftPanel.Size = UDim2.new(0, 155, 1, -46)
+LeftPanel.BackgroundTransparency = 1
+
 local NavigationScroll = Instance.new("ScrollingFrame")
 NavigationScroll.Name = "NavigationScroll"
-NavigationScroll.Parent = MainFrame
-NavigationScroll.Position = UDim2.new(0, 10, 0, 50)
-NavigationScroll.Size = UDim2.new(0, 140, 1, -65)
+NavigationScroll.Parent = LeftPanel
+NavigationScroll.Position = UDim2.new(0, 10, 0, 5)
+NavigationScroll.Size = UDim2.new(1, -15, 1, -65)
 NavigationScroll.BackgroundTransparency = 1
-NavigationScroll.ScrollBarThickness = 2
-NavigationScroll.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
+NavigationScroll.ScrollBarThickness = 0 
 
 local NavList = Instance.new("UIListLayout")
 NavList.Parent = NavigationScroll
 NavList.SortOrder = Enum.SortOrder.LayoutOrder
-NavList.Padding = UDim.new(0, 5)
+NavList.Padding = UDim.new(0, 4)
 
--- Ajuste automático do tamanho da rolagem das abas (Igual ao que você pediu)
 NavList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    NavigationScroll.CanvasSize = UDim2.new(0, 0, 0, NavList.AbsoluteContentSize.Y + 10)
+    NavigationScroll.CanvasSize = UDim2.new(0, 0, 0, NavList.AbsoluteContentSize.Y + 5)
 end)
 
--- Container do Lado Direito
+-- =============================================================================
+-- SISTEMA DE PERFIL DO JOGADOR
+-- =============================================================================
+local ProfileCard = Instance.new("Frame")
+ProfileCard.Name = "ProfileCard"
+ProfileCard.Parent = LeftPanel
+ProfileCard.Position = UDim2.new(0, 10, 1, -55)
+ProfileCard.Size = UDim2.new(1, -20, 0, 45)
+ProfileCard.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+
+local ProfileCorner = Instance.new("UICorner")
+ProfileCorner.CornerRadius = UDim.new(0, 6)
+ProfileCorner.Parent = ProfileCard
+
+local ProfileStroke = Instance.new("UIStroke")
+ProfileStroke.Thickness = 1
+ProfileStroke.Color = Color3.fromRGB(30, 30, 30)
+ProfileStroke.Parent = ProfileCard
+
+local AvatarImage = Instance.new("ImageLabel")
+AvatarImage.Parent = ProfileCard
+AvatarImage.Position = UDim2.new(0, 6, 0.5, -16)
+AvatarImage.Size = UDim2.new(0, 32, 0, 32)
+AvatarImage.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+local url = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" .. LocalPlayer.UserId .. "&size=150x150&format=Png&isCircular=false"
+task.spawn(function()
+    pcall(function()
+        local dados = game:GetService("HttpService"):JSONDecode(game:HttpGet(url))
+        if dados and dados.data and dados.data[1] then
+            AvatarImage.Image = dados.data[1].imageUrl
+        end
+    end)
+end)
+
+local AvatarCorner = Instance.new("UICorner")
+AvatarCorner.CornerRadius = UDim.new(1, 0)
+AvatarCorner.Parent = AvatarImage
+
+local UserDisplayName = Instance.new("TextLabel")
+UserDisplayName.Parent = ProfileCard
+UserDisplayName.BackgroundTransparency = 1
+UserDisplayName.Position = UDim2.new(0, 44, 0, 6)
+UserDisplayName.Size = UDim2.new(1, -50, 0, 16)
+UserDisplayName.Font = Enum.Font.GothamBold
+UserDisplayName.Text = LocalPlayer.DisplayName
+UserDisplayName.TextColor3 = Color3.fromRGB(240, 240, 240)
+UserDisplayName.TextSize = 11
+UserDisplayName.TextXAlignment = Enum.TextXAlignment.Left
+
+local UserUsername = Instance.new("TextLabel")
+UserUsername.Parent = ProfileCard
+UserUsername.BackgroundTransparency = 1
+UserUsername.Position = UDim2.new(0, 44, 0, 22)
+UserUsername.Size = UDim2.new(1, -50, 0, 16)
+UserUsername.Font = Enum.Font.Gotham
+UserUsername.Text = "@" .. LocalPlayer.Name
+UserUsername.TextColor3 = Color3.fromRGB(130, 130, 130)
+UserUsername.TextSize = 10
+UserUsername.TextXAlignment = Enum.TextXAlignment.Left
+
+local CenterSeparator = Instance.new("Frame")
+CenterSeparator.Parent = MainFrame
+CenterSeparator.Position = UDim2.new(0, 155, 0, 46)
+CenterSeparator.Size = UDim2.new(0, 1, 1, -46)
+CenterSeparator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+CenterSeparator.BackgroundTransparency = 0.93
+CenterSeparator.BorderSizePixel = 0
+
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Name = "ContentContainer"
 ContentContainer.Parent = MainFrame
-ContentContainer.Position = UDim2.new(0, 160, 0, 50)
-ContentContainer.Size = UDim2.new(1, -170, 1, -65)
+ContentContainer.Position = UDim2.new(0, 165, 0, 51)
+ContentContainer.Size = UDim2.new(1, -175, 1, -56)
 ContentContainer.BackgroundTransparency = 1
 
 -- =============================================================================
--- CRIAÇÃO AUTOMÁTICA DAS 15 ABAS COM SISTEMA DE ROLAGEM IDENTICO
+-- CRIAÇÃO DAS ABAS FILTRADAS
 -- =============================================================================
 local abas = {
-    "Murderer", "Sherif", "Inocente", "Esp", "Auto Farm", 
-    "Local player", "Estatus do servidor", "Settings", "Misc", "Perfil",
-    "Teleports", "Combat", "Visuals", "Skins", "Creditos"
+    "Murderer", "Sherif", "Esp", "Auto Farm", "Player/legit", "Misc", "Settings"
 }
 
 local paginas = {}
 local botoesAba = {}
 
 for i, nomeAba in ipairs(abas) do
-    -- Criando a página de rolagem de CADA aba (com o mesmo sistema de rolagem)
     local PaginaScroll = Instance.new("ScrollingFrame")
     PaginaScroll.Name = nomeAba .. "Page"
     PaginaScroll.Parent = ContentContainer
     PaginaScroll.Size = UDim2.new(1, 0, 1, 0)
     PaginaScroll.BackgroundTransparency = 1
     PaginaScroll.Visible = false
-    PaginaScroll.ScrollBarThickness = 2
-    PaginaScroll.ScrollBarImageColor3 = Color3.fromRGB(0, 150, 255)
+    PaginaScroll.ScrollBarThickness = 0
     
     local PaginaList = Instance.new("UIListLayout")
     PaginaList.Parent = PaginaScroll
     PaginaList.SortOrder = Enum.SortOrder.LayoutOrder
     PaginaList.Padding = UDim.new(0, 6)
     
-    -- Sistema de rolagem idêntico para a parte interna de cada aba
     PaginaList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        PaginaScroll.CanvasSize = UDim2.new(0, 0, 0, PaginaList.AbsoluteContentSize.Y + 10)
+        PaginaScroll.CanvasSize = UDim2.new(0, 0, 0, PaginaList.AbsoluteContentSize.Y + 5)
     end)
     
     paginas[nomeAba] = PaginaScroll
 
-    -- Criando o botão correspondente no painel esquerdo
     local BotaoAba = Instance.new("TextButton")
     BotaoAba.Name = nomeAba .. "Btn"
     BotaoAba.Parent = NavigationScroll
-    BotaoAba.Size = UDim2.new(1, -6, 0, 32)
-    BotaoAba.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    BotaoAba.Font = Enum.Font.GothamBold
-    BotaoAba.Text = "  " .. nomeAba
-    BotaoAba.TextColor3 = Color3.fromRGB(150, 150, 150)
+    BotaoAba.Size = UDim2.new(1, 0, 0, 30)
+    BotaoAba.BackgroundTransparency = 1
+    BotaoAba.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    BotaoAba.Font = Enum.Font.GothamMedium
+    BotaoAba.Text = "   " .. nomeAba
+    BotaoAba.TextColor3 = Color3.fromRGB(140, 140, 140)
     BotaoAba.TextSize = 11
     BotaoAba.TextXAlignment = Enum.TextXAlignment.Left
     BotaoAba.LayoutOrder = i
     
     local BotaoCorner = Instance.new("UICorner")
-    BotaoCorner.CornerRadius = UDim.new(0, 4)
+    BotaoCorner.CornerRadius = UDim.new(0, 6)
     BotaoCorner.Parent = BotaoAba
     
     botoesAba[nomeAba] = BotaoAba
 
-    -- Alternar entre as abas
     BotaoAba.MouseButton1Click:Connect(function()
         for _, nome in pairs(abas) do
             paginas[nome].Visible = false
-            botoesAba[nome].BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-            botoesAba[nome].TextColor3 = Color3.fromRGB(150, 150, 150)
+            botoesAba[nome].BackgroundTransparency = 1
+            botoesAba[nome].TextColor3 = Color3.fromRGB(140, 140, 140)
+            botoesAba[nome].Font = Enum.Font.GothamMedium
         end
         PaginaScroll.Visible = true
-        BotaoAba.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        BotaoAba.BackgroundTransparency = 0
         BotaoAba.TextColor3 = Color3.fromRGB(255, 255, 255)
+        BotaoAba.Font = Enum.Font.GothamBold
     end)
 end
 
--- Deixa a primeira aba aberta por padrão
 paginas["Murderer"].Visible = true
-botoesAba["Murderer"].BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+botoesAba["Murderer"].BackgroundTransparency = 0
 botoesAba["Murderer"].TextColor3 = Color3.fromRGB(255, 255, 255)
+botoesAba["Murderer"].Font = Enum.Font.GothamBold
 
 -- =============================================================================
--- SISTEMA DE ARRASTAR A JANELA PRINCIPAL (Mobile & PC)
+-- FUNÇÕES DE CRIAÇÃO DE ELEMENTOS (Toggles e Sliders)
 -- =============================================================================
-local dragging, dragStart, startPos
-TopBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = true; dragStart = i.Position; startPos = MainFrame.Position end end)
-UserInputService.InputChanged:Connect(function(i) if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then local delta = i.Position - dragStart; MainFrame.Position = startPos + UDim2.new(0, delta.X, 0, delta.Y) end end)
-UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
+function CriarToggle(nomeAba, texto, funcao)
+    local Card = Instance.new("Frame", paginas[nomeAba])
+    Card.Size = UDim2.new(1, -10, 0, 42)
+    Card.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", Card).Color = Color3.fromRGB(28, 28, 28)
 
--- =============================================================================
--- NOTIFICAÇÕES & ANIMAÇÃO DE SUBIDA (Vem de baixo e centraliza)
--- =============================================================================
-local function CriarNotificacao(titulo, msg, tempo)
-    local N = Instance.new("Frame", ScreenGui)
-    N.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    N.Size = UDim2.new(0, 250, 0, 60)
-    N.Position = UDim2.new(1, 30, 1, -100)
-    Instance.new("UICorner", N).CornerRadius = UDim.new(0, 5)
-    
-    local l1 = Instance.new("TextLabel", N); l1.Text = titulo; l1.Size = UDim2.new(1, -20, 0, 20); l1.Position = UDim2.new(0, 10, 0, 5); l1.BackgroundTransparency = 1; l1.TextColor3 = Color3.fromRGB(255, 255, 255); l1.Font = Enum.Font.GothamBold; l1.TextSize = 12; l1.TextXAlignment = Enum.TextXAlignment.Left
-    local l2 = Instance.new("TextLabel", N); l2.Text = msg; l2.Size = UDim2.new(1, -20, 0, 30); l2.Position = UDim2.new(0, 10, 0, 25); l2.BackgroundTransparency = 1; l2.TextColor3 = Color3.fromRGB(160, 160, 160); l2.Font = Enum.Font.Gotham; l2.TextSize = 11; l2.TextXAlignment = Enum.TextXAlignment.Left; l2.TextWrapped = true
+    local Label = Instance.new("TextLabel", Card)
+    Label.Text = "   " .. texto
+    Label.Size = UDim2.new(1, -60, 1, 0)
+    Label.BackgroundTransparency = 1
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
 
-    N:TweenPosition(UDim2.new(1, -270, 1, -100), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.4, true)
-    task.wait(tempo)
-    N:TweenPosition(UDim2.new(1, 30, 1, -100), Enum.EasingDirection.In, Enum.EasingStyle.Quart, 0.4, true)
-    task.wait(0.4)
-    N:Destroy()
+    local SwitchBg = Instance.new("TextButton", Card)
+    SwitchBg.Text = ""
+    SwitchBg.Position = UDim2.new(1, -45, 0.5, -9)
+    SwitchBg.Size = UDim2.new(0, 32, 0, 18)
+    SwitchBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+
+    local Ball = Instance.new("Frame", SwitchBg)
+    Ball.Size = UDim2.new(0, 12, 0, 12)
+    Ball.Position = UDim2.new(0, 3, 0.5, -6)
+    Ball.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", Ball).CornerRadius = UDim.new(1, 0)
+
+    local ativado = false
+    SwitchBg.MouseButton1Click:Connect(function()
+        ativado = not ativado
+        TweenService:Create(SwitchBg, TweenInfo.new(0.2), {BackgroundColor3 = ativado and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(40, 40, 40)}):Play()
+        TweenService:Create(Ball, TweenInfo.new(0.2), {Position = ativado and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)}):Play()
+        funcao(ativado)
+    end)
 end
 
--- Sequência de carregamento limpa antes de subir a interface
-task.spawn(function()
-    CriarNotificacao("Bacon X Hub v1", "Carregando a estrutura...", 2)
-    CriarNotificacao("Bacon X Hub v1", "Injetado com sucesso!", 2)
-    
-    -- Animação: Faz o script aparecer vindo de baixo para o meio certinho
+function CriarSlider(nomeAba, texto, min, max, padrao, funcao)
+    local Card = Instance.new("Frame", paginas[nomeAba])
+    Card.Size = UDim2.new(1, -10, 0, 52)
+    Card.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", Card).Color = Color3.fromRGB(28, 28, 28)
+
+    local Label = Instance.new("TextLabel", Card)
+    Label.Text = "   " .. texto
+    Label.Size = UDim2.new(0, 150, 0, 22)
+    Label.BackgroundTransparency = 1
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local ValLabel = Instance.new("TextLabel", Card)
+    ValLabel.Text = tostring(padrao) .. "  "
+    ValLabel.Position = UDim2.new(1, -60, 0, 0)
+    ValLabel.Size = UDim2.new(0, 50, 0, 22)
+    ValLabel.BackgroundTransparency = 1
+    ValLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ValLabel.Font = Enum.Font.GothamBold
+    ValLabel.TextSize = 11
+    ValLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+    local BaseLine = Instance.new("Frame", Card)
+    BaseLine.Position = UDim2.new(0, 15, 0, 34)
+    BaseLine.Size = UDim2.new(1, -30, 0, 4)
+    BaseLine.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Instance.new("UICorner", BaseLine).CornerRadius = UDim.new(1, 0)
+
+    local ProgressLine = Instance.new("Frame", BaseLine)
+    ProgressLine.Size = UDim2.new((padrao - min)/(max - min), 0, 1, 0)
+    ProgressLine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", ProgressLine).CornerRadius = UDim.new(1, 0)
+
+    local SliderBall = Instance.new("Frame", ProgressLine)
+    SliderBall.Size = UDim2.new(0, 10, 0, 10)
+    SliderBall.Position = UDim2.new(1, -5, 0.5, -5)
+    SliderBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", SliderBall).CornerRadius = UDim.new(1, 0)
+
+    local segurando = false
+    local function mover(input)
+        local pos = math.clamp((input.Position.X - BaseLine.AbsolutePosition.X) / BaseLine.AbsoluteSize.X, 0, 1)
+        ProgressLine.Size = UDim2.new(pos, 0, 1, 0)
+        local realVal = math.floor(min + (pos * (max - min)))
+        ValLabel.Text = tostring(realVal) .. "  "
+        funcao(realVal)
+    end
+
+    BaseLine.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then segurando = true; mover(i) end end)
+    UserInputService.InputChanged:Connect(function(i) if segurando and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then mover(i) end end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then segurando = false end end)
+end
+
+-- =============================================================================
+-- ÁREA DE ORGANIZAÇÃO DOS BOTÕES E FUNÇÕES DAS ABAS
+-- =============================================================================
+
+-- ===============================
+-- FUNÇÕES DA ABA MURDERER
+-- ===============================
+local TituloM = Instance.new("TextLabel", paginas["Murderer"])
+TituloM.Text = " CONFIGURAÇÕES DE KILL AURA"
+TituloM.Size = UDim2.new(1, 0, 0, 30)
+TituloM.BackgroundTransparency = 1
+TituloM.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloM.Font = Enum.Font.GothamBold
+TituloM.TextSize = 11
+TituloM.TextXAlignment = Enum.TextXAlignment.Left
+
+CriarToggle("Murderer", "Ativar Kill Aura", function(state)
+    _G.KillAuraAtivado = state
+end)
+
+CriarSlider("Murderer", "Distância do Aura", 5, 50, 15, function(val)
+    _G.DistanciaKillAura = val
+end)
+
+-- =============================================================================
+-- SISTEMA DE CONTROLES (MINIMIZAR, FECHAR, E BOTÃO FLUTUANTE)
+-- =============================================================================
+
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Name = "BXH_Button"
+OpenBtn.Parent = ScreenGui
+OpenBtn.Size = UDim2.new(0, 45, 0, 45)
+OpenBtn.Position = UDim2.new(0, 15, 0.4, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+OpenBtn.Text = "BXH"
+OpenBtn.TextColor3 = Color3.fromRGB(0, 200, 100)
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.TextSize = 12
+OpenBtn.Visible = false
+
+local OpenCorner = Instance.new("UICorner")
+OpenCorner.CornerRadius = UDim.new(0, 8)
+OpenCorner.Parent = OpenBtn
+
+local OpenStroke = Instance.new("UIStroke")
+OpenStroke.Color = Color3.fromRGB(35, 35, 35)
+OpenStroke.Thickness = 1
+OpenStroke.Parent = OpenBtn
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenBtn.Visible = true
+end)
+
+OpenBtn.MouseButton1Click:Connect(function()
+    OpenBtn.Visible = false
     MainFrame.Visible = true
-    MainFrame:TweenPosition(UDim2.new(0.5, -275, 0.5, -175), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.6, true)
+end)
+
+-- Prompt de confirmação para fechar
+local ConfirmFrame = Instance.new("Frame")
+ConfirmFrame.Name = "ConfirmFrame"
+ConfirmFrame.Parent = ScreenGui
+ConfirmFrame.Size = UDim2.new(0, 280, 0, 130)
+ConfirmFrame.Position = UDim2.new(0.5, -140, 0.5, -65)
+ConfirmFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+ConfirmFrame.Visible = false
+
+local ConfirmCorner = Instance.new("UICorner")
+ConfirmCorner.CornerRadius = UDim.new(0, 8)
+ConfirmCorner.Parent = ConfirmFrame
+
+local ConfirmStroke = Instance.new("UIStroke")
+ConfirmStroke.Color = Color3.fromRGB(40, 40, 40)
+ConfirmStroke.Thickness = 1
+ConfirmStroke.Parent = ConfirmFrame
+
+local ConfirmTitle = Instance.new("TextLabel")
+ConfirmTitle.Parent = ConfirmFrame
+ConfirmTitle.BackgroundTransparency = 1
+ConfirmTitle.Position = UDim2.new(0, 0, 0, 12)
+ConfirmTitle.Size = UDim2.new(1, 0, 0, 20)
+ConfirmTitle.Font = Enum.Font.GothamBold
+ConfirmTitle.Text = "Bacon X Hub"
+ConfirmTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+ConfirmTitle.TextSize = 14
+
+local ConfirmMsg = Instance.new("TextLabel")
+ConfirmMsg.Parent = ConfirmFrame
+ConfirmMsg.BackgroundTransparency = 1
+ConfirmMsg.Position = UDim2.new(0, 15, 0, 36)
+ConfirmMsg.Size = UDim2.new(1, -30, 0, 35)
+ConfirmMsg.Font = Enum.Font.GothamMedium
+ConfirmMsg.Text = "Tem certeza que deseja fechar o script?"
+ConfirmMsg.TextColor3 = Color3.fromRGB(170, 170, 170)
+ConfirmMsg.TextSize = 12
+ConfirmMsg.TextWrapped = true
+
+local YesBtn = Instance.new("TextButton")
+YesBtn.Name = "YesBtn"
+YesBtn.Parent = ConfirmFrame
+YesBtn.Position = UDim2.new(0, 20, 1, -42)
+YesBtn.Size = UDim2.new(0, 110, 0, 28)
+YesBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.Text = "Yes"
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.TextSize = 12
+Instance.new("UICorner", YesBtn).CornerRadius = UDim.new(0, 5)
+
+local NotBtn = Instance.new("TextButton")
+NotBtn.Name = "NotBtn"
+NotBtn.Parent = ConfirmFrame
+NotBtn.Position = UDim2.new(1, -130, 1, -42)
+NotBtn.Size = UDim2.new(0, 110, 0, 28)
+NotBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+NotBtn.Font = Enum.Font.GothamBold
+NotBtn.Text = "Not"
+NotBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+NotBtn.TextSize = 12
+Instance.new("UICorner", NotBtn).CornerRadius = UDim.new(0, 5)
+
+CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
+NotBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
+YesBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+-- Arrastar painel principal e botão flutuante
+local segurandoFrame, clickStart, frameStart
+TopBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then segurandoFrame = true; clickStart = i.Position; frameStart = MainFrame.Position end end)
+UserInputService.InputChanged:Connect(function(i) if segurandoFrame and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then local diff = i.Position - clickStart; MainFrame.Position = frameStart + UDim2.new(0, diff.X, 0, diff.Y) end end)
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then segurandoFrame = false end end)
+
+local segurandoBXH, clickStartBXH, bxhStart
+OpenBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then segurandoBXH = true; clickStartBXH = i.Position; bxhStart = OpenBtn.Position end end)
+UserInputService.InputChanged:Connect(function(i) if segurandoBXH and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then local diff = i.Position - clickStartBXH; OpenBtn.Position = bxhStart + UDim2.new(0, diff.X, 0, diff.Y) end end)
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then segurandoBXH = false end end)
+
+-- =============================================================================
+-- SISTEMA DE NOTIFICAÇÕES EM SEQUÊNCIA (Boas-vindas / Carregamento)
+-- =============================================================================
+local function MostrarNotificacao(titulo, mensagem, duracao)
+    local NotifFrame = Instance.new("Frame", ScreenGui)
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    NotifFrame.Size = UDim2.new(0, 260, 0, 60)
+    NotifFrame.Position = UDim2.new(1, 30, 1, -90) -- Inicia escondido na direita
+    Instance.new("UICorner", NotifFrame).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", NotifFrame).Color = Color3.fromRGB(35, 35, 35)
+    
+    local TxtTitle = Instance.new("TextLabel", NotifFrame)
+    TxtTitle.Text = "  " .. titulo
+    TxtTitle.Size = UDim2.new(1, -10, 0, 22)
+    TxtTitle.Position = UDim2.new(0, 5, 0, 4)
+    TxtTitle.BackgroundTransparency = 1
+    TxtTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TxtTitle.Font = Enum.Font.GothamBold
+    TxtTitle.TextSize = 12
+    TxtTitle.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local TxtMsg = Instance.new("TextLabel", NotifFrame)
+    TxtMsg.Text = "  " .. mensagem
+    TxtMsg.Size = UDim2.new(1, -10, 0, 28)
+    TxtMsg.Position = UDim2.new(0, 5, 0, 24)
+    TxtMsg.BackgroundTransparency = 1
+    TxtMsg.TextColor3 = Color3.fromRGB(150, 150, 150)
+    TxtMsg.Font = Enum.Font.Gotham
+    TxtMsg.TextSize = 10
+    TxtMsg.TextXAlignment = Enum.TextXAlignment.Left
+    TxtMsg.TextWrapped = true
+
+    -- Animação de Entrada
+    NotifFrame:TweenPosition(UDim2.new(1, -280, 1, -90), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.4, true)
+    task.wait(duracao)
+    
+    -- Animação de Saída
+    NotifFrame:TweenPosition(UDim2.new(1, 30, 1, -90), Enum.EasingDirection.In, Enum.EasingStyle.Quart, 0.4, true)
+    task.wait(0.4)
+    NotifFrame:Destroy()
+end
+
+-- Thread gerenciadora do carregamento sequencial
+task.spawn(function()
+    -- 1ª Notificação
+    MostrarNotificacao("Bacon X Hub", "Seja muito bem vindo ao meu script de MM2", 2.5)
+    task.wait(0.2)
+    
+    -- 2ª Notificação
+    MostrarNotificacao("Bacon X Hub", "Script está carregando por favor espere...", 2.5)
+    task.wait(0.2)
+    
+    -- 3ª Notificação (Aparece junto com a abertura do painel principal)
+    task.spawn(function()
+        MostrarNotificacao("Bacon X Hub", "Script carregado com sucesso espero que goste", 3)
+    end)
+    
+    -- Abre a Interface Principal com Animação de Subida
+    MainFrame.Visible = true
+    MainFrame:TweenPosition(UDim2.new(0.5, -275, 0.5, -175), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.5, true)
 end)
