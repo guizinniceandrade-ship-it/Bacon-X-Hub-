@@ -715,9 +715,137 @@ end)
 -- ==========================================
 -- [3] ABA: ESP
 -- ==========================================
--- Cole seus botões da aba Esp logo abaixo desta linha:
+-- =============================================================================
+-- LOGICA DO ESP (MESSENGER / MURDERER DETECTOR)
+-- =============================================================================
 
+_G.EspAtivado = false
+_G.EspHighlight = false
+_G.EspLinha = false
+_G.EspNome = false
+_G.EspFuncao = false
+_G.EspDistancia = false
+_G.TransparenciaESP = 0.8 -- Slider de transparência
 
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+-- Tabela para guardar os desenhos de cada player
+local Drawings = {}
+
+local function CriarEsp(player)
+    local esp = {
+        Linha = Drawing.new("Line"),
+        Nome = Drawing.new("Text"),
+        Funcao = Drawing.new("Text"),
+        Distancia = Drawing.new("Text"),
+        Highlight = Drawing.new("Square")
+    }
+    
+    esp.Linha.Visible = false
+    esp.Linha.Thickness = 1
+    
+    esp.Nome.Visible = false
+    esp.Nome.Size = 13
+    esp.Nome.Center = true
+    esp.Nome.Font = 2
+    
+    esp.Funcao.Visible = false
+    esp.Funcao.Size = 13
+    esp.Funcao.Center = true
+    esp.Funcao.Font = 2
+    esp.Funcao.Color = Color3.fromRGB(255, 50, 50) -- Cor para o Murderer
+    
+    esp.Distancia.Visible = false
+    esp.Distancia.Size = 13
+    esp.Distancia.Center = true
+    esp.Distancia.Font = 2
+    
+    esp.Highlight.Visible = false
+    esp.Highlight.Filled = false
+    esp.Highlight.Thickness = 1
+    
+    Drawings[player] = esp
+end
+
+-- Limpa desenhos se o player sair
+Players.PlayerRemoving:Connect(function(player)
+    if Drawings[player] then
+        for _, obj in pairs(Drawings[player]) do obj:Remove() end
+        Drawings[player] = nil
+    end
+end)
+
+-- Loop principal do ESP (Desenha frame a frame)
+RunService.RenderStepped:Connect(function()
+    if not _G.EspAtivado then 
+        for p, d in pairs(Drawings) do
+            for _, obj in pairs(d) do obj.Visible = false end
+        end
+        return 
+    end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
+            if not Drawings[player] then CriarEsp(player) end
+            
+            local hrp = player.Character.HumanoidRootPart
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            
+            local d = Drawings[player]
+            
+            if onScreen then
+                -- Logica de Murderer (Checa se tem faca)
+                local isMurderer = player.Character:FindFirstChild("Knife") ~= nil
+                
+                -- Configurar visibilidade
+                d.Linha.Visible = _G.EspLinha
+                d.Nome.Visible = _G.EspNome
+                d.Funcao.Visible = _G.EspFuncao and isMurderer
+                d.Distancia.Visible = _G.EspDistancia
+                d.Highlight.Visible = _G.EspHighlight
+                
+                -- Atualizar posições
+                d.Linha.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                d.Linha.To = Vector2.new(pos.X, pos.Y)
+                d.Linha.Transparency = _G.TransparenciaESP
+                
+                d.Nome.Position = Vector2.new(pos.X, pos.Y - 20)
+                d.Nome.Text = player.Name
+                d.Nome.Transparency = _G.TransparenciaESP
+                
+                if d.Funcao.Visible then
+                    d.Funcao.Position = Vector2.new(pos.X, pos.Y + 10)
+                    d.Funcao.Text = "[MURDERER]"
+                    d.Funcao.Transparency = _G.TransparenciaESP
+                end
+                
+                d.Distancia.Position = Vector2.new(pos.X, pos.Y + 25)
+                d.Distancia.Text = tostring(math.floor((LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)) .. " studs"
+                d.Distancia.Transparency = _G.TransparenciaESP
+            else
+                for _, obj in pairs(d) do obj.Visible = false end
+            end
+        end
+    end
+end)
+
+-- [ELEMENTOS DA INTERFACE]
+local TituloESP = Instance.new("TextLabel", paginas["Esp"])
+TituloESP.Text = " ESP MURDERER"
+TituloESP.Size = UDim2.new(1, 0, 0, 30)
+TituloESP.BackgroundTransparency = 1
+TituloESP.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloESP.Font = Enum.Font.GothamBold
+
+CriarToggle("Esp", "Ativar ESP Global", function(s) _G.EspAtivado = s end)
+CriarToggle("Esp", "Highlight (Caixa)", function(s) _G.EspHighlight = s end)
+CriarToggle("Esp", "Linha", function(s) _G.EspLinha = s end)
+CriarToggle("Esp", "Nome", function(s) _G.EspNome = s end)
+CriarToggle("Esp", "Função (Murderer)", function(s) _G.EspFuncao = s end)
+CriarToggle("Esp", "Distância", function(s) _G.EspDistancia = s end)
+
+CriarSlider("Esp", "Transparência ESP", 1, 10, 8, function(v) _G.TransparenciaESP = v/10 end)
 
 
 -- ==========================================
