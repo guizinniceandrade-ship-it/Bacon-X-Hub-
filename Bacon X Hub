@@ -947,7 +947,187 @@ CriarToggle("Esp", "Innocent Função", function(state) _G.InoFuncao = state end
 -- ==========================================
 -- [4] ABA: AUTO FARM
 -- ==========================================
--- Cole seus botões da aba Auto Farm logo abaixo desta linha:
+-- =============================================================================
+-- ABA AUTO FARM: SISTEMA COMPLETO E FUNCIONAL (TWEEN, TELEPORT & SETTINGS)
+-- =============================================================================
+
+_G.AutoFarmTween = false
+_G.AutoFarmTeleport = false
+
+_G.AutoFarmSpeed = 15       -- Velocidade do voo (Menor = mais rápido no cálculo de tempo)
+_G.AutoFarmPosicaoY = 30     -- Altura de segurança
+_G.AutoFarmDistTeleport = 5  -- Distância para ativar o "ímã" de aproximação
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Função para verificar quantas moedas você já pegou na rodada
+local function ObterMoedasAtuais()
+    local playerData = LocalPlayer:FindFirstChild("PlayerData")
+    if playerData and playerData:FindFirstChild("Coins") then
+        return playerData.Coins.Value
+    end
+    -- Segunda opção de checagem caso o MM2 mude a pasta
+    local coinsFolder = LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Coins")
+    return coinsFolder and coinsFolder.Value or 0
+end
+
+-- Função para buscar a moeda válida mais próxima no mapa
+local function ObterMoedaMaisProxima()
+    local mapa = workspace:FindFirstChild("Normal") or workspace:FindFirstChild("Sandbox")
+    if not mapa then return nil end
+    
+    local containerMoedas = mapa:FindFirstChild("CoinContainer")
+    if not containerMoedas then return nil end
+    
+    local meuHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not meuHrp then return nil end
+    
+    local menorDistancia = math.huge
+    local moedaAlvo = nil
+    
+    for _, moeda in pairs(containerMoedas:GetChildren()) do
+        -- Verifica se é uma moeda real, se tem colisão e se não foi pega por outro
+        if moeda:IsA("BasePart") or (moeda:FindFirstChild("Coin") and moeda.Coin:IsA("BasePart")) then
+            local partMoeda = moeda:IsA("BasePart") and moeda or moeda.Coin
+            local dist = (meuHrp.Position - partMoeda.Position).Magnitude
+            if dist < menorDistancia then
+                menorDistancia = dist
+                moedaAlvo = partMoeda
+            end
+        end
+    end
+    return moedaAlvo
+end
+
+-- Loop Principal do Auto Farm (Roda em segundo plano sem travar o jogo)
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        
+        if _G.AutoFarmTween or _G.AutoFarmTeleport then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChild("Humanoid")
+            
+            -- Só farma se você estiver vivo e com espaço na mochila (Limite do MM2 é 40)
+            if hrp and hum and hum.Health > 0 and ObterMoedasAtuais() < 40 then
+                local moeda = ObterMoedaMaisProxima()
+                
+                if moeda then
+                    -- Desativa a gravidade do boneco temporariamente para não cair enquanto voa
+                    hrp.Velocity = Vector3.new(0, 0, 0)
+                    
+                    local posMoeda = moeda.Position
+                    local posSeguraY = Vector3.new(posMoeda.X, posMoeda.Y + _G.AutoFarmPosicaoY, posMoeda.Z)
+                    local distanciaAteMoeda = (hrp.Position - posMoeda).Magnitude
+                    
+                    -- =========================================================
+                    -- MODO 1: TELEPORTE INSTANTÂNEO
+                    -- =========================================================
+                    if _G.AutoFarmTeleport then
+                        -- Teleporta direto na moeda, espera coletar e volta
+                        hrp.CFrame = CFrame.new(posMoeda)
+                        task.wait(0.1)
+                        
+                    -- =========================================================
+                    -- MODO 2: TWEEN (VOANDO SUAVE) + SISTEMA POSIÇÃO Y
+                    -- =========================================================
+                    elseif _G.AutoFarmTween then
+                        
+                        -- Se o botão extra "Teleporte" (Ímã) estiver ativo e estiver perto da moeda
+                        if distanciaAteMoeda <= _G.AutoFarmDistTeleport then
+                            hrp.CFrame = CFrame.new(posMoeda)
+                            task.wait(0.05)
+                        else
+                            -- Voa mantendo a Posição Y (Altura Segura definida no Slider)
+                            local distDoVoo = (hrp.Position - posSeguraY).Magnitude
+                            local tempoTween = distDoVoo / _G.AutoFarmSpeed
+                            
+                            local tweenInfo = TweenInfo.new(tempoTween, Enum.EasingStyle.Linear)
+                            local vooTween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(posSeguraY)})
+                            vooTween:Play()
+                            vooTween.Completed:Wait()
+                            
+                            -- Chegou exatamente acima da moeda? Desce rápido, pega e sobe
+                            if (hrp.Position - posSeguraY).Magnitude < 3 then
+                                hrp.CFrame = CFrame.new(posMoeda) -- Desce na moeda
+                                task.wait(0.08)
+                                hrp.CFrame = CFrame.new(posSeguraY) -- Retorna para a altura de segurança
+                            end
+                        end
+                        
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Antikick por inatividade (Garante que você não caia por ficar AFK farmando)
+if not _G.AntiAfkAtivo then
+    _G.AntiAfkAtivo = true
+    LocalPlayer.Idled:Connect(function()
+        local VirtualUser = game:GetService("VirtualUser")
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end)
+end
+
+-- =============================================================================
+-- INTERFACE VISUAL (ABA AUTO FARM)
+-- =============================================================================
+
+-- [TÍTULO PRINCIPAL]
+local TituloFarm = Instance.new("TextLabel", paginas["Auto Farm"])
+TituloFarm.Text = "  AUTO FARM COIN"
+TituloFarm.Size = UDim2.new(1, 0, 0, 45)
+TituloFarm.BackgroundTransparency = 1
+TituloFarm.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloFarm.Font = Enum.Font.GothamBold
+TituloFarm.TextSize = 16
+TituloFarm.TextXAlignment = Enum.TextXAlignment.Left
+
+-- [BOTÕES] Ativação dos Modos
+CriarToggle("Auto Farm", "Auto Farm Tween", function(state)
+    _G.AutoFarmTween = state
+    if state then _G.AutoFarmTeleport = false end -- Desliga o outro para não bugar
+end)
+
+CriarToggle("Auto Farm", "Auto Farm Teleporte", function(state)
+    _G.AutoFarmTeleport = state
+    if state then _G.AutoFarmTween = false end -- Desliga o outro para não bugar
+end)
+
+-- Espaçador
+local EspacadorFarm = Instance.new("Frame", paginas["Auto Farm"])
+EspacadorFarm.Size = UDim2.new(1, 0, 0, 15)
+EspacadorFarm.BackgroundTransparency = 1
+
+-- [SUBTÍTULO] SETTINGS TWEEN
+local SubTituloSettings = Instance.new("TextLabel", paginas["Auto Farm"])
+SubTituloSettings.Text = "  AUTO FARM SETTINGS TWEEN"
+SubTituloSettings.Size = UDim2.new(1, 0, 0, 40)
+SubTituloSettings.BackgroundTransparency = 1
+SubTituloSettings.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubTituloSettings.Font = Enum.Font.GothamBold
+SubTituloSettings.TextSize = 14
+SubTituloSettings.TextXAlignment = Enum.TextXAlignment.Left
+
+-- [SLIDERS] Configurações de Controle
+CriarSlider("Auto Farm", "Speed", 10, 60, 25, function(val)
+    _G.AutoFarmSpeed = val
+end)
+
+CriarSlider("Auto Farm", "Posição Y", 10, 50, 30, function(val)
+    _G.AutoFarmPosicaoY = val
+end)
+
+CriarSlider("Auto Farm", "Teleporte (Aproximação)", 1, 20, 5, function(val)
+    _G.AutoFarmDistTeleport = val
+end)
 
 
 
