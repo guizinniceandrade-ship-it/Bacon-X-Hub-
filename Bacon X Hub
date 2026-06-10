@@ -206,3 +206,89 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
+-- =============================================================================
+-- SISTEMA DE NOTIFICAÇÕES (RODA EM SEGUNDO PLANO)
+-- =============================================================================
+local function CriarNotificacao(titulo, mensagem, duracaoExibicao)
+    -- Cria um container invisível para a notificação na base da tela
+    local NotifFrame = Instance.new("Frame")
+    NotifFrame.Name = "BaconNotification"
+    NotifFrame.Parent = ScreenGui -- Usa a mesma ScreenGui do Hub
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Fundo escuro clean
+    NotifFrame.Size = UDim2.new(0, 280, 0, 65)
+    -- Começa um pouco abaixo da tela (escondido) para fazer o efeito de subida
+    NotifFrame.Position = UDim2.new(0.5, -140, 1, 20)
+    
+    local NotifCorner = Instance.new("UICorner")
+    NotifCorner.CornerRadius = UDim.new(0, 5)
+    NotifCorner.Parent = NotifFrame
+    
+    -- Título da Notificação (Bacon X Hub)
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Parent = NotifFrame
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Position = UDim2.new(0, 10, 0, 6)
+    TitleLabel.Size = UDim2.new(1, -20, 0, 15)
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.Text = titulo
+    TitleLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
+    TitleLabel.TextSize = 13
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    -- Mensagem de texto
+    local MsgLabel = Instance.new("TextLabel")
+    MsgLabel.Parent = NotifFrame
+    MsgLabel.BackgroundTransparency = 1
+    MsgLabel.Position = UDim2.new(0, 10, 0, 24)
+    MsgLabel.Size = UDim2.new(1, -20, 0, 35)
+    MsgLabel.Font = Enum.Font.Gotham
+    MsgLabel.Text = mensagem
+    MsgLabel.TextColor3 = Color3.fromRGB(170, 170, 170)
+    MsgLabel.TextSize = 11
+    MsgLabel.TextXAlignment = Enum.TextXAlignment.Left
+    MsgLabel.TextYAlignment = Enum.TextYAlignment.Top
+    MsgLabel.TextWrapped = true
+
+    -- Efeito de Subida (Aparecer)
+    NotifFrame:TweenPosition(
+        UDim2.new(0.5, -140, 1, -85), -- Sobe para ficar visível perto do rodapé
+        Enum.EasingDirection.Out,
+        Enum.EasingStyle.Quart,
+        0.5,
+        true
+    )
+    
+    -- Tempo que ela fica na tela antes de sumir
+    task.wait(duracaoExibicao)
+    
+    -- Efeito de Descida (Sumir)
+    NotifFrame:TweenPosition(
+        UDim2.new(0.5, -140, 1, 20), -- Desce para fora da tela de novo
+        Enum.EasingDirection.In,
+        Enum.EasingStyle.Quart,
+        0.5,
+        true
+    )
+    
+    task.wait(0.5)
+    NotifFrame:Destroy()
+end
+
+-- Sequência de tempo exata que você pediu
+task.spawn(function()
+    -- 1ª Notificação (Aparece na hora)
+    CriarNotificacao("Bacon X Hub", "Bem vindo ao meu script de MM2 espero que se divirta.", 3.5)
+    
+    -- Espera dar os 4 segundos no total
+    task.wait(0.5) 
+    
+    -- 2ª Notificação (Após 4 segundos)
+    CriarNotificacao("Bacon X Hub", "Script está carregando por favor espere...", 3.5)
+    
+    -- Espera dar os 7 segundos desde a anterior
+    task.wait(3.5)
+    
+    -- 3ª Notificação (Após 7 segundos)
+    CriarNotificacao("Bacon X Hub", "Script carregado com sucesso.", 4)
+end)
+
