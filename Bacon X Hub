@@ -716,119 +716,78 @@ end)
 -- [3] ABA: ESP
 -- ==========================================
 -- =============================================================================
--- ESP MURDERER COMPLETO (TODAS AS FUNÇÕES ATIVAS)
+-- BASE DO ESP: DETECÇÃO DE MURDERER + HIGHLIGHT
 -- =============================================================================
 
 _G.MostrarHighlight = false
-_G.MostrarLinha = false
-_G.MostrarNome = false
-_G.MostrarFuncao = false
-_G.MostrarDistancia = false
 _G.TransparenciaESP = 0.8
 
-local Camera = workspace.CurrentCamera
+-- Função para verificar se o jogador é o Murderer (Mão, Mochila ou Título)
+local function VerificarSeEMurderer(player, char)
+    -- 1. Checa se a faca está na mão
+    if char:FindFirstChild("Knife") then 
+        return true 
+    end
+    
+    -- 2. Checa se a faca está guardada na mochila
+    if player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("Knife") then 
+        return true 
+    end
+    
+    -- 3. Detecção Avançada: Checa se o jogador recebeu o status/título de Murderer no jogo
+    if player:FindFirstChild("status") and player.status:FindFirstChild("Role") then
+        if player.status.Role.Value == "Murderer" then
+            return true
+        end
+    end
+    
+    return false
+end
 
--- Função para criar e atualizar o ESP em cada jogador
-local function GerenciarESP(player)
+-- Gerenciador do Highlight individual
+local function AplicarHighlight(player)
     if player == LocalPlayer then return end
     
     local function SetupCharacter(char)
-        local hrp = char:WaitForChild("HumanoidRootPart", 5)
         local humanoid = char:WaitForChild("Humanoid", 5)
-        if not hrp or not humanoid then return end
+        local hrp = char:WaitForChild("HumanoidRootPart", 5)
+        if not humanoid or not hrp then return end
         
-        -- Cria os contêineres visuais
-        local espObj = Instance.new("Folder")
-        espObj.Name = "BaconX_ESP"
-        espObj.Parent = char
+        -- Cria o Highlight se não existir
+        local highlight = char:FindFirstChild("BaconX_Highlight")
+        if not highlight then
+            highlight = Instance.new("Highlight")
+            highlight.Name = "BaconX_Highlight"
+            highlight.Parent = char
+        end
         
-        -- 1. HIGHLIGHT
-        local highlight = Instance.new("Highlight", espObj)
-        highlight.FillColor = Color3.fromRGB(255, 255, 255)
-        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-        
-        -- ADICIONAL: Interface de Texto (BillboardGui)
-        local billboard = Instance.new("BillboardGui", espObj)
-        billboard.Size = UDim2.new(0, 200, 0, 60)
-        billboard.AlwaysOnTop = true
-        billboard.StudsOffset = Vector3.new(0, 3, 0)
-        
-        local txtNome = Instance.new("TextLabel", billboard)
-        txtNome.Size = UDim2.new(1, 0, 0, 15)
-        txtNome.BackgroundTransparency = 1
-        txtNome.TextColor3 = Color3.new(1, 1, 1)
-        txtNome.TextStrokeTransparency = 0
-        txtNome.Font = Enum.Font.GothamBold
-        txtNome.TextSize = 12
-        
-        local txtFuncao = Instance.new("TextLabel", billboard)
-        txtFuncao.Size = UDim2.new(1, 0, 0, 15)
-        txtFuncao.Position = UDim2.new(0, 0, 0, 15)
-        txtFuncao.BackgroundTransparency = 1
-        txtFuncao.TextColor3 = Color3.fromRGB(255, 50, 50)
-        txtFuncao.TextStrokeTransparency = 0
-        txtFuncao.Font = Enum.Font.GothamBold
-        txtFuncao.TextSize = 13
-        txtFuncao.Text = "[ MURDERER ]"
-        
-        local txtDist = Instance.new("TextLabel", billboard)
-        txtDist.Size = UDim2.new(1, 0, 0, 15)
-        txtDist.Position = UDim2.new(0, 0, 0, 30)
-        txtDist.BackgroundTransparency = 1
-        txtDist.TextColor3 = Color3.fromRGB(200, 200, 200)
-        txtDist.TextStrokeTransparency = 0
-        txtDist.Font = Enum.Font.Gotham
-        txtDist.TextSize = 11
-
-        -- 2. LINHA (Usando Adornment para renderizar em 3D sem lag)
-        local linha = Instance.new("LineHandleAdornment", espObj)
-        linha.Length = 0
-        linha.Thickness = 2
-        linha.AlwaysOnTop = true
-        linha.Adornee = hrp
-
-        -- LOOP DE ATUALIZAÇÃO EM TEMPO REAL DESTE JOGADOR
+        -- Loop de atualização frame a frame para este personagem
         local conexao
         conexao = game:GetService("RunService").RenderStepped:Connect(function()
-            if not char.Parent or not hrp.Parent or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            -- Se o personagem ou o script resetar, desliga o loop
+            if not char.Parent or not hrp.Parent then
                 conexao:Disconnect()
                 return
             end
             
-            -- Atualiza Visibilidades e Transparência
+            -- TRAVA DE SEGURANÇA: Se o jogador morreu, desativa o Highlight na hora
+            if humanoid.Health <= 0 then
+                highlight.Enabled = false
+                return
+            end
+            
+            -- Define se o Highlight geral deve aparecer
             highlight.Enabled = _G.MostrarHighlight
             highlight.FillTransparency = 1 - _G.TransparenciaESP
             highlight.OutlineTransparency = 1 - _G.TransparenciaESP
             
-            txtNome.Visible = _G.MostrarNome
-            txtNome.Text = player.DisplayName or player.Name
-            
-            txtDist.Visible = _G.MostrarDistancia
-            local m_dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
-            txtDist.Text = tostring(m_dist) .. " studs"
-            
-            -- Checagem Inteligente de Murderer (Mão ou Mochila)
-            local temFaca = char:FindFirstChild("Knife") or player.Backpack:FindFirstChild("Knife")
-            txtFuncao.Visible = (_G.MostrarFuncao and temFaca)
-            
-            if txtFuncao.Visible then
-                highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Muda a caixa para vermelho se for Murderer
+            -- Checa em tempo real se ele é o Murderer
+            if VerificarSeEMurderer(player, char) then
+                highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Borda Vermelha para o Murderer
+                highlight.FillColor = Color3.fromRGB(255, 50, 50)   -- Preenchimento Vermelho
             else
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-            end
-            
-            -- Atualiza a Posição da Linha (Do seus pés até o alvo)
-            if _G.MostrarLinha then
-                linha.Visible = true
-                linha.Color3 = temFaca and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(255, 255, 255)
-                linha.Transparency = 1 - _G.TransparenciaESP
-                -- Faz a linha apontar do nosso tronco para o deles
-                local meuHrpPos = LocalPlayer.Character.HumanoidRootPart.Position
-                local direcao = (meuHrpPos - hrp.Position)
-                linha.CFrame = CFrame.lookAt(Vector3.new(0,0,0), direcao)
-                linha.Length = direcao.Magnitude
-            else
-                linha.Visible = false
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- Borda Branca para Inocentes
+                highlight.FillColor = Color3.fromRGB(255, 255, 255)
             end
         end)
     end
@@ -837,11 +796,15 @@ local function GerenciarESP(player)
     player.CharacterAdded:Connect(SetupCharacter)
 end
 
--- Roda para quem já está no servidor e para quem entrar
-for _, p in pairs(Players:GetPlayers()) do GerenciarESP(p) end
-Players.PlayerAdded:Connect(GerenciarESP)
+-- Inicia a detecção para todos
+for _, p in pairs(Players:GetPlayers()) do AplicarHighlight(p) end
+Players.PlayerAdded:Connect(AplicarHighlight)
 
--- [TEXTO] ESP MURDERER (Alinhado à esquerda, Grande e Espaçado)
+-- =============================================================================
+-- INTERFACE (ABA ESP)
+-- =============================================================================
+
+-- [TEXTO] ESP MURDERER (Alinhado à esquerda e Grande)
 local TituloESP = Instance.new("TextLabel", paginas["Esp"])
 TituloESP.Text = "  ESP MURDERER"
 TituloESP.Size = UDim2.new(1, 0, 0, 45)
@@ -851,16 +814,16 @@ TituloESP.Font = Enum.Font.GothamBold
 TituloESP.TextSize = 16
 TituloESP.TextXAlignment = Enum.TextXAlignment.Left
 
--- [BOTÕES DA INTERFACE]
-CriarToggle("Esp", "Highlight", function(s) _G.MostrarHighlight = s end)
-CriarToggle("Esp", "Linha", function(s) _G.MostrarLinha = s end)
-CriarToggle("Esp", "Nome", function(s) _G.MostrarNome = s end)
-CriarToggle("Esp", "Função Murderer", function(s) _G.MostrarFuncao = s end)
-CriarToggle("Esp", "Distância", function(s) _G.MostrarDistancia = s end)
-
-CriarSlider("Esp", "Transparência", 1, 10, 8, function(v) 
-    _G.TransparenciaESP = v/10 
+-- [BOTÃO 1] Highlight Toggle
+CriarToggle("Esp", "Highlight", function(state)
+    _G.MostrarHighlight = state
 end)
+
+-- [BOTÃO COMPLEMENTAR] Transparência do Highlight
+CriarSlider("Esp", "Transparência do ESP", 1, 10, 8, function(val)
+    _G.TransparenciaESP = val / 10
+end)
+
 
 
 
