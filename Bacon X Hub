@@ -468,6 +468,76 @@ CriarSlider("Murderer", "Raio de Busca (Distância)", 10, 100, 30, function(val)
     _G.DistanciaKillAura = val
 end)
 
+-- =============================================================================
+-- FUNÇÃO E COMPONENTES DA HITBOX (ABA MURDERER)
+-- =============================================================================
+
+_G.HitboxMurdererAtivada = false
+_G.TamanhoHitboxMurderer = 2
+_G.MostrarHitboxMurderer = false
+
+-- Loop que aplica a alteração de tamanho nos outros jogadores
+task.spawn(function()
+    while task.wait(0.5) do
+        if _G.HitboxMurdererAtivada then
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = v.Character.HumanoidRootPart
+                    
+                    -- Define o tamanho com base no Slider
+                    hrp.Size = Vector3.new(_G.TamanhoHitboxMurderer, _G.TamanhoHitboxMurderer, _G.TamanhoHitboxMurderer)
+                    
+                    -- Controla se a caixa fica visível (Verde Neon) ou Invisível (Modo Legit)
+                    hrp.Transparency = _G.MostrarHitboxMurderer and 0.6 or 1
+                    hrp.Color = Color3.fromRGB(0, 200, 100)
+                    hrp.Material = Enum.Material.Neon
+                    hrp.CanCollide = false
+                end
+            end
+        else
+            -- Se desligar o botão, limpa a hitbox e volta o tamanho ao normal (2,2,2)
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = v.Character.HumanoidRootPart
+                    hrp.Size = Vector3.new(2, 2, 2)
+                    hrp.Transparency = 1
+                    hrp.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+-- Linha de separação visual ou espaço
+local EspacoM = Instance.new("Frame", paginas["Murderer"])
+EspacoM.Size = UDim2.new(1, 0, 0, 10)
+EspacoM.BackgroundTransparency = 1
+
+-- [TEXTO] Título da Seção dentro de Murderer
+local TituloHitboxM = Instance.new("TextLabel", paginas["Murderer"])
+TituloHitboxM.Text = " HIT BOX PLAYER"
+TituloHitboxM.Size = UDim2.new(1, 0, 0, 30)
+TituloHitboxM.BackgroundTransparency = 1
+TituloHitboxM.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloHitboxM.Font = Enum.Font.GothamBold
+TituloHitboxM.TextSize = 11
+TituloHitboxM.TextXAlignment = Enum.TextXAlignment.Left
+
+-- [BOTÃO 1] Liga/Desliga
+CriarToggle("Murderer", "Ativar Hitbox", function(state)
+    _G.HitboxMurdererAtivada = state
+end)
+
+-- [BOTÃO 2] Tamanho (Slider de 2 a 30)
+CriarSlider("Murderer", "Tamanho da Hitbox", 2, 30, 2, function(val)
+    _G.TamanhoHitboxMurderer = val
+end)
+
+-- [BOTÃO 3] Mostrar/Ocultar
+CriarToggle("Murderer", "Visualizar Hitbox (Verde)", function(state)
+    _G.MostrarHitboxMurderer = state
+end)
+
 
 -- ==========================================
 -- [2] ABA: SHERIF
