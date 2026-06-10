@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Deleta qualquer interface antiga do Bacon X Hub para não duplicar
@@ -14,29 +15,32 @@ pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:FindFirstChildOfClass("PlayerGui") end
 
 -- =============================================================================
--- JANELA PRINCIPAL (550x350 - SEM BORDAS COLORIDAS)
+-- JANELA PRINCIPAL (CONFIGURADA PARA A ANIMAÇÃO DE SUBIDA)
 -- =============================================================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12) -- Fundo Preto Fosco Puro
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12) -- Preto Puro
+MainFrame.Position = UDim2.new(0.5, -275, 1.5, 0)
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
 MainFrame.ClipsDescendants = true
+MainFrame.Visible = false 
+MainFrame.BackgroundTransparency = 1 
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 6)
 MainCorner.Parent = MainFrame
 
 -- =============================================================================
--- TOPO DA INTERFACE (Nome em Branco/Cinza e SEM Botão X)
+-- TOPO DA INTERFACE (Totalmente Preto + Arredondamento Corrigido + Linha Degradê)
 -- =============================================================================
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
-TopBar.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+TopBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 TopBar.Size = UDim2.new(1, 0, 0, 35)
 
+-- CORREÇÃO AQUI: Arredonda o topo para não cobrir o MainCorner lá atrás
 local TopCorner = Instance.new("UICorner")
 TopCorner.CornerRadius = UDim.new(0, 6)
 TopCorner.Parent = TopBar
@@ -49,67 +53,66 @@ HubTitle.Position = UDim2.new(0, 12, 0, 0)
 HubTitle.Size = UDim2.new(1, -12, 1, 0)
 HubTitle.Font = Enum.Font.GothamBold
 HubTitle.Text = "Bacon X Hub v1"
-HubTitle.TextColor3 = Color3.fromRGB(240, 240, 240) -- Nome agora é Branco Clean
+HubTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
 HubTitle.TextSize = 14
 HubTitle.TextXAlignment = Enum.TextXAlignment.Left
 
--- =============================================================================
--- ESTRUTURA DE LAYOUT: MENU LATERAL (ESQUERDA) vs CONTEÚDO (DIREITA)
--- =============================================================================
+-- LINHA EM DEGRADÊ ESTILO BANANA HUB (Azul Neon)
+local LineLine = Instance.new("Frame")
+LineLine.Name = "GradientLine"
+LineLine.Parent = TopBar
+LineLine.Position = UDim2.new(0, 10, 1, 0)
+LineLine.Size = UDim2.new(1, -20, 0, 2)
+LineLine.BorderSizePixel = 0
 
--- Menu Lateral com Rolagem para as 10 abas
+local Gradient = Instance.new("UIGradient")
+Gradient.Parent = LineLine
+Gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 85, 255)),   
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 210, 255)), 
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 85, 255))    
+})
+
+-- =============================================================================
+-- ESTRUTURA DE LAYOUT: MENU LATERAL vs CONTEÚDO
+-- =============================================================================
 local NavigationScroll = Instance.new("ScrollingFrame")
 NavigationScroll.Name = "NavigationScroll"
 NavigationScroll.Parent = MainFrame
-NavigationScroll.Position = UDim2.new(0, 5, 0, 40)
-NavigationScroll.Size = UDim2.new(0, 130, 1, -45)
+NavigationScroll.Position = UDim2.new(0, 5, 0, 45)
+NavigationScroll.Size = UDim2.new(0, 130, 1, -50)
 NavigationScroll.BackgroundTransparency = 1
-NavigationScroll.CanvasSize = UDim2.new(0, 0, 0, 0) -- Cresce sozinho
-NavigationScroll.ScrollBarThickness = 2
-NavigationScroll.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 50)
+NavigationScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+NavigationScroll.ScrollBarThickness = 0 
 
 local NavList = Instance.new("UIListLayout")
 NavList.Parent = NavigationScroll
 NavList.SortOrder = Enum.SortOrder.LayoutOrder
 NavList.Padding = UDim.new(0, 4)
 
--- Container Lado Direito (Onde vão aparecer os scripts/funções de cada aba)
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Name = "ContentContainer"
 ContentContainer.Parent = MainFrame
-ContentContainer.Position = UDim2.new(0, 140, 0, 40)
-ContentContainer.Size = UDim2.new(1, -145, 1, -45)
+ContentContainer.Position = UDim2.new(0, 140, 0, 45)
+ContentContainer.Size = UDim2.new(1, -145, 1, -50)
 ContentContainer.BackgroundTransparency = 1
 
 -- =============================================================================
--- SISTEMA GERENCIADOR DE ABAS DINÂMICO
+-- CRIAÇÃO DAS ABAS
 -- =============================================================================
-local abas = {
-    "Murderer",
-    "Sherif",
-    "Inocente",
-    "Esp",
-    "Auto Farm",
-    "Local player",
-    "Estatus do servidor",
-    "Senttings",
-    "Misc",
-    "Perfil"
-}
-
+local abas = {"Murderer", "Sherif", "Inocente", "Esp", "Auto Farm", "Local player", "Estatus do servidor", "Senttings", "Misc", "Perfil"}
 local paginas = {}
 local primeiroBotao = nil
 
 for i, nomeAba in ipairs(abas) do
-    -- 1. Cria a Página de Conteúdo com Rolagem independente para a aba
     local PaginaScroll = Instance.new("ScrollingFrame")
     PaginaScroll.Name = nomeAba .. "Page"
     PaginaScroll.Parent = ContentContainer
     PaginaScroll.Size = UDim2.new(1, 0, 1, 0)
     PaginaScroll.BackgroundTransparency = 1
     PaginaScroll.Visible = false
-    PaginaScroll.CanvasSize = UDim2.new(0, 0, 0, 0) -- Ajusta via script conforme adicionar botões
-    PaginaScroll.ScrollBarThickness = 3
+    PaginaScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    PaginaScroll.ScrollBarThickness = 2
     PaginaScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
     
     local PaginaList = Instance.new("UIListLayout")
@@ -117,22 +120,20 @@ for i, nomeAba in ipairs(abas) do
     PaginaList.SortOrder = Enum.SortOrder.LayoutOrder
     PaginaList.Padding = UDim.new(0, 6)
     
-    -- Auto-ajuste do tamanho da rolagem interna da página
     PaginaList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         PaginaScroll.CanvasSize = UDim2.new(0, 0, 0, PaginaList.AbsoluteContentSize.Y + 15)
     end)
     
     paginas[nomeAba] = PaginaScroll
 
-    -- 2. Cria o Botão correspondente no Menu Lateral
     local BotaoAba = Instance.new("TextButton")
     BotaoAba.Name = nomeAba .. "Btn"
     BotaoAba.Parent = NavigationScroll
     BotaoAba.Size = UDim2.new(1, -5, 0, 32)
-    BotaoAba.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    BotaoAba.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
     BotaoAba.Font = Enum.Font.GothamBold
     BotaoAba.Text = "  " .. nomeAba
-    BotaoAba.TextColor3 = Color3.fromRGB(160, 160, 160)
+    BotaoAba.TextColor3 = Color3.fromRGB(140, 140, 140)
     BotaoAba.TextSize = 11
     BotaoAba.TextXAlignment = Enum.TextXAlignment.Left
     BotaoAba.LayoutOrder = i
@@ -141,41 +142,34 @@ for i, nomeAba in ipairs(abas) do
     BotaoCorner.CornerRadius = UDim.new(0, 4)
     BotaoCorner.Parent = BotaoAba
 
-    -- Troca de abas ao clicar
     BotaoAba.MouseButton1Click:Connect(function()
-        -- Reseta todos os botões e páginas
         for _, nome in pairs(abas) do
             paginas[nome].Visible = false
             local btn = NavigationScroll:FindFirstChild(nome .. "Btn")
             if btn then
-                btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-                btn.TextColor3 = Color3.fromRGB(160, 160, 160)
+                btn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+                btn.TextColor3 = Color3.fromRGB(140, 140, 140)
             end
         end
-        -- Ativa a aba clicada (Visual Cinza Claro/Branco ao selecionar)
         PaginaScroll.Visible = true
-        BotaoAba.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        BotaoAba.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
         BotaoAba.TextColor3 = Color3.fromRGB(255, 255, 255)
     end)
     
     if i == 1 then primeiroBotao = BotaoAba end
 end
 
--- Ativa a primeira aba por padrão ao executar
 if primeiroBotao then
-    primeiroBotao.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    primeiroBotao.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
     primeiroBotao.TextColor3 = Color3.fromRGB(255, 255, 255)
     paginas[abas[1]].Visible = true
 end
 
--- Ajusta o tamanho da rolagem do Menu Lateral baseado no número de abas
 NavList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     NavigationScroll.CanvasSize = UDim2.new(0, 0, 0, NavList.AbsoluteContentSize.Y + 10)
 end)
 
--- =============================================================================
--- SISTEMA DE ARRASTAR A JANELA (Mobile Draggable)
--- =============================================================================
+-- SISTEMA DE ARRASTAR (TopBar)
 local dragging, dragInput, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -199,7 +193,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Atalho para abrir/fechar via teclado (Teclados Físicos / PC)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
         MainFrame.Visible = not MainFrame.Visible
@@ -207,88 +200,67 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- =============================================================================
--- SISTEMA DE NOTIFICAÇÕES (RODA EM SEGUNDO PLANO)
+-- NOTIFICAÇÃO DO LADO DIREITO
 -- =============================================================================
 local function CriarNotificacao(titulo, mensagem, duracaoExibicao)
-    -- Cria um container invisível para a notificação na base da tela
     local NotifFrame = Instance.new("Frame")
     NotifFrame.Name = "BaconNotification"
-    NotifFrame.Parent = ScreenGui -- Usa a mesma ScreenGui do Hub
-    NotifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Fundo escuro clean
-    NotifFrame.Size = UDim2.new(0, 280, 0, 65)
-    -- Começa um pouco abaixo da tela (escondido) para fazer o efeito de subida
-    NotifFrame.Position = UDim2.new(0.5, -140, 1, 20)
+    NotifFrame.Parent = ScreenGui
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    NotifFrame.Size = UDim2.new(0, 260, 0, 65)
+    NotifFrame.Position = UDim2.new(1, 30, 1, -150)
     
     local NotifCorner = Instance.new("UICorner")
     NotifCorner.CornerRadius = UDim.new(0, 5)
     NotifCorner.Parent = NotifFrame
     
-    -- Título da Notificação (Bacon X Hub)
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Parent = NotifFrame
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Position = UDim2.new(0, 10, 0, 6)
-    TitleLabel.Size = UDim2.new(1, -20, 0, 15)
+    TitleLabel.Position = UDim2.new(0, 12, 0, 6)
+    TitleLabel.Size = UDim2.new(1, -24, 0, 15)
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.Text = titulo
     TitleLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
     TitleLabel.TextSize = 13
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Mensagem de texto
     local MsgLabel = Instance.new("TextLabel")
     MsgLabel.Parent = NotifFrame
     MsgLabel.BackgroundTransparency = 1
-    MsgLabel.Position = UDim2.new(0, 10, 0, 24)
-    MsgLabel.Size = UDim2.new(1, -20, 0, 35)
+    MsgLabel.Position = UDim2.new(0, 12, 0, 24)
+    MsgLabel.Size = UDim2.new(1, -24, 0, 35)
     MsgLabel.Font = Enum.Font.Gotham
     MsgLabel.Text = mensagem
-    MsgLabel.TextColor3 = Color3.fromRGB(170, 170, 170)
+    MsgLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
     MsgLabel.TextSize = 11
     MsgLabel.TextXAlignment = Enum.TextXAlignment.Left
     MsgLabel.TextYAlignment = Enum.TextYAlignment.Top
     MsgLabel.TextWrapped = true
 
-    -- Efeito de Subida (Aparecer)
-    NotifFrame:TweenPosition(
-        UDim2.new(0.5, -140, 1, -85), -- Sobe para ficar visível perto do rodapé
-        Enum.EasingDirection.Out,
-        Enum.EasingStyle.Quart,
-        0.5,
-        true
-    )
-    
-    -- Tempo que ela fica na tela antes de sumir
+    NotifFrame:TweenPosition(UDim2.new(1, -280, 1, -150), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.4, true)
     task.wait(duracaoExibicao)
-    
-    -- Efeito de Descida (Sumir)
-    NotifFrame:TweenPosition(
-        UDim2.new(0.5, -140, 1, 20), -- Desce para fora da tela de novo
-        Enum.EasingDirection.In,
-        Enum.EasingStyle.Quart,
-        0.5,
-        true
-    )
-    
-    task.wait(0.5)
+    NotifFrame:TweenPosition(UDim2.new(1, 30, 1, -150), Enum.EasingDirection.In, Enum.EasingStyle.Quart, 0.4, true)
+    task.wait(0.4)
     NotifFrame:Destroy()
 end
 
--- Sequência de tempo exata que você pediu
-task.spawn(function()
-    -- 1ª Notificação (Aparece na hora)
-    CriarNotificacao("Bacon X Hub", "Bem vindo ao meu script de MM2 espero que se divirta.", 3.5)
-    
-    -- Espera dar os 4 segundos no total
-    task.wait(0.5) 
-    
-    -- 2ª Notificação (Após 4 segundos)
-    CriarNotificacao("Bacon X Hub", "Script está carregando por favor espere...", 3.5)
-    
-    -- Espera dar os 7 segundos desde a anterior
-    task.wait(3.5)
-    
-    -- 3ª Notificação (Após 7 segundos)
-    CriarNotificacao("Bacon X Hub", "Script carregado com sucesso.", 4)
-end)
+-- FUNÇÃO DE ANIMAÇÃO DE APARECER
+local function ExecutarAnimacaoEntrada()
+    MainFrame.Visible = true
+    TweenService:Create(MainFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -275, 0.5, -175),
+        BackgroundTransparency = 0
+    }):Play()
+end
 
+-- SEQUÊNCIA DE CARREGAMENTO
+task.spawn(function()
+    CriarNotificacao("Bacon X Hub", "Bem vindo ao meu script de MM2 espero que se divirta.", 3.5)
+    task.wait(0.5) 
+    CriarNotificacao("Bacon X Hub", "Script está carregando por favor espere...", 3.5)
+    task.wait(3.5)
+    CriarNotificacao("Bacon X Hub", "Script carregado com sucesso.", 4)
+    
+    ExecutarAnimacaoEntrada()
+end)
