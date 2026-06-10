@@ -947,6 +947,105 @@ CriarToggle("Esp", "Innocent Função", function(state) _G.InoFuncao = state end
 -- ==========================================
 -- [4] ABA: AUTO FARM
 -- ==========================================
+-- =============================================================================
+-- [BACON X HUB V1] - AUTO FARM COMPLETO E ORGANIZADO
+-- =============================================================================
+local AutoFarmPage = pages["Auto Farm"]
+
+-- Variáveis Globais de Controle
+_G.ModoFarm = "Tween" -- "Tween" ou "Teleport"
+_G.Velocidade = 15
+_G.PosicaoYAtiva = false
+_G.TeleporteAtivo = false
+_G.IsFarming = false
+
+-- Função Auxiliar para Encontrar Moedas
+local function FindAllCoins()
+    local found = {}
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and (v.Name:find("Coin") or v.Name:find("Token")) and v.Transparency < 1 then
+            table.insert(found, v)
+        end
+    end
+    return found
+end
+
+-- =============================================================================
+-- INTERFACE (UI)
+-- =============================================================================
+local function CriarSecao(nome)
+    local Titulo = Instance.new("TextLabel", AutoFarmPage)
+    Titulo.Size = UDim2.new(1, -6, 0, 25)
+    Titulo.BackgroundTransparency = 1
+    Titulo.Text = "  " .. nome
+    Titulo.TextColor3 = Color3.fromRGB(0, 170, 255)
+    Titulo.Font = Enum.Font.GothamBold
+    Titulo.TextSize = 14
+    Titulo.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+-- Criando os elementos
+CriarSecao("Auto Farms Coin")
+
+-- Botões de Modo
+CriarToggle("Auto Farm", "Auto Farm Tween", function(s) 
+    if s then _G.ModoFarm = "Tween"; _G.IsFarming = true else _G.IsFarming = false end 
+end)
+
+CriarToggle("Auto Farm", "Auto Farm Teleporte", function(s) 
+    if s then _G.ModoFarm = "Teleport"; _G.IsFarming = true else _G.IsFarming = false end 
+end)
+
+CriarSecao("Settings Auto Farm Tween")
+
+CriarSlider("Auto Farm", "Speed", 10, 60, 20, function(v) _G.Velocidade = v end)
+
+CriarToggle("Auto Farm", "Posição Y", function(s) _G.PosicaoYAtiva = s end)
+CriarToggle("Auto Farm", "Teleporte", function(s) _G.TeleporteAtivo = s end)
+
+-- =============================================================================
+-- MOTOR DO AUTO FARM (LÓGICA UNIFICADA)
+-- =============================================================================
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.IsFarming then
+            local char = game.Players.LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            
+            if root then
+                local coins = FindAllCoins()
+                if #coins > 0 then
+                    local target = coins[1] -- Pega a primeira que achar
+                    
+                    -- Noclip
+                    for _, p in pairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
+                    
+                    if _G.ModoFarm == "Teleport" then
+                        root.CFrame = target.CFrame
+                    elseif _G.ModoFarm == "Tween" then
+                        local offset = _G.PosicaoYAtiva and 30 or 1.3
+                        local targetPos = target.CFrame * CFrame.new(0, offset, 0)
+                        
+                        -- Voo
+                        local dist = (root.Position - targetPos.Position).Magnitude
+                        local tween = game:GetService("TweenService"):Create(root, 
+                            TweenInfo.new(dist/_G.Velocidade, Enum.EasingStyle.Linear), 
+                            {CFrame = targetPos})
+                        tween:Play()
+                        tween.Completed:Wait()
+                        
+                        -- Micro-teleporte final (ímã) se ativado
+                        if _G.TeleporteAtivo or _G.PosicaoYAtiva then
+                            root.CFrame = target.CFrame
+                            task.wait(0.05)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
 
 
 
