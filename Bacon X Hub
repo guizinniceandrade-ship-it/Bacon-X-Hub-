@@ -716,36 +716,24 @@ end)
 -- [3] ABA: ESP
 -- ==========================================
 -- =============================================================================
--- BASE DO ESP: DETECÇÃO DE MURDERER + HIGHLIGHT
+-- PARTE 1 E 2: HIGHLIGHT + LINHA (DETECÇÃO DE MURDERER ATIVA)
 -- =============================================================================
 
 _G.MostrarHighlight = false
+_G.MostrarLinha = false -- Nova variável para a linha
 _G.TransparenciaESP = 0.8
 
--- Função para verificar se o jogador é o Murderer (Mão, Mochila ou Título)
+-- Função de detecção tripla (Mão, Mochila ou Status do jogo)
 local function VerificarSeEMurderer(player, char)
-    -- 1. Checa se a faca está na mão
-    if char:FindFirstChild("Knife") then 
-        return true 
-    end
-    
-    -- 2. Checa se a faca está guardada na mochila
-    if player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("Knife") then 
-        return true 
-    end
-    
-    -- 3. Detecção Avançada: Checa se o jogador recebeu o status/título de Murderer no jogo
+    if char:FindFirstChild("Knife") then return true end
+    if player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("Knife") then return true end
     if player:FindFirstChild("status") and player.status:FindFirstChild("Role") then
-        if player.status.Role.Value == "Murderer" then
-            return true
-        end
+        if player.status.Role.Value == "Murderer" then return true end
     end
-    
     return false
 end
 
--- Gerenciador do Highlight individual
-local function AplicarHighlight(player)
+local function AplicarESP(player)
     if player == LocalPlayer then return end
     
     local function SetupCharacter(char)
@@ -753,41 +741,77 @@ local function AplicarHighlight(player)
         local hrp = char:WaitForChild("HumanoidRootPart", 5)
         if not humanoid or not hrp then return end
         
-        -- Cria o Highlight se não existir
-        local highlight = char:FindFirstChild("BaconX_Highlight")
+        local espObj = char:FindFirstChild("BaconX_ESP_Folder")
+        if not espObj then
+            espObj = Instance.new("Folder")
+            espObj.Name = "BaconX_ESP_Folder"
+            espObj.Parent = char
+        end
+        
+        -- [1] Criar Highlight
+        local highlight = espObj:FindFirstChild("BaconX_Highlight")
         if not highlight then
             highlight = Instance.new("Highlight")
             highlight.Name = "BaconX_Highlight"
-            highlight.Parent = char
+            highlight.Parent = espObj
         end
         
-        -- Loop de atualização frame a frame para este personagem
+        -- [2] Criar Linha (Usando Adornment 3D nativo para não dar lag)
+        local linha = espObj:FindFirstChild("BaconX_Linha")
+        if not linha then
+            linha = Instance.new("LineHandleAdornment")
+            linha.Name = "BaconX_Linha"
+            linha.Length = 0
+            linha.Thickness = 2
+            linha.AlwaysOnTop = true
+            linha.Adornee = hrp
+            linha.Parent = espObj
+        end
+        
+        -- Loop de atualização frame a frame
         local conexao
         conexao = game:GetService("RunService").RenderStepped:Connect(function()
-            -- Se o personagem ou o script resetar, desliga o loop
-            if not char.Parent or not hrp.Parent then
+            if not char.Parent or not hrp.Parent or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 conexao:Disconnect()
                 return
             end
             
-            -- TRAVA DE SEGURANÇA: Se o jogador morreu, desativa o Highlight na hora
+            -- TRAVA DE SEGURANÇA: Se o jogador morrer, esconde tudo dele
             if humanoid.Health <= 0 then
                 highlight.Enabled = false
+                linha.Visible = false
                 return
             end
             
-            -- Define se o Highlight geral deve aparecer
+            -- ATUALIZAÇÃO DO HIGHLIGHT
             highlight.Enabled = _G.MostrarHighlight
             highlight.FillTransparency = 1 - _G.TransparenciaESP
             highlight.OutlineTransparency = 1 - _G.TransparenciaESP
             
-            -- Checa em tempo real se ele é o Murderer
-            if VerificarSeEMurderer(player, char) then
-                highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Borda Vermelha para o Murderer
-                highlight.FillColor = Color3.fromRGB(255, 50, 50)   -- Preenchimento Vermelho
+            -- CHECAGEM DE COR (Murderer ou Inocente)
+            local eMurderer = VerificarSeEMurderer(player, char)
+            
+            if eMurderer then
+                highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+                highlight.FillColor = Color3.fromRGB(255, 50, 50)
             else
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- Borda Branca para Inocentes
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillColor = Color3.fromRGB(255, 255, 255)
+            end
+            
+            -- ATUALIZAÇÃO DA LINHA
+            if _G.MostrarLinha then
+                linha.Visible = true
+                linha.Transparency = 1 - _G.TransparenciaESP
+                linha.Color3 = eMurderer and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(255, 255, 255)
+                
+                -- Faz o cálculo da direção entre você e o alvo
+                local meuHrpPos = LocalPlayer.Character.HumanoidRootPart.Position
+                local direcao = (meuHrpPos - hrp.Position)
+                linha.CFrame = CFrame.lookAt(Vector3.new(0,0,0), direcao)
+                linha.Length = direcao.Magnitude
+            else
+                linha.Visible = false
             end
         end)
     end
@@ -796,15 +820,14 @@ local function AplicarHighlight(player)
     player.CharacterAdded:Connect(SetupCharacter)
 end
 
--- Inicia a detecção para todos
-for _, p in pairs(Players:GetPlayers()) do AplicarHighlight(p) end
-Players.PlayerAdded:Connect(AplicarHighlight)
+for _, p in pairs(Players:GetPlayers()) do AplicarESP(p) end
+Players.PlayerAdded:Connect(AplicarESP)
 
 -- =============================================================================
--- INTERFACE (ABA ESP)
+-- INTERFACE ATUALIZADA (ABA ESP)
 -- =============================================================================
 
--- [TEXTO] ESP MURDERER (Alinhado à esquerda e Grande)
+-- [TEXTO] ESP MURDERER (Grande e na Esquerda)
 local TituloESP = Instance.new("TextLabel", paginas["Esp"])
 TituloESP.Text = "  ESP MURDERER"
 TituloESP.Size = UDim2.new(1, 0, 0, 45)
@@ -814,15 +837,21 @@ TituloESP.Font = Enum.Font.GothamBold
 TituloESP.TextSize = 16
 TituloESP.TextXAlignment = Enum.TextXAlignment.Left
 
--- [BOTÃO 1] Highlight Toggle
+-- [BOTÃO 1] Highlight
 CriarToggle("Esp", "Highlight", function(state)
     _G.MostrarHighlight = state
 end)
 
--- [BOTÃO COMPLEMENTAR] Transparência do Highlight
+-- [BOTÃO 2] Linha (Adicionado agora!)
+CriarToggle("Esp", "Linha", function(state)
+    _G.MostrarLinha = state
+end)
+
+-- [SLIDER GLOBAL] Transparência das Funções (Afeta o Highlight e a Linha)
 CriarSlider("Esp", "Transparência do ESP", 1, 10, 8, function(val)
     _G.TransparenciaESP = val / 10
 end)
+
 
 
 
