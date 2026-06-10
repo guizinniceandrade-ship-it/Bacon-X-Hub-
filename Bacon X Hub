@@ -537,11 +537,11 @@ CriarToggle("Murderer", "Visualizar Hitbox (Verde)", function(state)
     _G.MostrarHitboxMurderer = state
 end)
 
--- =============
--- LOGICA DO THROW KNIFE AIMBOT (PUXAR ALVO PARA A FACA JOGADA) - CORRIGIDO
--- =============
+-- =============================================================================
+-- LOGICA DO THROW KNIFE AIMBOT (TRAZER ALVO NO ARREMESSO) - REFORMULADO 2026
+-- =============================================================================
 
-_G.ThrowKnifeAtivado = false -- CORRIGIDO: Sem espaço para não quebrar o script
+_G.ThrowKnifeAtivado = false
 _G.DistanciaThrow = 50 
 
 -- Função para encontrar o alvo mais próximo dentro do raio configurado
@@ -567,38 +567,43 @@ local function ObterAlvoThrow()
     return MaisProximo
 end
 
--- Gerenciador do projétil da faca com proteção contra travamentos
-local function MonitorarFacaJogada(FacaProjetil)
-    local Alvo = ObterAlvoThrow()
+-- Monitora quando você ativa o clique/ataque com a faca na mão
+local function AtivarPuxadaArremesso()
+    local MeuChar = LocalPlayer.Character
+    if not MeuChar then return end
     
-    if Alvo and Alvo:FindFirstChild("HumanoidRootPart") and Alvo:FindFirstChild("Humanoid") then
-        -- O pcall impede que qualquer erro aqui dentro quebre o resto do seu script principal
-        pcall(function()
-            while FacaProjetil and FacaProjetil.Parent and Alvo and Alvo.Humanoid.Health > 0 do
-                task.wait() 
-                
-                -- Teletransporta o alvo para a faca
-                if Alvo:FindFirstChild("HumanoidRootPart") then
-                    Alvo.HumanoidRootPart.CFrame = FacaProjetil.CFrame
+    local Faca = MeuChar:FindFirstChild("Knife")
+    if Faca then
+        local Alvo = ObterAlvoThrow()
+        if Alvo and Alvo:FindFirstChild("HumanoidRootPart") and Alvo:FindFirstChild("Humanoid") then
+            
+            -- Cria uma thread separada para não travar o jogo
+            task.spawn(function()
+                -- Mantém o alvo preso na sua frente por até 1 segundo (tempo do voo da faca)
+                local TempoInicio = tick()
+                while tick() - TempoInicio < 1.2 do
+                    task.wait()
+                    
+                    -- Verifica se o alvo morreu ou se você desativou a função
+                    if not _G.ThrowKnifeAtivado or not Alvo or Alvo.Humanoid.Health <= 0 then 
+                        break 
+                    end
+                    
+                    -- Teletransporta o alvo para 3 studs bem na frente do seu personagem
+                    if MeuChar:FindFirstChild("HumanoidRootPart") and Alvo:FindFirstChild("HumanoidRootPart") then
+                        Alvo.HumanoidRootPart.CFrame = MeuChar.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3.5)
+                    end
                 end
-                
-                -- Se a faca atingir o chão/parede (velocidade quase zero), para de puxar
-                if FacaProjetil:IsA("BasePart") and FacaProjetil.Velocity.Magnitude < 0.5 then
-                    break 
-                end
-            end
-        end)
+            end)
+        end
     end
 end
 
--- Escuta quando algo novo é adicionado ao Workspace
-workspace.ChildAdded:Connect(function(child)
-    if _G.ThrowKnifeAtivado then
-        -- Verifica se o objeto adicionado é a faca jogada
-        if child.Name == "ThrownKnife" or child.Name == "KnifeProjectile" then
-            task.spawn(function()
-                MonitorarFacaJogada(child)
-            end)
+-- Detecta o clique do mouse ou toque na tela para acionar a puxada
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if _G.ThrowKnifeAtivado and not gameProcessed then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            AtivarPuxadaArremesso()
         end
     end
 end)
@@ -627,6 +632,7 @@ end)
 CriarSlider("Murderer", "Raio de Puxada", 10, 200, 50, function(val)
     _G.DistanciaThrow = val
 end)
+
 
 -- ========
 -- LOGICA DO AIM LOCK (TRAVA DE MIRA NO JOGADOR MAIS PROXIMO)
