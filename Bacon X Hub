@@ -537,6 +537,97 @@ CriarToggle("Murderer", "Visualizar Hitbox (Verde)", function(state)
     _G.MostrarHitboxMurderer = state
 end)
 
+-- =============
+-- LOGICA DO THROW KNIFE AIMBOT (PUXAR ALVO PARA A FACA JOGADA) - CORRIGIDO
+-- =============
+
+_G.ThrowKnifeAtivado = false -- CORRIGIDO: Sem espaço para não quebrar o script
+_G.DistanciaThrow = 50 
+
+-- Função para encontrar o alvo mais próximo dentro do raio configurado
+local function ObterAlvoThrow()
+    local MaisProximo = nil
+    local MenorDistancia = math.huge
+    local MeuChar = LocalPlayer.Character
+    
+    if not MeuChar or not MeuChar:FindFirstChild("HumanoidRootPart") then return nil end
+    
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid") then
+            if v.Character.Humanoid.Health > 0 and not v.Character:FindFirstChild("ForceField") then 
+                local Distancia = (MeuChar.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                
+                if Distancia < _G.DistanciaThrow and Distancia < MenorDistancia then
+                    MenorDistancia = Distancia
+                    MaisProximo = v.Character
+                end
+            end
+        end
+    end
+    return MaisProximo
+end
+
+-- Gerenciador do projétil da faca com proteção contra travamentos
+local function MonitorarFacaJogada(FacaProjetil)
+    local Alvo = ObterAlvoThrow()
+    
+    if Alvo and Alvo:FindFirstChild("HumanoidRootPart") and Alvo:FindFirstChild("Humanoid") then
+        -- O pcall impede que qualquer erro aqui dentro quebre o resto do seu script principal
+        pcall(function()
+            while FacaProjetil and FacaProjetil.Parent and Alvo and Alvo.Humanoid.Health > 0 do
+                task.wait() 
+                
+                -- Teletransporta o alvo para a faca
+                if Alvo:FindFirstChild("HumanoidRootPart") then
+                    Alvo.HumanoidRootPart.CFrame = FacaProjetil.CFrame
+                end
+                
+                -- Se a faca atingir o chão/parede (velocidade quase zero), para de puxar
+                if FacaProjetil:IsA("BasePart") and FacaProjetil.Velocity.Magnitude < 0.5 then
+                    break 
+                end
+            end
+        end)
+    end
+end
+
+-- Escuta quando algo novo é adicionado ao Workspace
+workspace.ChildAdded:Connect(function(child)
+    if _G.ThrowKnifeAtivado then
+        -- Verifica se o objeto adicionado é a faca jogada
+        if child.Name == "ThrownKnife" or child.Name == "KnifeProjectile" then
+            task.spawn(function()
+                MonitorarFacaJogada(child)
+            end)
+        end
+    end
+end)
+
+-- Espaçador visual
+local EspacoT = Instance.new("Frame", paginas["Murderer"])
+EspacoT.Size = UDim2.new(1, 0, 0, 10)
+EspacoT.BackgroundTransparency = 1
+
+-- [TEXTO] Título da Seção
+local TituloThrow = Instance.new("TextLabel", paginas["Murderer"])
+TituloThrow.Text = " THROW KNIFE AIMBOT"
+TituloThrow.Size = UDim2.new(1, 0, 0, 30)
+TituloThrow.BackgroundTransparency = 1
+TituloThrow.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloThrow.Font = Enum.Font.GothamBold
+TituloThrow.TextSize = 11
+TituloThrow.TextXAlignment = Enum.TextXAlignment.Left
+
+-- [BOTÃO 1] Liga/Desliga o Aimbot de Arremesso
+CriarToggle("Murderer", "Ativar Knife Bring Kill", function(state)
+    _G.ThrowKnifeAtivado = state
+end)
+
+-- [BOTÃO 2] Raio de Busca (Slider de 10 a 200 studs)
+CriarSlider("Murderer", "Raio de Puxada", 10, 200, 50, function(val)
+    _G.DistanciaThrow = val
+end)
+
 
 
 -- ==========================================
