@@ -402,12 +402,55 @@ function CriarSlider(nomeAba, texto, min, max, padrao, funcao)
 end
 
 -- =============================================================================
--- ÁREA DE ORGANIZAÇÃO DOS BOTÕES E FUNÇÕES DAS ABAS
+-- MAPA VISUAL DAS ABAS - COLOQUE SEUS BOTÕES E TEXTOS EXATAMENTE AQUI
 -- =============================================================================
 
--- ===============================
--- FUNÇÕES DA ABA MURDERER
--- ===============================
+-- ==========================================
+-- [1] ABA: MURDERER (Lógica Kill Aura Pronta)
+-- ==========================================
+_G.KillAuraAtivado = false
+_G.DistanciaKillAura = 30
+
+local function ObterAlvoValido()
+    local MaisProximo = nil
+    local MenorDistancia = math.huge
+    local MeuChar = LocalPlayer.Character
+    if not MeuChar or not MeuChar:FindFirstChild("HumanoidRootPart") then return nil end
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid") then
+            if v.Character.Humanoid.Health > 0 and not v.Character:FindFirstChild("ForceField") then 
+                local Distancia = (MeuChar.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                if Distancia < _G.DistanciaKillAura and Distancia < MenorDistancia then
+                    MenorDistancia = Distancia
+                    MaisProximo = v.Character
+                end
+            end
+        end
+    end
+    return MaisProximo
+end
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if _G.KillAuraAtivado then
+            local MeuChar = LocalPlayer.Character
+            if MeuChar and MeuChar:FindFirstChild("HumanoidRootPart") then
+                local ItemEquipado = MeuChar:FindFirstChildOfClass("Tool")
+                if ItemEquipado and ItemEquipado.Name == "Knife" then
+                    local Alvo = ObterAlvoValido()
+                    if Alvo and Alvo:FindFirstChild("HumanoidRootPart") then
+                        local PosicaoFrente = MeuChar.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3.5)
+                        Alvo.HumanoidRootPart.CFrame = PosicaoFrente
+                        if ItemEquipado:FindFirstChild("Click") then
+                            ItemEquipado.Click:FireServer()
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
 local TituloM = Instance.new("TextLabel", paginas["Murderer"])
 TituloM.Text = " CONFIGURAÇÕES DE KILL AURA"
 TituloM.Size = UDim2.new(1, 0, 0, 30)
@@ -417,13 +460,62 @@ TituloM.Font = Enum.Font.GothamBold
 TituloM.TextSize = 11
 TituloM.TextXAlignment = Enum.TextXAlignment.Left
 
-CriarToggle("Murderer", "Ativar Kill Aura", function(state)
+CriarToggle("Murderer", "Ativar Bring Aura (Apenas Faca)", function(state)
     _G.KillAuraAtivado = state
 end)
 
-CriarSlider("Murderer", "Distância do Aura", 5, 50, 15, function(val)
+CriarSlider("Murderer", "Raio de Busca (Distância)", 10, 100, 30, function(val)
     _G.DistanciaKillAura = val
 end)
+
+
+-- ==========================================
+-- [2] ABA: SHERIF
+-- ==========================================
+-- Cole seus botões da aba Sherif logo abaixo desta linha:
+
+
+
+
+-- ==========================================
+-- [3] ABA: ESP
+-- ==========================================
+-- Cole seus botões da aba Esp logo abaixo desta linha:
+
+
+
+
+-- ==========================================
+-- [4] ABA: AUTO FARM
+-- ==========================================
+-- Cole seus botões da aba Auto Farm logo abaixo desta linha:
+
+
+
+
+-- ==========================================
+-- [5] ABA: PLAYER/LEGIT
+-- ==========================================
+-- Cole seus botões da aba Player/legit logo abaixo desta linha:
+
+
+
+
+-- ==========================================
+-- [6] ABA: MISC
+-- ==========================================
+-- Cole seus botões da aba Misc logo abaixo desta linha:
+
+
+
+
+-- ==========================================
+-- [7] ABA: SETTINGS
+-- ==========================================
+-- Cole seus botões da aba Settings logo abaixo desta linha:
+
+
+
 
 -- =============================================================================
 -- SISTEMA DE CONTROLES (MINIMIZAR, FECHAR, E BOTÃO FLUTUANTE)
@@ -582,20 +674,16 @@ end
 
 -- Thread gerenciadora do carregamento sequencial
 task.spawn(function()
-    -- 1ª Notificação
     MostrarNotificacao("Bacon X Hub", "Seja muito bem vindo ao meu script de MM2", 2.5)
     task.wait(0.2)
     
-    -- 2ª Notificação
     MostrarNotificacao("Bacon X Hub", "Script está carregando por favor espere...", 2.5)
     task.wait(0.2)
     
-    -- 3ª Notificação (Aparece junto com a abertura do painel principal)
     task.spawn(function()
         MostrarNotificacao("Bacon X Hub", "Script carregado com sucesso espero que goste", 3)
     end)
     
-    -- Abre a Interface Principal com Animação de Subida
     MainFrame.Visible = true
     MainFrame:TweenPosition(UDim2.new(0.5, -275, 0.5, -175), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.5, true)
 end)
