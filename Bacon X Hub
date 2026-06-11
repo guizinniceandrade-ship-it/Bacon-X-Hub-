@@ -1206,62 +1206,9 @@ CriarToggle("Player/legit", "Noclip", function(state)
     _G.NoclipPlayerAtivado = state
 end)
 
--- =============================================================================
--- SEÇÃO DE TELEPORTE (COLAR NO FINAL DA ABA PLAYER/LEGIT)
--- =============================================================================
 
-_G.PlayerAlvo = nil
 
--- Linha de separação visual para não embolar com o Noclip
-local EspacoTP = Instance.new("Frame", paginas["Player/legit"])
-EspacoTP.Size = UDim2.new(1, 0, 0, 15)
-EspacoTP.BackgroundTransparency = 1
 
--- [TEXTO] Título da Seção de Teleporte
-local TituloTP = Instance.new("TextLabel", paginas["Player/legit"])
-TituloTP.Text = " TELEPORTE PLAYER"
-TituloTP.Size = UDim2.new(1, 0, 0, 30)
-TituloTP.BackgroundTransparency = 1
-TituloTP.TextColor3 = Color3.fromRGB(255, 255, 255)
-TituloTP.Font = Enum.Font.GothamBold
-TituloTP.TextSize = 11
-TituloTP.TextXAlignment = Enum.TextXAlignment.Left
-
--- Função para listar os jogadores do servidor nesta mesma aba
-local function AtualizarListaJogadores()
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= LocalPlayer then
-            CriarToggle("Player/legit", "Player: " .. v.Name, function(state)
-                if state then
-                    _G.PlayerAlvo = v
-                else
-                    if _G.PlayerAlvo == v then _G.PlayerAlvo = nil end
-                end
-            end)
-        end
-    end
-end
-
--- Botão de ação que faz você ir até o alvo
-CriarToggle("Player/legit", "TELEPORTAR PARA PLAYER", function(state)
-    if state then
-        if _G.PlayerAlvo and _G.PlayerAlvo.Character and _G.PlayerAlvo.Character:FindFirstChild("HumanoidRootPart") then
-            local MeuChar = LocalPlayer.Character
-            if MeuChar and MeuChar:FindFirstChild("HumanoidRootPart") then
-                MeuChar.HumanoidRootPart.CFrame = _G.PlayerAlvo.Character.HumanoidRootPart.CFrame
-            end
-        end
-        -- Limpa o alvo da memória após o teleporte
-        _G.PlayerAlvo = nil
-    end
-end)
-
--- Botão para carregar os nomes dos players na tela
-CriarToggle("Player/legit", "Atualizar Lista", function(state)
-    if state then
-        AtualizarListaJogadores()
-    end
-end)
 
 -- ==========================================
 -- [6] ABA: MISC
