@@ -709,20 +709,20 @@ end)
 -- ==========================================
 
 -- =============================================================================
--- ABA: SHERIFF - SILENT AIM EXCLUSIVO
+-- ABA: SHERIFF - AIMLOCK 100% GRUDADO NO MURDERER (CORRIGIDO)
 -- =============================================================================
 
-_G.SilentAimSheriffAtivado = false
-_G.SilentAimFov = 100 -- Distância máxima que o Murderer pode estar da mira para puxar
+_G.AimlockSheriffAtivado = false
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 -- =============================================================================
--- FUNÇÃO DE DETECÇÃO DO MURDERER ATUAL
+-- FUNÇÃO PARA ENCONTRAR O JOGADOR QUE É O MURDERER
 -- =============================================================================
-local function ObterMurdererValido()
+local function ObterMurdererVivo()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
             -- Verifica se ele está com a Faca na mão ou na mochila
@@ -738,46 +738,25 @@ local function ObterMurdererValido()
 end
 
 -- =============================================================================
--- MOTOR DO SILENT AIM (INTERCEPTOR DE DISPARO DO REVÓLVER)
+-- MOTOR DO AIMLOCK (RODA A CADA FRAME ANTES DA RENDERIZAÇÃO DA TELA)
 -- =============================================================================
-local Metatable = getrawmetatable(game)
-local OldIndex = Metatable.__index
-setreadonly(Metatable, false)
-
-Metatable.__index = newcclosure(function(self, idx)
-    -- Se o Silent Aim estiver ligado e o jogo tentar ler onde a arma clicou ("Hit")
-    if _G.SilentAimSheriffAtivado and tostring(idx) == "Hit" then
-        -- Verifica se o jogador está segurando a Arma do Sheriff
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("Gun") then
-            local alvoHrp = ObterMurdererValido()
-            if alvoHrp then
-                -- Verifica se o alvo está dentro do raio visual (Fov) na tela do celular
-                local screenPos, onScreen = Camera:WorldToViewportPoint(alvoHrp.Position)
-                if onScreen then
-                    local mousePos = game:GetService("UserInputService"):GetMouseLocation()
-                    local distanciaDoCentro = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                    
-                    if distanciaDoCentro <= _G.SilentAimFov then
-                        -- Força o tiro a ir direto na CFrame (posição) do Murderer
-                        return alvoHrp.CFrame
-                    end
-                end
-            end
+RunService.RenderStepped:Connect(function()
+    if _G.AimlockSheriffAtivado then
+        local alvoHrp = ObterMurdererVivo()
+        if alvoHrp then
+            -- Força a CFrame da câmera a olhar fixamente para a posição do Murderer
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, alvoHrp.Position)
         end
     end
-    return OldIndex(self, idx)
 end)
 
-setreadonly(Metatable, true)
-
 -- =============================================================================
--- INTERFACE VISUAL DA ABA
+-- INTERFACE VISUAL DA ABA (MANTIDA NO SEU PADRÃO)
 -- =============================================================================
 
 -- [TEXTO] Título exclusivo da Seção
 local TituloSilent = Instance.new("TextLabel", paginas["Sheriff"])
-TituloSilent.Text = " SETTINGS SILENT AIM"
+TituloSilent.Text = " SETTINGS AIMLOCK SHERIFF"
 TituloSilent.Size = UDim2.new(1, 0, 0, 30)
 TituloSilent.BackgroundTransparency = 1
 TituloSilent.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -786,16 +765,9 @@ TituloSilent.TextSize = 11
 TituloSilent.TextXAlignment = Enum.TextXAlignment.Left
 
 -- [BOTÃO LIGA/DESLIGA]
-CriarToggle("Sheriff", "Ativar Silent Aim", function(state)
-    _G.SilentAimSheriffAtivado = state
+CriarToggle("Sheriff", "Ativar Câmera Grudada (Aimlock)", function(state)
+    _G.AimlockSheriffAtivado = state
 end)
-
--- [SLIDER DE FOV / RAIO DE MIRA]
-CriarSlider("Sheriff", "Raio de Atração (FOV)", 50, 500, 100, function(val)
-    _G.SilentAimFov = val
-end)
-
-
 
 
 -- ==========================================
