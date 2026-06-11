@@ -707,7 +707,93 @@ end)
 -- ==========================================
 -- [2] ABA: SHERIF
 -- ==========================================
--- Cole seus botões da aba Sherif logo abaixo desta linha:
+
+-- =============================================================================
+-- ABA: SHERIFF - SILENT AIM EXCLUSIVO
+-- =============================================================================
+
+_G.SilentAimSheriffAtivado = false
+_G.SilentAimFov = 100 -- Distância máxima que o Murderer pode estar da mira para puxar
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- =============================================================================
+-- FUNÇÃO DE DETECÇÃO DO MURDERER ATUAL
+-- =============================================================================
+local function ObterMurdererValido()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            -- Verifica se ele está com a Faca na mão ou na mochila
+            if p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife") then
+                local hum = p.Character:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 then
+                    return p.Character.HumanoidRootPart
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- =============================================================================
+-- MOTOR DO SILENT AIM (INTERCEPTOR DE DISPARO DO REVÓLVER)
+-- =============================================================================
+local Metatable = getrawmetatable(game)
+local OldIndex = Metatable.__index
+setreadonly(Metatable, false)
+
+Metatable.__index = newcclosure(function(self, idx)
+    -- Se o Silent Aim estiver ligado e o jogo tentar ler onde a arma clicou ("Hit")
+    if _G.SilentAimSheriffAtivado and tostring(idx) == "Hit" then
+        -- Verifica se o jogador está segurando a Arma do Sheriff
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Gun") then
+            local alvoHrp = ObterMurdererValido()
+            if alvoHrp then
+                -- Verifica se o alvo está dentro do raio visual (Fov) na tela do celular
+                local screenPos, onScreen = Camera:WorldToViewportPoint(alvoHrp.Position)
+                if onScreen then
+                    local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+                    local distanciaDoCentro = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                    
+                    if distanciaDoCentro <= _G.SilentAimFov then
+                        -- Força o tiro a ir direto na CFrame (posição) do Murderer
+                        return alvoHrp.CFrame
+                    end
+                end
+            end
+        end
+    end
+    return OldIndex(self, idx)
+end)
+
+setreadonly(Metatable, true)
+
+-- =============================================================================
+-- INTERFACE VISUAL DA ABA
+-- =============================================================================
+
+-- [TEXTO] Título exclusivo da Seção
+local TituloSilent = Instance.new("TextLabel", paginas["Sheriff"])
+TituloSilent.Text = " SETTINGS SILENT AIM"
+TituloSilent.Size = UDim2.new(1, 0, 0, 30)
+TituloSilent.BackgroundTransparency = 1
+TituloSilent.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloSilent.Font = Enum.Font.GothamBold
+TituloSilent.TextSize = 11
+TituloSilent.TextXAlignment = Enum.TextXAlignment.Left
+
+-- [BOTÃO LIGA/DESLIGA]
+CriarToggle("Sheriff", "Ativar Silent Aim", function(state)
+    _G.SilentAimSheriffAtivado = state
+end)
+
+-- [SLIDER DE FOV / RAIO DE MIRA]
+CriarSlider("Sheriff", "Raio de Atração (FOV)", 50, 500, 100, function(val)
+    _G.SilentAimFov = val
+end)
 
 
 
