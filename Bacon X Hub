@@ -1131,6 +1131,57 @@ CriarToggle("Auto Farm", "Posição Y", function(state)
     _G.AutoFarmPosicaoYAtivado = state
 end)
 
+-- =============================================================================
+-- SEÇÃO: AUTO FARM - AUTO RESET COM 40 MOEDAS
+-- =============================================================================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+_G.AutoResetMoedasAtivado = false
+
+-- =============================================================================
+-- MOTOR DO AUTO RESET (MONITORA O BOLSO DE MOEDAS)
+-- =============================================================================
+local function IniciarMonitoramentoMoedas(char)
+    local humanoid = char:WaitForChild("Humanoid", 5)
+    if not humanoid then return end
+
+    -- Procura onde o MM2 guarda as moedas coletadas na rodada atual
+    -- Nota: O MM2 costuma usar uma IntValue chamada "CoinBag" ou "Moedas" no player
+    local CoinBag = LocalPlayer:FindFirstChild("CoinBag") or (LocalPlayer:FindFirstChild("leaderstats") and LocalPlayer.leaderstats:FindFirstChild("Coins"))
+    
+    if CoinBag then
+        -- Fica escutando qualquer mudança no número de moedas
+        CoinBag.Changed:Connect(function(valorAtual)
+            if _G.AutoResetMoedasAtivado and valorAtual >= 40 then
+                if humanoid and humanoid.Health > 0 then
+                    -- Mata/Reseta o boneco instantaneamente ao bater 40 moedas
+                    humanoid.Health = 0
+                    print("Bacon X Hub: Bolsa cheia (40 moedas)! Resetando personagem.")
+                end
+            end
+        end)
+    end
+end
+
+-- Garante que o monitoramento reinicie toda vez que você morrer e der spawn de novo
+LocalPlayer.CharacterAdded:Connect(function(novoChar)
+    task.wait(1) -- Aguarda as variáveis do jogo carregarem no boneco
+    IniciarMonitoramentoMoedas(novoChar)
+end)
+
+-- Caso você já esteja vivo quando o script for executado
+if LocalPlayer.Character then
+    task.spawn(function() IniciarMonitoramentoMoedas(LocalPlayer.Character) end)
+end
+
+-- =============================================================================
+-- CONEXÃO COM O BOTÃO DA SUA ABA AUTO FARM
+-- =============================================================================
+CriarToggle("Auto Farm", "Auto Reset (40 Moedas)", function(state)
+    _G.AutoResetMoedasAtivado = state
+end)
 
 -- ==========================================
 -- [5] ABA: PLAYER/LEGIT
