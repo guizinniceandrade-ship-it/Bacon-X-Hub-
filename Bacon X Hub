@@ -1083,10 +1083,125 @@ end)
 -- ==========================================
 -- [5] ABA: PLAYER/LEGIT
 -- ==========================================
--- Cole seus botões da aba Player/legit logo abaixo desta linha:
+-- =============================================================================
+-- ABA: PLAYER/LEGIT (ESTRUTURA INTEGRADA AO PADRÃO DO SEU HUB)
+-- =============================================================================
 
+-- VARIÁVEIS GLOBAIS DE CONTROLE (Padrão _G)
+_G.SpeedAtivado = false
+_G.VelocidadePlayer = 16
 
+_G.JumpAtivado = false
+_G.ForcaPuloPlayer = 50
 
+_G.InfiniteJumpAtivado = false
+_G.NoclipPlayerAtivado = false
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- =============================================================================
+-- MOTORES EM SEGUNDO PLANO (SPEED, JUMP, INFINITE JUMP E NOCLIP)
+-- =============================================================================
+
+-- Loop Principal para Speed, Jump e Noclip
+task.spawn(function()
+    while task.wait(0.1) do
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if char and hum and hum.Health > 0 then
+            -- Controle de Velocidade (Speed)
+            if _G.SpeedAtivado then
+                hum.WalkSpeed = _G.VelocidadePlayer
+            else
+                hum.WalkSpeed = 16 -- Velocidade padrão do Roblox
+            end
+            
+            -- Controle de Força do Pulo (Jump)
+            if _G.JumpAtivado then
+                hum.JumpPower = _G.ForcaPuloPlayer
+                hum.UseJumpPower = true
+            else
+                hum.JumpPower = 50 -- Força de pulo padrão do Roblox
+            end
+            
+            -- Controle de Atravessar Paredes (Noclip)
+            if _G.NoclipPlayerAtivado then
+                for _, bodyPart in pairs(char:GetDescendants()) do
+                    if bodyPart:IsA("BasePart") then
+                        bodyPart.CanCollide = false
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Motor do Pulo Infinito (Infinite Jump)
+UserInputService.JumpRequest:Connect(function()
+    if _G.InfiniteJumpAtivado then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Health > 0 then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- =============================================================================
+-- INTERFACE VISUAL DA ABA (USANDO SUAS FUNÇÕES COMPORTAMENTAIS)
+-- =============================================================================
+
+-- [TEXTO] Título da Seção
+local TituloPlayer = Instance.new("TextLabel", paginas["Player/legit"])
+TituloPlayer.Text = " SETTINGS MOD PLAYER"
+TituloPlayer.Size = UDim2.new(1, 0, 0, 30)
+TituloPlayer.BackgroundTransparency = 1
+TituloPlayer.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloPlayer.Font = Enum.Font.GothamBold
+TituloPlayer.TextSize = 11
+TituloPlayer.TextXAlignment = Enum.TextXAlignment.Left
+
+-- 1. CONTROLES DE VELOCIDADE (SPEED)
+CriarToggle("Player/legit", "Ativar Speed", function(state)
+    _G.SpeedAtivado = state
+end)
+
+CriarSlider("Player/legit", "Velocidade do Speed", 16, 120, 16, function(val)
+    _G.VelocidadePlayer = val
+end)
+
+-- Linha de separação visual sutil
+local EspacoP1 = Instance.new("Frame", paginas["Player/legit"])
+EspacoP1.Size = UDim2.new(1, 0, 0, 5)
+EspacoP1.BackgroundTransparency = 1
+
+-- 2. CONTROLES DE PULO (JUMP)
+CriarToggle("Player/legit", "Ativar Jump", function(state)
+    _G.JumpAtivado = state
+end)
+
+CriarSlider("Player/legit", "Tamanho do Salto", 50, 200, 50, function(val)
+    _G.ForcaPuloPlayer = val
+end)
+
+-- Linha de separação visual sutil
+local EspacoP2 = Instance.new("Frame", paginas["Player/legit"])
+EspacoP2.Size = UDim2.new(1, 0, 0, 5)
+EspacoP2.BackgroundTransparency = 1
+
+-- 3. BOTÃO DE PULO INFINITO
+CriarToggle("Player/legit", "Infinite Jump", function(state)
+    _G.InfiniteJumpAtivado = state
+end)
+
+-- 4. BOTÃO DE NOCLIP
+CriarToggle("Player/legit", "Noclip", function(state)
+    _G.NoclipPlayerAtivado = state
+end)
 
 -- ==========================================
 -- [6] ABA: MISC
