@@ -1430,9 +1430,107 @@ end)
 -- ==========================================
 -- [6] ABA: MISC
 -- ==========================================
--- Cole seus botões da aba Misc logo abaixo desta linha:
 
+-- =============================================================================
+-- ABA: MISC - DETECTOR DE SCRIPTS EXCLUSIVO
+-- =============================================================================
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local StatusJogadores = {} 
+local LabelsLinhas = {}
+
+-- [TEXTO] Título da Seção
+local TituloDetector = Instance.new("TextLabel", paginas["Misc"])
+TituloDetector.Text = " DETECTOR DE SCRIPT"
+TituloDetector.Size = UDim2.new(1, -6, 0, 25)
+TituloDetector.BackgroundTransparency = 1
+TituloDetector.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloDetector.Font = Enum.Font.GothamBold
+TituloDetector.TextSize = 11
+TituloDetector.TextXAlignment = Enum.TextXAlignment.Left
+
+-- =============================================================================
+-- FUNÇÃO PARA CRIAR AS LINHAS DE DETECÇÃO DIRETAS NA ABA
+-- =============================================================================
+local function ResetarListaDetectorVisual()
+    -- Limpa as labels antigas para não duplicar na página
+    for _, obj in pairs(paginas["Misc"]:GetChildren()) do
+        if obj.Name == "LinhaDetect" then obj:Destroy() end
+    end
+    LabelsLinhas = {}
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local LinhaPlayer = Instance.new("TextLabel")
+            local CantoLinha = Instance.new("UICorner")
+
+            LinhaPlayer.Name = "LinhaDetect"
+            LinhaPlayer.Parent = paginas["Misc"]
+            LinhaPlayer.Size = UDim2.new(1, -6, 0, 30)
+            LinhaPlayer.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Fundo escuro do seu Hub
+            LinhaPlayer.Font = Enum.Font.GothamSemibold
+            LinhaPlayer.Text = "  " .. p.Name .. "  >  [ Analisando... ]"
+            LinhaPlayer.TextColor3 = Color3.fromRGB(160, 160, 160)
+            LinhaPlayer.TextSize = 12
+            LinhaPlayer.TextXAlignment = Enum.TextXAlignment.Left
+
+            CantoLinha.CornerRadius = UDim.new(0, 5)
+            CantoLinha.Parent = LinhaPlayer
+
+            LabelsLinhas[p.Name] = LinhaPlayer
+        end
+    end
+end
+
+-- Monitoramento de entrada e saída do servidor
+Players.PlayerAdded:Connect(function() task.wait(0.5) ResetarListaDetectorVisual() end)
+Players.PlayerRemoving:Connect(function() ResetarListaDetectorVisual() end)
+
+-- =============================================================================
+-- MOTOR REALTIME (HEARTBEAT) - CHECA VELOCIDADE E VOO TODO FRAME
+-- =============================================================================
+RunService.Heartbeat:Connect(function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local root = p.Character.HumanoidRootPart
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            
+            if hum and hum.Health > 0 then
+                local vel = root.AssemblyLinearVelocity.Magnitude
+                local noAr = hum.FloorMaterial == Enum.Material.Air
+                
+                -- Se passar de 35 de velocidade ou voar alto se movendo rápido
+                if vel > 35 or (noAr and root.AssemblyLinearVelocity.Y > -1 and vel > 22) then
+                    StatusJogadores[p.Name] = "Script"
+                else
+                    if StatusJogadores[p.Name] ~= "Script" then
+                        StatusJogadores[p.Name] = "limpo"
+                    end
+                end
+                
+                -- Atualiza o texto cru diretamente no formato pedido
+                local txtLabel = LabelsLinhas[p.Name]
+                if txtLabel then
+                    if StatusJogadores[p.Name] == "Script" then
+                        txtLabel.Text = "  " .. p.Name .. "  >  Script"
+                        txtLabel.TextColor3 = Color3.fromRGB(255, 70, 70) -- Vermelho
+                    else
+                        txtLabel.Text = "  " .. p.Name .. "  >  limpo"
+                        txtLabel.TextColor3 = Color3.fromRGB(120, 255, 120) -- Verde
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Inicia a listagem ao abrir
+task.defer(function()
+    ResetarListaDetectorVisual()
+end)
 
 
 -- ==========================================
