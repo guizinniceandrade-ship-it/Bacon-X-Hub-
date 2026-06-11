@@ -1432,94 +1432,100 @@ end)
 -- ==========================================
 
 -- =============================================================================
--- ABA: MISC - DETECTOR DE SCRIPTS EXCLUSIVO
+-- SEÇÃO: FPS SETTINGS - OTIMIZAÇÃO EXTREMA PARA MOBILE
 -- =============================================================================
 
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
-local StatusJogadores = {} 
-local LabelsLinhas = {}
+_G.FpsBoosterAtivado = false
+_G.TirarAnimacaoAtivado = false
 
 -- [TEXTO] Título da Seção
-local TituloDetector = Instance.new("TextLabel", paginas["Misc"])
-TituloDetector.Text = " DETECTOR DE SCRIPT"
-TituloDetector.Size = UDim2.new(1, -6, 0, 25)
-TituloDetector.BackgroundTransparency = 1
-TituloDetector.TextColor3 = Color3.fromRGB(255, 255, 255)
-TituloDetector.Font = Enum.Font.GothamBold
-TituloDetector.TextSize = 11
-TituloDetector.TextXAlignment = Enum.TextXAlignment.Left
+local TituloFPS = Instance.new("TextLabel", paginas["Misc"])
+TituloFPS.Text = " FPS SETTINGS"
+TituloFPS.Size = UDim2.new(1, -6, 0, 25)
+TituloFPS.BackgroundTransparency = 1
+TituloFPS.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloFPS.Font = Enum.Font.GothamBold
+TituloFPS.TextSize = 11
+TituloSilent.TextXAlignment = Enum.TextXAlignment.Left
 
 -- =============================================================================
--- FUNÇÃO PARA CRIAR AS LINHAS DE DETECÇÃO DIRETAS NA ABA
+-- FUNÇÃO EXTREMA: APLICAR VISUAL CINZA E REMOVER TEXTURAS DO PERSONAGEM
 -- =============================================================================
-local function ResetarListaDetectorVisual()
-    -- Limpa as labels antigas para não duplicar na página
-    for _, obj in pairs(paginas["Misc"]:GetChildren()) do
-        if obj.Name == "LinhaDetect" then obj:Destroy() end
-    end
-    LabelsLinhas = {}
-
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            local LinhaPlayer = Instance.new("TextLabel")
-            local CantoLinha = Instance.new("UICorner")
-
-            LinhaPlayer.Name = "LinhaDetect"
-            LinhaPlayer.Parent = paginas["Misc"]
-            LinhaPlayer.Size = UDim2.new(1, -6, 0, 30)
-            LinhaPlayer.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Fundo escuro do seu Hub
-            LinhaPlayer.Font = Enum.Font.GothamSemibold
-            LinhaPlayer.Text = "  " .. p.Name .. "  >  [ Analisando... ]"
-            LinhaPlayer.TextColor3 = Color3.fromRGB(160, 160, 160)
-            LinhaPlayer.TextSize = 12
-            LinhaPlayer.TextXAlignment = Enum.TextXAlignment.Left
-
-            CantoLinha.CornerRadius = UDim.new(0, 5)
-            CantoLinha.Parent = LinhaPlayer
-
-            LabelsLinhas[p.Name] = LinhaPlayer
+local function OtimizarPersonagem(char)
+    if not _G.FpsBoosterAtivado then return end
+    task.wait(0.2) -- Aguarda carregar as roupas
+    
+    -- Remove roupas, camisas, calças e acessórios de textura
+    for _, obj in pairs(char:GetChildren()) do
+        if obj:IsA("Clothing") or obj:IsA("ShirtGraphic") or obj:IsA("BodyColors") then
+            obj:Destroy()
+        elseif obj:IsA("Accessory") then
+            local handle = obj:FindFirstChild("Handle")
+            if handle then
+                -- Remove texturas pesadas do cabelo/chapéu e deixa liso
+                local mesh = handle:FindFirstChildOfClass("SpecialMesh") or handle
+                if mesh then mesh.TextureId = "" end
+                handle.Color = Color3.fromRGB(120, 120, 120)
+            end
+        elseif obj:IsA("BasePart") then
+            -- Força o corpo a ficar completamente cinza fosco e sem reflexo
+            obj.Material = Enum.Material.SmoothPlastic
+            obj.Color = Color3.fromRGB(150, 150, 150)
+            obj.Reflectance = 0
         end
     end
 end
 
--- Monitoramento de entrada e saída do servidor
-Players.PlayerAdded:Connect(function() task.wait(0.5) ResetarListaDetectorVisual() end)
-Players.PlayerRemoving:Connect(function() ResetarListaDetectorVisual() end)
+-- =============================================================================
+-- FUNÇÃO: LIMPAR TEXTURAS E LUZES DO MAPA
+-- =============================================================================
+local function OtimizarAmbienteEParticulas(objeto)
+    if not _G.FpsBoosterAtivado then return end
+    
+    if objeto:IsA("ParticleEmitter") or objeto:IsA("Trail") or objeto:IsA("Smoke") or objeto:IsA("Sparkles") then
+        objeto.Enabled = false
+    elseif objeto:IsA("Decal") or objeto:IsA("Texture") then
+        objeto:Destroy() -- Deleta texturas de paredes/chão para deixar blocos lisos
+    elseif objeto:IsA("BasePart") then
+        objeto.Material = Enum.Material.SmoothPlastic
+        objeto.Reflectance = 0
+    elseif objeto:IsA("Light") then
+        objeto.Enabled = false -- Desliga fontes de luzes que pesam na GPU
+    end
+end
+
+-- Monitoramento contínuo para novos mapas que carregam no MM2
+workspace.DescendantAdded:Connect(function(descendant)
+    if _G.FpsBoosterAtivado then
+        OtimizarAmbienteEParticulas(descendant)
+    end
+end)
+
+-- Monitoramento de novos personagens na partida
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        if _G.FpsBoosterAtivado then
+            OtimizarPersonagem(char)
+        end
+    end)
+end)
 
 -- =============================================================================
--- MOTOR REALTIME (HEARTBEAT) - CHECA VELOCIDADE E VOO TODO FRAME
+-- LOOP PRINCIPAL: DESATIVAR ANIMAÇÕES (GOTHAM/SQUARE FIX)
 -- =============================================================================
-RunService.Heartbeat:Connect(function()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local root = p.Character.HumanoidRootPart
-            local hum = p.Character:FindFirstChildOfClass("Humanoid")
-            
-            if hum and hum.Health > 0 then
-                local vel = root.AssemblyLinearVelocity.Magnitude
-                local noAr = hum.FloorMaterial == Enum.Material.Air
-                
-                -- Se passar de 35 de velocidade ou voar alto se movendo rápido
-                if vel > 35 or (noAr and root.AssemblyLinearVelocity.Y > -1 and vel > 22) then
-                    StatusJogadores[p.Name] = "Script"
-                else
-                    if StatusJogadores[p.Name] ~= "Script" then
-                        StatusJogadores[p.Name] = "limpo"
-                    end
-                end
-                
-                -- Atualiza o texto cru diretamente no formato pedido
-                local txtLabel = LabelsLinhas[p.Name]
-                if txtLabel then
-                    if StatusJogadores[p.Name] == "Script" then
-                        txtLabel.Text = "  " .. p.Name .. "  >  Script"
-                        txtLabel.TextColor3 = Color3.fromRGB(255, 70, 70) -- Vermelho
-                    else
-                        txtLabel.Text = "  " .. p.Name .. "  >  limpo"
-                        txtLabel.TextColor3 = Color3.fromRGB(120, 255, 120) -- Verde
+RunService.Stepped:Connect(function()
+    if _G.TirarAnimacaoAtivado then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("Humanoid") then
+                -- Congela as tracks de animação ativa para poupar processamento
+                local animator = p.Character.Humanoid:FindFirstChildOfClass("Animator")
+                if animator then
+                    for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+                        track:Stop(0)
                     end
                 end
             end
@@ -1527,9 +1533,34 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Inicia a listagem ao abrir
-task.defer(function()
-    ResetarListaDetectorVisual()
+-- =============================================================================
+-- CRIAÇÃO DOS BOTÕES (BOTOES PADRÃO DO SEU HUB)
+-- =============================================================================
+
+-- 1. BOTÃO FPS BOOSTER
+CriarToggle("Misc", "FPS Booster (Mapa Liso/Skins Cinza)", function(state)
+    _G.FpsBoosterAtivado = state
+    if state then
+        -- Desliga efeitos visuais globais de iluminação
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        
+        -- Limpa o mapa existente imediatamente ao ativar
+        for _, obj in pairs(workspace:GetDescendants()) do
+            OtimizarAmbienteEParticulas(obj)
+        end
+        -- Deixa todo mundo cinza instantaneamente
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character then OtimizarPersonagem(p.Character) end
+        end
+    else
+        Lighting.GlobalShadows = true
+    end
+end)
+
+-- 2. BOTÃO TIRAR ANIMAÇÃO
+CriarToggle("Misc", "Tirar Animação", function(state)
+    _G.TirarAnimacaoAtivado = state
 end)
 
 
