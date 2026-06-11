@@ -1570,6 +1570,39 @@ CriarToggle("Misc", "Tirar animação", function(state)
     _G.TirarAnimacaoAtivado = state
 end)
 
+-- =============================================================================
+-- SEÇÃO: ANTI-AFK (IMPEDIR DESCONEXÃO)
+-- =============================================================================
+
+local VirtualUser = game:GetService("VirtualUser")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+
+local AtivoAntiAFK = false
+
+-- Esta função força o jogo a entender que o usuário está interagindo
+local function IniciarAntiAFK()
+    LocalPlayer.Idled:Connect(function()
+        if AtivoAntiAFK then
+            -- Simula o pressionamento de uma tecla para resetar o tempo de inatividade
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end
+    end)
+end
+
+-- Iniciamos o listener assim que o script carregar
+IniciarAntiAFK()
+
+-- Botão de Toggle na aba Misc
+CriarToggle("Misc", "Ativar Anti-AFK", function(state)
+    AtivoAntiAFK = state
+    if state then
+        -- Feedback visual simples no console
+        print("Bacon X Hub: Anti-AFK ativado!")
+    else
+        print("Bacon X Hub: Anti-AFK desativado.")
+    end
+end)
 
 
 -- ==========================================
