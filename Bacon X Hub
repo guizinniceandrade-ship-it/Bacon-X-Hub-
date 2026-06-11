@@ -709,7 +709,7 @@ end)
 -- ==========================================
 
 -- =============================================================================
--- ABA: SHERIFF - AIMLOCK 100% GRUDADO NO MURDERER (CORRIGIDO)
+-- ABA: SHERIF - AIMLOCK 100% CORRIGIDO (NOME DA ABA AJUSTADO)
 -- =============================================================================
 
 _G.AimlockSheriffAtivado = false
@@ -738,24 +738,23 @@ local function ObterMurdererVivo()
 end
 
 -- =============================================================================
--- MOTOR DO AIMLOCK (RODA A CADA FRAME ANTES DA RENDERIZAÇÃO DA TELA)
+-- MOTOR DO AIMLOCK (TRAVA A CÂMERA NO ALVO)
 -- =============================================================================
 RunService.RenderStepped:Connect(function()
     if _G.AimlockSheriffAtivado then
         local alvoHrp = ObterMurdererVivo()
         if alvoHrp then
-            -- Força a CFrame da câmera a olhar fixamente para a posição do Murderer
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, alvoHrp.Position)
         end
     end
 end)
 
 -- =============================================================================
--- INTERFACE VISUAL DA ABA (MANTIDA NO SEU PADRÃO)
+-- INTERFACE VISUAL DA ABA (CORRIGIDA PARA "Sherif")
 -- =============================================================================
 
 -- [TEXTO] Título exclusivo da Seção
-local TituloSilent = Instance.new("TextLabel", paginas["Sheriff"])
+local TituloSilent = Instance.new("TextLabel", paginas["Sherif"])
 TituloSilent.Text = " SETTINGS AIMLOCK SHERIFF"
 TituloSilent.Size = UDim2.new(1, 0, 0, 30)
 TituloSilent.BackgroundTransparency = 1
@@ -765,10 +764,9 @@ TituloSilent.TextSize = 11
 TituloSilent.TextXAlignment = Enum.TextXAlignment.Left
 
 -- [BOTÃO LIGA/DESLIGA]
-CriarToggle("Sheriff", "Ativar Câmera Grudada (Aimlock)", function(state)
+CriarToggle("Sherif", "Ativar Câmera Grudada (Aimlock)", function(state)
     _G.AimlockSheriffAtivado = state
 end)
-
 
 -- ==========================================
 -- [3] ABA: ESP
