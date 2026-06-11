@@ -1208,8 +1208,171 @@ end)
 
 
 -- =============================================================================
--- SEÇÃO DE TELEPORTE AVANÇADA (CAIXA DE ROLAGEM + SELEÇÃO VERDE)
+-- SEÇÃO DE TELEPORTE AVANÇADA (CAIXA DE ROLAGEM + BOTÃO DIRETO > + AUTO REFRESH)
 -- =============================================================================
+
+_G.PlayerAlvoInstancia = nil
+local BotoesJogadores = {} -- Guarda a referência dos botões para gerenciar as cores
+
+-- Linha de separação visual para não embolar com o Noclip
+local EspacoTP = Instance.new("Frame", paginas["Player/legit"])
+EspacoTP.Size = UDim2.new(1, 0, 0, 15)
+EspacoTP.BackgroundTransparency = 1
+
+-- [TEXTO] Título da Seção de Teleporte
+local TituloTP = Instance.new("TextLabel", paginas["Player/legit"])
+TituloTP.Text = " TELEPORTE PLAYER"
+TituloTP.Size = UDim2.new(1, 0, 0, 30)
+TituloTP.BackgroundTransparency = 1
+TituloTP.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloTP.Font = Enum.Font.GothamBold
+TituloTP.TextSize = 11
+TituloTP.TextXAlignment = Enum.TextXAlignment.Left
+
+-- =============================================================================
+-- CAIXA DE ROLAGEM (ScrollingFrame) ESTILIZADA
+-- =============================================================================
+local CaixaRolagem = Instance.new("ScrollingFrame")
+local ListaLayout = Instance.new("UIListLayout")
+local CantoCaixa = Instance.new("UICorner")
+
+CaixaRolagem.Name = "CaixaRolagemPlayers"
+CaixaRolagem.Parent = paginas["Player/legit"]
+CaixaRolagem.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Fundo escuro do Hub
+CaixaRolagem.Size = UDim2.new(1, -6, 0, 150) -- Altura fixa de 150
+CaixaRolagem.CanvasSize = UDim2.new(0, 0, 0, 0)
+CaixaRolagem.ScrollBarThickness = 4
+CaixaRolagem.ScrollBarImageColor3 = Color3.fromRGB(0, 170, 255) -- Detalhe Azul Neon
+CaixaRolagem.BorderSizePixel = 0
+
+CantoCaixa.CornerRadius = UDim.new(0, 6)
+CantoCaixa.Parent = CaixaRolagem
+
+ListaLayout.Parent = CaixaRolagem
+ListaLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ListaLayout.Padding = UDim.new(0, 4)
+
+local PaddingInterno = Instance.new("UIPadding", CaixaRolagem)
+PaddingInterno.PaddingTop = UDim.new(0, 5)
+PaddingInterno.PaddingLeft = UDim.new(0, 8)
+PaddingInterno.PaddingRight = UDim.new(0, 8)
+
+-- =============================================================================
+-- FUNÇÃO PARA CARREGAR OS JOGADORES DENTRO DA CAIXA
+-- =============================================================================
+local function CriarListaLayoutPlayers()
+    -- Limpa os botões antigos da lista antes de refazer
+    for _, obj in pairs(CaixaRolagem:GetChildren()) do
+        if obj:IsA("TextButton") then obj:Destroy() end
+    end
+    BotoesJogadores = {}
+    _G.PlayerAlvoInstancia = nil
+
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer then
+            local BtnPlayer = Instance.new("TextButton")
+            local CantoBtn = Instance.new("UICorner")
+
+            BtnPlayer.Name = v.Name
+            BtnPlayer.Parent = CaixaRolagem
+            BtnPlayer.Size = UDim2.new(1, 0, 0, 30)
+            BtnPlayer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+            BtnPlayer.Font = Enum.Font.GothamSemibold
+            BtnPlayer.Text = "  " .. v.Name
+            BtnPlayer.TextColor3 = Color3.fromRGB(200, 200, 200)
+            BtnPlayer.TextSize = 13
+            BtnPlayer.TextXAlignment = Enum.TextXAlignment.Left
+
+            CantoBtn.CornerRadius = UDim.new(0, 4)
+            CantoBtn.Parent = BtnPlayer
+
+            BotoesJogadores[v.Name] = BtnPlayer
+
+            -- Seleção do Player (Fica verde)
+            BtnPlayer.MouseButton1Click:Connect(function()
+                for _, b in pairs(BotoesJogadores) do
+                    b.TextColor3 = Color3.fromRGB(200, 200, 200)
+                    b.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+                end
+                BtnPlayer.TextColor3 = Color3.fromRGB(255, 255, 255)
+                BtnPlayer.BackgroundColor3 = Color3.fromRGB(0, 180, 90) -- Verde
+                _G.PlayerAlvoInstancia = v
+            end)
+        end
+    end
+    
+    CaixaRolagem.CanvasSize = UDim2.new(0, 0, 0, ListaLayout.AbsoluteContentSize.Y + 10)
+end
+
+-- =============================================================================
+-- AUTOMATIZAÇÃO DA LISTA (DETECTA QUANDO ALGUÉM ENTRA OU SAI)
+-- =============================================================================
+Players.PlayerAdded:Connect(function()
+    task.wait(0.5) -- Pequeno delay para o jogador carregar completamente
+    CriarListaLayoutPlayers()
+end)
+
+Players.PlayerRemoving:Connect(function()
+    CriarListaLayoutPlayers()
+end)
+
+-- Espaçador entre a caixa e o botão fixo
+local EspacoBotoes = Instance.new("Frame", paginas["Player/legit"])
+EspacoBotoes.Size = UDim2.new(1, 0, 0, 8)
+EspacoBotoes.BackgroundTransparency = 1
+
+-- =============================================================================
+-- BOTÃO DE CLIQUE DIRETO: TELEPORTAR PARA O PLAYER >
+-- =============================================================================
+local BtnTeleportSeta = Instance.new("TextButton")
+local CantoSeta = Instance.new("UICorner")
+
+BtnTeleportSeta.Name = "BtnTeleportSeta"
+BtnTeleportSeta.Parent = paginas["Player/legit"]
+BtnTeleportSeta.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Fundo padrão do seu Hub
+BtnTeleportSeta.Size = UDim2.new(1, -6, 0, 40) -- Tamanho idêntico aos seus botões
+BtnTeleportSeta.Font = Enum.Font.GothamBold
+BtnTeleportSeta.Text = "  Teleportar para o Player  >"
+BtnTeleportSeta.TextColor3 = Color3.fromRGB(200, 200, 200)
+BtnTeleportSeta.TextSize = 14
+BtnTeleportSeta.TextXAlignment = Enum.TextXAlignment.Left
+
+CantoSeta.CornerRadius = UDim.new(0, 6)
+CantoSeta.Parent = BtnTeleportSeta
+
+-- Efeito visual ao passar o dedo/mouse por cima (Feedback sutil)
+BtnTeleportSeta.MouseEnter:Connect(function()
+    BtnTeleportSeta.TextColor3 = Color3.fromRGB(255, 255, 255)
+end)
+BtnTeleportSeta.MouseLeave:Connect(function()
+    BtnTeleportSeta.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+-- Ação do Clique Seco para Teleportar e Desmarcar
+BtnTeleportSeta.MouseButton1Click:Connect(function()
+    if _G.PlayerAlvoInstancia and _G.PlayerAlvoInstancia.Character and _G.PlayerAlvoInstancia.Character:FindFirstChild("HumanoidRootPart") then
+        local MeuChar = LocalPlayer.Character
+        if MeuChar and MeuChar:FindFirstChild("HumanoidRootPart") then
+            -- Executa o teleporte seco
+            MeuChar.HumanoidRootPart.CFrame = _G.PlayerAlvoInstancia.Character.HumanoidRootPart.CFrame
+        end
+    end
+    
+    -- Limpa a marcação verde do botão selecionado
+    if _G.PlayerAlvoInstancia and BotoesJogadores[_G.PlayerAlvoInstancia.Name] then
+        local b = BotoesJogadores[_G.PlayerAlvoInstancia.Name]
+        b.TextColor3 = Color3.fromRGB(200, 200, 200)
+        b.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    end
+    
+    -- Reseta a variável de alvo
+    _G.PlayerAlvoInstancia = nil
+end)
+
+-- Carrega a lista pela primeira vez de forma automática ao iniciar o Hub
+task.defer(function()
+    CriarListaLayoutPlayers()
+end)
 
 
 -- ==========================================
