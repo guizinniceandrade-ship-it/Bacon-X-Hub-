@@ -709,7 +709,7 @@ end)
 -- ==========================================
 
 -- =============================================================================
--- ABA: SHERIF - AIMLOCK 100% CORRIGIDO (NOME DA ABA AJUSTADO)
+-- ABA: SHERIF - AIMLOCK 100% INTEGRADO AO SEU HUB
 -- =============================================================================
 
 _G.AimlockSheriffAtivado = false
@@ -720,12 +720,11 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 -- =============================================================================
--- FUNÇÃO PARA ENCONTRAR O JOGADOR QUE É O MURDERER
+-- MOTOR DO AIMLOCK (FICA TRAVADO NO MURDERER)
 -- =============================================================================
 local function ObterMurdererVivo()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            -- Verifica se ele está com a Faca na mão ou na mochila
             if p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife") then
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
                 if hum and hum.Health > 0 then
@@ -737,9 +736,6 @@ local function ObterMurdererVivo()
     return nil
 end
 
--- =============================================================================
--- MOTOR DO AIMLOCK (TRAVA A CÂMERA NO ALVO)
--- =============================================================================
 RunService.RenderStepped:Connect(function()
     if _G.AimlockSheriffAtivado then
         local alvoHrp = ObterMurdererVivo()
@@ -750,20 +746,20 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =============================================================================
--- INTERFACE VISUAL DA ABA (CORRIGIDA PARA "Sherif")
+-- INTERFACE VISUAL DA ABA (USANDO DIRETAMENTE A SUA TABELA 'paginas')
 -- =============================================================================
 
--- [TEXTO] Título exclusivo da Seção
+-- [TEXTO] Título da Seção
 local TituloSilent = Instance.new("TextLabel", paginas["Sherif"])
 TituloSilent.Text = " SETTINGS AIMLOCK SHERIFF"
-TituloSilent.Size = UDim2.new(1, 0, 0, 30)
+TituloSilent.Size = UDim2.new(1, -6, 0, 30)
 TituloSilent.BackgroundTransparency = 1
 TituloSilent.TextColor3 = Color3.fromRGB(255, 255, 255)
 TituloSilent.Font = Enum.Font.GothamBold
 TituloSilent.TextSize = 11
 TituloSilent.TextXAlignment = Enum.TextXAlignment.Left
 
--- [BOTÃO LIGA/DESLIGA]
+-- [BOTAO TOGGLE] Chamando a função padrão do seu menu para a aba "Sherif"
 CriarToggle("Sherif", "Ativar Câmera Grudada (Aimlock)", function(state)
     _G.AimlockSheriffAtivado = state
 end)
