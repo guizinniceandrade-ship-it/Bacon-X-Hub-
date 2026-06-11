@@ -1431,6 +1431,144 @@ end)
 -- [6] ABA: MISC
 -- ==========================================
 
+-- =============================================================================
+-- SEÇÃO: FPS SETTINGS - OTIMIZAÇÃO EXTREMA (CORRIGIDA)
+-- =============================================================================
+
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+_G.FpsBoosterAtivado = false
+_G.TirarAnimacaoAtivado = false
+
+-- =============================================================================
+-- INTERFACE VISUAL DA ABA (NOME MAIOR E ENCOSTADO NA ESQUERDA)
+-- =============================================================================
+local TituloFPS = Instance.new("TextLabel", paginas["Misc"])
+TituloFPS.Text = " FPS SETTINGS"
+TituloFPS.Size = UDim2.new(1, -6, 0, 35) -- Altura um pouco maior para o tamanho da fonte
+TituloFPS.BackgroundTransparency = 1
+TituloFPS.TextColor3 = Color3.fromRGB(255, 255, 255)
+TituloFPS.Font = Enum.Font.GothamBold
+TituloFPS.TextSize = 14 -- Nome um pouco maior como você pediu
+TituloFPS.TextXAlignment = Enum.TextXAlignment.Left -- Encostado no canto esquerdo
+
+-- =============================================================================
+-- FUNÇÃO AGRESSIVA: TRANSFORMA O JOGADOR EM UM BONECO CINZA SECO (SEM NADA)
+-- =============================================================================
+local function DeixarPlayerCinzaTotal(char)
+    if not _G.FpsBoosterAtivado then return end
+    task.wait(0.1)
+    
+    -- Deleta absolutamente TUDO que veste o jogador: roupas, rostos, cabelos e sapatos
+    for _, obj in pairs(char:GetChildren()) do
+        if obj:IsA("Clothing") or obj:IsA("ShirtGraphic") or obj:IsA("BodyColors") or obj:IsA("Accessory") or obj:IsA("CharacterMesh") then
+            obj:Destroy()
+        elseif obj:IsA("BasePart") then
+            -- Transforma todas as partes (pele, cabeça, pés) em plástico cinza puro
+            obj.Material = Enum.Material.SmoothPlastic
+            obj.Color = Color3.fromRGB(120, 120, 120)
+            obj.Reflectance = 0
+        end
+    end
+    
+    -- Remove o adesivo de rosto (Face) dentro da cabeça
+    local cabeca = char:FindFirstChild("Head")
+    if cabeca then
+        local face = cabeca:FindFirstChildOfClass("Decal")
+        if face then face:Destroy() end
+    end
+end
+
+-- =============================================================================
+-- FUNÇÃO: LIMPAR MAPA, TEXTURAS, LUZES E PARTICULAS
+-- =============================================================================
+local function OtimizarMapaCompleto(objeto)
+    if not _G.FpsBoosterAtivado then return end
+    
+    if objeto:IsA("ParticleEmitter") or objeto:IsA("Trail") or objeto:IsA("Smoke") or objeto:IsA("Sparkles") or objeto:IsA("Fire") then
+        objeto.Enabled = false
+    elseif objeto:IsA("Decal") or objeto:IsA("Texture") then
+        objeto:Destroy()
+    elseif objeto:IsA("BasePart") then
+        objeto.Material = Enum.Material.SmoothPlastic
+        objeto.Reflectance = 0
+    elseif objeto:IsA("Light") then
+        objeto.Enabled = false
+    end
+end
+
+-- Monitora a entrada de novos mapas na votação do MM2
+workspace.DescendantAdded:Connect(function(descendant)
+    if _G.FpsBoosterAtivado then OtimizarMapaCompleto(descendant) end
+    if _G.TirarAnimacaoAtivado and (descendant:IsA("TweenScript") or descendant:IsA("AnimationController")) then
+        pcall(function() descendant:Destroy() end)
+    end
+end)
+
+-- Monitora quando os players dão spawn para arrancar a skin na hora
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        if _G.FpsBoosterAtivado then DeixarPlayerCinzaTotal(char) end
+    end)
+end)
+
+-- =============================================================================
+-- MOTOR DO REMOVER ANIMAÇÃO (CONGELA JOGADORES E SCRIPTS DO CENÁRIO)
+-- =============================================================================
+RunService.Stepped:Connect(function()
+    if _G.TirarAnimacaoAtivado then
+        -- 1. Trava a animação de todos os corpos
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("Humanoid") then
+                local animator = p.Character.Humanoid:FindFirstChildOfClass("Animator")
+                if animator then
+                    for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+                        track:Stop(0)
+                    end
+                end
+            end
+        end
+        -- 2. Pausa os controladores de animação do cenário do MM2
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("AnimationController") then
+                for _, track in pairs(obj:GetPlayingAnimationTracks()) do
+                    track:Stop(0)
+                end
+            end
+        end
+    end
+end)
+
+-- =============================================================================
+-- CONEXÃO COM OS BOTÕES DO SEU HUB
+-- =============================================================================
+
+-- 1. BOTÃO FPS BOOSTER
+CriarToggle("Misc", "FPS booster", function(state)
+    _G.FpsBoosterAtivado = state
+    if state then
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        
+        -- Aplica o efeito no mapa existente na hora que clica
+        for _, obj in pairs(workspace:GetDescendants()) do
+            OtimizarMapaCompleto(obj)
+        end
+        -- Arranca a skin e deixa todo mundo cinza liso imediatamente
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character then DeixarPlayerCinzaTotal(p.Character) end
+        end
+    else
+        Lighting.GlobalShadows = true
+    end
+end)
+
+-- 2. BOTÃO TIRAR ANIMAÇÃO
+CriarToggle("Misc", "Tirar animação", function(state)
+    _G.TirarAnimacaoAtivado = state
+end)
 
 
 
