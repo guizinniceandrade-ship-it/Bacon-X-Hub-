@@ -4,8 +4,7 @@ local PlaceId = game.PlaceId
 local Jogos = {
     -- Murder Mystery 2 (MM2)
     [142823291] = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/ThatSick/HoneyLua/refs/heads/main/Loader.luau"))()
-    end,
+loadstring(game:HttpGet('https://raw.smokingscripts.org/vertex.lua'))()
 
     -- Blox Fruits (Serve para o Mar 1, 2, 3 e Arena)
     [2753915549] = function() -- Mar 1
