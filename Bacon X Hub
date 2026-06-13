@@ -581,6 +581,190 @@ end)
 
 -- 🔴 3. FUNÇÕES PARA A ABA: VISUALS (ESP)
 
+-- =============================================================================
+-- VALKYRIE CYBERNETICS - ABA ESP COMPLETA (ATUALIZADA E CORRIGIDA)
+-- =============================================================================
+
+-- Título da Seção (Alinhado com a sua interface)
+local EspLabel = Instance.new("TextLabel", PageVisuals) -- Lembre-se de ajustar 'PageVisuals' para a sua variável de aba
+EspLabel.Name = "EspSectionLabel"
+EspLabel.Size = UDim2.new(1, -10, 0, 25)
+EspLabel.BackgroundTransparency = 1
+EspLabel.Font = Enum.Font.GothamBold
+EspLabel.Text = "Esp --"
+EspLabel.TextColor3 = Color3.fromRGB(0, 200, 100) -- Verde padrão do Hub
+EspLabel.TextSize = 13
+EspLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Variáveis Globais de Controle para os Toggles
+_G.EspPcAtivo = false
+_G.EspCapsulaAtivo = false
+_G.EspPortaoAtivo = false
+_G.EspPlayersAtivo = false
+
+-- =============================================================================
+-- FUNÇÃO CRIADORA DE TOGGLE SWITCH ANIMADO
+-- =============================================================================
+local function CriarToggleEspPremium(textoNome, funcaoCallback)
+    local RowFrame = Instance.new("Frame", PageVisuals)
+    RowFrame.Size = UDim2.new(1, -10, 0, 40)
+    RowFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+    Instance.new("UICorner", RowFrame).CornerRadius = UDim.new(0, 6)
+    
+    local RowStroke = Instance.new("UIStroke", RowFrame)
+    RowStroke.Color = Color3.fromRGB(35, 35, 35)
+    RowStroke.Thickness = 1
+
+    local Label = Instance.new("TextLabel", RowFrame)
+    Label.Size = UDim2.new(1, -70, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.GothamMedium
+    Label.Text = textoNome
+    Label.TextColor3 = Color3.fromRGB(230, 230, 230)
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local SwitchBg = Instance.new("TextButton", RowFrame)
+    SwitchBg.Size = UDim2.new(0, 42, 0, 22)
+    SwitchBg.Position = UDim2.new(1, -54, 0.5, -11)
+    SwitchBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    SwitchBg.Text = ""
+    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+    
+    local SwitchStroke = Instance.new("UIStroke", SwitchBg)
+    SwitchStroke.Color = Color3.fromRGB(60, 60, 60)
+    SwitchStroke.Thickness = 1
+
+    local SliderCircle = Instance.new("Frame", SwitchBg)
+    SliderCircle.Size = UDim2.new(0, 16, 0, 16)
+    SliderCircle.Position = UDim2.new(0, 3, 0.5, -8)
+    SliderCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", SliderCircle).CornerRadius = UDim.new(1, 0)
+
+    local ativo = false
+
+    SwitchBg.MouseButton1Click:Connect(function()
+        ativo = not ativo
+        
+        local CorAlvo = ativo and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(45, 45, 45)
+        local StrokeAlvo = ativo and Color3.fromRGB(0, 255, 130) or Color3.fromRGB(60, 60, 60)
+        local PosicaoAlvo = ativo and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+
+        TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = CorAlvo}):Play()
+        TweenService:Create(SwitchStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = StrokeAlvo}):Play()
+        TweenService:Create(SliderCircle, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = PosicaoAlvo}):Play()
+
+        funcaoCallback(ativo)
+    end)
+end
+
+-- =============================================================================
+-- LOGICAS DE ATUALIZAÇÃO E FUNÇÕES DO ESP (HIGHLIGHTS)
+-- =============================================================================
+local function GerenciarHighlight(objeto, nomeTag, corPreenchimento, corBorda, ativo)
+    if ativo then
+        local hl = objeto:FindFirstChild(nomeTag)
+        if not hl then
+            hl = Instance.new("Highlight")
+            hl.Name = nomeTag
+            hl.Adornee = objeto
+            hl.Parent = objeto
+        end
+        hl.FillColor = corPreenchimento
+        hl.FillTransparency = 0.6
+        hl.OutlineColor = corBorda
+        hl.OutlineTransparency = 0
+    else
+        local antigo = objeto:FindFirstChild(nomeTag)
+        if antigo then antigo:Destroy() end
+    end
+end
+
+-- Loop de Varredura e Atualização Constante do Mapa
+task.spawn(function()
+    while task.wait(1) do
+        -- 1. ESP PC (Baseado na correção da Screenshot_20260613-012457.png)
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj.Name == "ComputerTable" or obj.Name:match("Computer")) and obj:IsA("Model") then
+                local corFill = Color3.fromRGB(0, 70, 200)   -- Azul Forte Interno
+                local corOutline = Color3.fromRGB(0, 130, 255) -- Azul mais forte em volta
+                
+                local screen = obj:FindFirstChild("Screen", true)
+                local pcConcluido = false
+                
+                if screen and screen:IsA("Part") then
+                    -- Se a cor verde (G) for maior que azul (B), a tela está verde!
+                    if screen.Color.G > screen.Color.B then
+                        pcConcluido = true
+                    end
+                end
+                
+                if obj:FindFirstChild("GreenLight", true) or obj:FindFirstChild("Completed", true) then
+                    pcConcluido = true
+                end
+
+                if pcConcluido then
+                    corFill = Color3.fromRGB(0, 180, 70)     -- Verde interno
+                    corOutline = Color3.fromRGB(0, 255, 100)  -- Borda verde brilhante
+                end
+                
+                GerenciarHighlight(obj, "ValkyrieEspPC", corFill, corOutline, _G.EspPcAtivo)
+            end
+        end
+
+        -- 2. ESP CÁPSULA (Amarelo com Amarelo Mais Forte em volta)
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj.Name == "FreezePod" or obj.Name:match("Tube") or obj.Name:match("Pod")) and obj:IsA("Model") then
+                local corFill = Color3.fromRGB(220, 220, 0)    -- Amarelo interno
+                local corOutline = Color3.fromRGB(255, 255, 0)  -- Amarelo bem forte em volta
+                GerenciarHighlight(obj, "ValkyrieEspCapsula", corFill, corOutline, _G.EspCapsulaAtivo)
+            end
+        end
+
+        -- 3. ESP PORTÃO
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj.Name == "ExitGate" or obj.Name:match("Gate") or obj.Name:match("Exit")) and obj:IsA("Model") then
+                GerenciarHighlight(obj, "ValkyrieEspPortao", Color3.fromRGB(200, 100, 0), Color3.fromRGB(255, 130, 0), _G.EspPortaoAtivo)
+            end
+        end
+
+        -- 4. ESP PLAYERS (Sobreviventes Branco / Monstro Vermelho)
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local corFill = Color3.fromRGB(200, 200, 200)
+                local corOutline = Color3.fromRGB(255, 255, 255)
+                
+                if p.Character:FindFirstChild("BeastEffect") or p.Character:FindFirstChild("Hammer") then
+                    corFill = Color3.fromRGB(180, 0, 0)
+                    corOutline = Color3.fromRGB(255, 0, 0)
+                end
+                
+                GerenciarHighlight(p.Character, "ValkyrieEspPlayer", corFill, corOutline, _G.EspPlayersAtivo)
+            end
+        end
+    end
+end)
+
+-- =============================================================================
+-- CRIAÇÃO DOS BOTÕES ORDENADOS NA ABA ESP
+-- =============================================================================
+
+CriarToggleEspPremium("Esp Pc", function(state)
+    _G.EspPcAtivo = state
+end)
+
+CriarToggleEspPremium("Esp cápsula", function(state)
+    _G.EspCapsulaAtivo = state
+end)
+
+CriarToggleEspPremium("Esp portão", function(state)
+    _G.EspPortaoAtivo = state
+end)
+
+CriarToggleEspPremium("Esp players", function(state)
+    _G.EspPlayersAtivo = state
+end)
 
 
 
