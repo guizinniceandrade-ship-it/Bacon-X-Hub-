@@ -264,6 +264,165 @@ local PagePlayer   = CriarEstruturaAba("Player", 4)
 
 -- 🔴 1. FUNÇÕES PARA A ABA: SURVIVOR
 
+-- =============================================================================
+-- SISTEMA DE TELEPORTE COM FILTRO DE PC E RECUO DE SEGURANÇA (SURVIVOR)
+-- =============================================================================
+
+-- Título da Seção
+local TeleportLabel = Instance.new("TextLabel", PageSurvivor)
+TeleportLabel.Name = "TeleportSectionLabel"
+TeleportLabel.Size = UDim2.new(1, -10, 0, 25)
+TeleportLabel.BackgroundTransparency = 1
+TeleportLabel.Font = Enum.Font.GothamBold
+TeleportLabel.Text = "Teleportes --"
+TeleportLabel.TextColor3 = Color3.fromRGB(0, 200, 100)
+TeleportLabel.TextSize = 13
+TeleportLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Função Auxiliar para Criar as Linhas de Teleporte com o Botão ">"
+local function CriarLinhaTeleporte(textoNome, funcaoDestino)
+    local RowFrame = Instance.new("Frame", PageSurvivor)
+    RowFrame.Size = UDim2.new(1, -10, 0, 35)
+    RowFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+    Instance.new("UICorner", RowFrame).CornerRadius = UDim.new(0, 6)
+    
+    local RowStroke = Instance.new("UIStroke", RowFrame)
+    RowStroke.Color = Color3.fromRGB(35, 35, 35)
+    RowStroke.Thickness = 1
+
+    local Label = Instance.new("TextLabel", RowFrame)
+    Label.Size = UDim2.new(1, -50, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.GothamMedium
+    Label.Text = textoNome
+    Label.TextColor3 = Color3.fromRGB(230, 230, 230)
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local GoBtn = Instance.new("TextButton", RowFrame)
+    GoBtn.Size = UDim2.new(0, 30, 0, 25)
+    GoBtn.Position = UDim2.new(1, -35, 0.5, -12)
+    GoBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    GoBtn.Font = Enum.Font.GothamBold
+    GoBtn.Text = ">"
+    GoBtn.TextColor3 = Color3.fromRGB(0, 255, 130)
+    GoBtn.TextSize = 14
+    Instance.new("UICorner", GoBtn).CornerRadius = UDim.new(0, 4)
+    
+    local BtnStroke = Instance.new("UIStroke", GoBtn)
+    BtnStroke.Color = Color3.fromRGB(0, 200, 100)
+    BtnStroke.Thickness = 1
+
+    GoBtn.MouseButton1Click:Connect(funcaoDestino)
+end
+
+-- Função Principal do Tween com Recuo de Posição (CFrame com Offset)
+local function IniciarTweenVoando(cframeAlvo)
+    local car = LocalPlayer.Character
+    local hrp = car and car:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    -- Aplica o recuo: 3 studs para cima e 4 studs para trás em relação à rotação do objeto
+    -- Isso evita que você spawne "dentro" ou colando na parede do objeto
+    local posicaoFinal = cframeAlvo * CFrame.new(0, 3, 4)
+
+    local distancia = (hrp.Position - posicaoFinal.Position).Magnitude
+    local velocidade = 40 -- Velocidade do voo
+    local tempoDeVoo = distancia / velocidade
+
+    hrp.Anchored = true
+
+    local infoTween = TweenInfo.new(tempoDeVoo, Enum.EasingStyle.Linear)
+    local voo = TweenService:Create(hrp, infoTween, {CFrame = posicaoFinal})
+    
+    CriarNotificacao("Teleporte", "Voando com recuo de segurança...", 2)
+    voo:Play()
+    
+    voo.Completed:Connect(function()
+        hrp.Anchored = false
+        CriarNotificacao("Teleporte", "Chegou no ponto cego!", 1.5)
+    end)
+end
+
+-- 1. LÓGICA DO TELEPORTE: PC (APENAS NÃO CONCLUÍDOS)
+CriarLinhaTeleporte("Teleporte Pc", function()
+    local computadores = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if (obj.Name == "ComputerTable" or obj.Name:match("Computer")) and obj:IsA("Model") then
+            -- Verifica se o computador já foi hackeado/concluído
+            -- O FTF costuma usar uma Screen ou uma PointLight verde/azul quando pronto.
+            local esgotado = false
+            local screen = obj:FindFirstChild("Screen", true)
+            
+            -- Se a tela do PC mudou de cor para verde (0, 255, ...) ou sumiu o objetivo, consideramos feito
+            if screen and screen:IsA("Part") and screen.Color.G > 0.7 then
+                esgotado = true
+            end
+            
+            -- Também checa se existe alguma estampa ou texturas de concluído
+            if obj:FindFirstChild("GreenLight", true) or obj:FindFirstChild("Completed", true) then
+                esgotado = true
+            end
+
+            if not esgotado then
+                table.insert(computadores, obj)
+            end
+        end
+    end
+
+    if #computadores > 0 then
+        local pcEscolhido = computadores[math.random(1, #computadores)]
+        -- Usa o CFrame do objeto principal para calcular a rotação e o recuo certo
+        local primPart = pcEscolhido.PrimaryPart or pcEscolhido:FindFirstChild("Screen") or pcEscolhido:FindFirstChildOfClass("Part")
+        if primPart then
+            IniciarTweenVoando(primPart.CFrame)
+        end
+    else
+        CriarNotificacao("Aviso", "Todos os PCs deste mapa já foram feitos!", 3)
+    end
+end)
+
+-- 2. LÓGICA DO TELEPORTE: CÁPSULA (COM RECUO)
+CriarLinhaTeleporte("Teleporte cápsula", function()
+    local capsulas = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if (obj.Name == "FreezePod" or obj.Name:match("Tube") or obj.Name:match("Pod")) and obj:IsA("Model") then
+            table.insert(capsulas, obj)
+        end
+    end
+
+    if #capsulas > 0 then
+        local capsulaEscolhida = capsulas[math.random(1, #capsulas)]
+        local primPart = capsulaEscolhida.PrimaryPart or capsulaEscolhida:FindFirstChildOfClass("Part")
+        if primPart then
+            IniciarTweenVoando(primPart.CFrame)
+        end
+    else
+        CriarNotificacao("Erro", "Nenhuma cápsula encontrada.", 3)
+    end
+end)
+
+-- 3. LÓGICA DO TELEPORTE: PORTÃO (COM RECUO)
+CriarLinhaTeleporte("Teleporte portão", function()
+    local portoes = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if (obj.Name == "ExitGate" or obj.Name:match("Gate") or obj.Name:match("Exit")) and obj:IsA("Model") then
+            table.insert(portoes, obj)
+        end
+    end
+
+    if #portoes > 0 then
+        local portaoEscolhido = portoes[math.random(1, #portoes)]
+        local primPart = portaoEscolhido.PrimaryPart or portaoEscolhido:FindFirstChildOfClass("Part")
+        if primPart then
+            -- Portões são muito grandes, damos um offset um pouco maior para garantir que não vai bugar na parede
+            IniciarTweenVoando(primPart.CFrame * CFrame.new(0, 0, 2))
+        end
+    else
+        CriarNotificacao("Erro", "Nenhum portão localizado.", 3)
+    end
+end)
 
 
 -- 🔴 2. FUNÇÕES PARA A ABA: BEAST
