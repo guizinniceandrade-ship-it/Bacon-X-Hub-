@@ -1,31 +1,434 @@
-local PlaceId = game.PlaceId
+-- =============================================================================
+-- VALKYRIE CYBERNETICS X OVERLORD HUB - CÓDIGO 100% COMPLETO COM MAPA DE FUNÇÕES
+-- =============================================================================
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
 
--- Dicionário contendo o ID de cada jogo e seu respectivo script
-local Jogos = {
-    -- Murder Mystery 2 (MM2)
-    [142823291] = function()
-loadstring(game:HttpGet('https://raw.smokingscripts.org/vertex.lua'))()
+local NomeDoHub = "Valkyrie CyberNetics X Overlord Hub"
+local NomeDoJogo = "Flee the Facility"
 
-    -- Blox Fruits (Serve para o Mar 1, 2, 3 e Arena)
-    [2753915549] = function() -- Mar 1
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))()
-    end,
-    [4442272125] = function() -- Mar 2
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))()
-    end,
-    [7449423635] = function() -- Mar 3
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))()
-    end,
+pcall(function()
+    local info = MarketplaceService:GetProductInfo(game.PlaceId)
+    if info and info.Name then NomeDoJogo = info.Name end
+end)
 
-    -- Flee the Facility (FTF)
-    [893404548] = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/JustCode6967/Nexus-FTF/refs/heads/main/Nexus-Hub.xyz", true))()
-    end
-}
+local Antigo = game:GetService("CoreGui"):FindFirstChild("ValkyrieFTF_UI") or LocalPlayer:FindFirstChildOfClass("PlayerGui"):FindFirstChild("ValkyrieFTF_UI")
+if Antigo then Antigo:Destroy() end
 
--- Verifica se o jogo atual está na lista e executa
-if Jogos[PlaceId] then
-    pcall(Jogos[PlaceId])
-else
-    print("BaconX Manager: Nenhum script configurado para este jogo (PlaceId: " .. tostring(PlaceId) .. ")")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ValkyrieFTF_UI"
+ScreenGui.ResetOnSpawn = false
+
+pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:FindFirstChildOfClass("PlayerGui") end
+
+-- =============================================================================
+-- SISTEMA DE NOTIFICAÇÕES
+-- =============================================================================
+local function CriarNotificacao(titulo, mensagem, duracao)
+    local NotifFrame = Instance.new("Frame", ScreenGui)
+    NotifFrame.Size = UDim2.new(0, 260, 0, 70)
+    NotifFrame.Position = UDim2.new(1, 300, 1, -85)
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    
+    local nc = Instance.new("UICorner", NotifFrame)
+    nc.CornerRadius = UDim.new(0, 8)
+    
+    local ns = Instance.new("UIStroke", NotifFrame)
+    ns.Color = Color3.fromRGB(0, 200, 100)
+    ns.Thickness = 1.5
+
+    local tTitle = Instance.new("TextLabel", NotifFrame)
+    tTitle.Size = UDim2.new(1, -20, 0, 25)
+    tTitle.Position = UDim2.new(0, 12, 0, 6)
+    tTitle.BackgroundTransparency = 1
+    tTitle.Font = Enum.Font.GothamBold
+    tTitle.TextColor3 = Color3.fromRGB(0, 255, 130)
+    tTitle.TextSize = 12
+    tTitle.TextXAlignment = Enum.TextXAlignment.Left
+    tTitle.Text = titulo
+
+    local tMsg = Instance.new("TextLabel", NotifFrame)
+    tMsg.Size = UDim2.new(1, -24, 0, 35)
+    tMsg.Position = UDim2.new(0, 12, 0, 28)
+    tMsg.BackgroundTransparency = 1
+    tMsg.Font = Enum.Font.GothamMedium
+    tMsg.TextColor3 = Color3.fromRGB(220, 220, 220)
+    tMsg.TextSize = 11
+    tMsg.TextXAlignment = Enum.TextXAlignment.Left
+    tMsg.TextWrapped = true
+    tMsg.Text = mensagem
+
+    TweenService:Create(NotifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -280, 1, -85)}):Play()
+    
+    task.delay(duracao, function()
+        local s = TweenService:Create(NotifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 300, 1, -85)})
+        s:Play()
+        s.Completed:Connect(function() NotifFrame:Destroy() end)
+    end)
 end
+
+-- =============================================================================
+-- PAINEL PRINCIPAL (MAIN CANVAS)
+-- =============================================================================
+local MainCanvas = Instance.new("Frame", ScreenGui)
+MainCanvas.Name = "MainCanvas"
+MainCanvas.BackgroundColor3 = Color3.fromRGB(19, 19, 19)
+MainCanvas.Size = UDim2.new(0, 550, 0, 350)
+MainCanvas.Position = UDim2.new(0.5, -275, 1, 50)
+MainCanvas.ClipsDescendants = true
+Instance.new("UICorner", MainCanvas).CornerRadius = UDim.new(0, 14)
+
+local LeftPanel = Instance.new("Frame", MainCanvas)
+LeftPanel.Name = "LeftPanel"
+LeftPanel.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
+LeftPanel.BorderSizePixel = 0
+LeftPanel.Size = UDim2.new(0, 170, 1, 0)
+Instance.new("UICorner", LeftPanel).CornerRadius = UDim.new(0, 14)
+
+local EdgeHider = Instance.new("Frame", LeftPanel)
+EdgeHider.Name = "EdgeHider"
+EdgeHider.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
+EdgeHider.BorderSizePixel = 0
+EdgeHider.Position = UDim2.new(1, -10, 0, 0)
+EdgeHider.Size = UDim2.new(0, 10, 1, 0)
+
+-- =============================================================================
+-- AS 3 LINHAS DIVISÓRIAS VERDES COLOACADAS EXATAMENTE ONDE PEDIU
+-- =============================================================================
+local L1 = Instance.new("Frame", LeftPanel)
+L1.Name = "HeaderDivider"
+L1.Size = UDim2.new(0.8, 0, 0, 1)
+L1.Position = UDim2.new(0.1, 0, 0, 60)
+L1.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+L1.BorderSizePixel = 0
+
+local L2 = Instance.new("Frame", LeftPanel)
+L2.Name = "BottomDivider"
+L2.Size = UDim2.new(0.8, 0, 0, 1)
+L2.Position = UDim2.new(0.1, 0, 1, -55)
+L2.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+L2.BorderSizePixel = 0
+
+local L3 = Instance.new("Frame", MainCanvas)
+L3.Name = "VerticalDivider"
+L3.Size = UDim2.new(0, 1, 0.9, 0)
+L3.Position = UDim2.new(0, 175, 0.05, 0)
+L3.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+L3.BorderSizePixel = 0
+
+-- Cabeçalho de Textos
+local HeaderFrame = Instance.new("Frame", LeftPanel)
+HeaderFrame.BackgroundTransparency = 1
+HeaderFrame.Size = UDim2.new(1, 0, 0, 60)
+
+local Title1 = Instance.new("TextLabel", HeaderFrame)
+Title1.Position = UDim2.new(0, 16, 0, 14)
+Title1.Size = UDim2.new(1, -24, 0, 15)
+Title1.Font = Enum.Font.GothamBold
+Title1.Text = "Valkyrie CyberNetics"
+Title1.TextColor3 = Color3.fromRGB(0, 200, 100)
+Title1.TextSize = 11
+Title1.TextXAlignment = Enum.TextXAlignment.Left
+Title1.BackgroundTransparency = 1
+
+local Title2 = Instance.new("TextLabel", HeaderFrame)
+Title2.Position = UDim2.new(0, 16, 0, 30)
+Title2.Size = UDim2.new(1, -24, 0, 20)
+Title2.Font = Enum.Font.GothamMedium
+Title2.Text = NomeDoJogo
+Title2.TextColor3 = Color3.fromRGB(160, 160, 160)
+Title2.TextSize = 11
+Title2.TextXAlignment = Enum.TextXAlignment.Left
+Title2.BackgroundTransparency = 1
+
+-- Menu de Rolagem das Abas
+local NavigationScroll = Instance.new("ScrollingFrame", LeftPanel)
+NavigationScroll.Position = UDim2.new(0, 0, 0, 65)
+NavigationScroll.Size = UDim2.new(1, 0, 1, -125)
+NavigationScroll.BackgroundTransparency = 1
+NavigationScroll.ScrollBarThickness = 0
+
+local NavList = Instance.new("UIListLayout", NavigationScroll)
+NavList.Padding = UDim.new(0, 4)
+NavList.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Container Inferior dos Botões
+local BottomContainer = Instance.new("Frame", LeftPanel)
+BottomContainer.Position = UDim2.new(0, 0, 1, -55)
+BottomContainer.Size = UDim2.new(1, 0, 0, 55)
+BottomContainer.BackgroundTransparency = 1
+
+local CloseBtn = Instance.new("TextButton", BottomContainer)
+CloseBtn.Position = UDim2.new(0, 12, 0, 12)
+CloseBtn.Size = UDim2.new(0, 68, 0, 28)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(135, 35, 35)
+CloseBtn.Text = "Fechar"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 11
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+
+local MinimizeBtn = Instance.new("TextButton", BottomContainer)
+MinimizeBtn.Position = UDim2.new(1, -80, 0, 12)
+MinimizeBtn.Size = UDim2.new(0, 68, 0, 28)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(33, 33, 33)
+MinimizeBtn.Text = "Minimizar"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.TextSize = 11
+Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 6)
+
+-- Painel Base do Conteúdo
+local ContentContainer = Instance.new("Frame", MainCanvas)
+ContentContainer.Name = "ContentContainer"
+ContentContainer.Position = UDim2.new(0, 185, 0, 15)
+ContentContainer.Size = UDim2.new(1, -200, 1, -30)
+ContentContainer.BackgroundTransparency = 1
+
+-- Tabela para gerenciar a troca das telas
+local paginas = {}
+local botoesAba = {}
+
+local function CriarEstruturaAba(nomeAba, layoutOrder)
+    local PaginaScroll = Instance.new("ScrollingFrame", ContentContainer)
+    PaginaScroll.Name = nomeAba .. "Page"
+    PaginaScroll.Size = UDim2.new(1, 0, 1, 0)
+    PaginaScroll.BackgroundTransparency = 1
+    PaginaScroll.Visible = false
+    PaginaScroll.ScrollBarThickness = 2
+    PaginaScroll.ScrollBarImageColor3 = Color3.fromRGB(0, 200, 100)
+    
+    local PaginaList = Instance.new("UIListLayout", PaginaScroll)
+    PaginaList.Padding = UDim.new(0, 6)
+    PaginaList.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    PaginaList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        PaginaScroll.CanvasSize = UDim2.new(0, 0, 0, PaginaList.AbsoluteContentSize.Y + 5)
+    end)
+    
+    local BotaoAba = Instance.new("TextButton", NavigationScroll)
+    BotaoAba.Name = nomeAba .. "Btn"
+    BotaoAba.Size = UDim2.new(1, -10, 0, 34)
+    BotaoAba.Position = UDim2.new(0, 5, 0, 0)
+    BotaoAba.BackgroundTransparency = 1
+    BotaoAba.Font = Enum.Font.GothamMedium
+    BotaoAba.Text = "      " .. nomeAba
+    BotaoAba.TextColor3 = Color3.fromRGB(150, 150, 150)
+    BotaoAba.TextSize = 12
+    BotaoAba.TextXAlignment = Enum.TextXAlignment.Left
+    BotaoAba.LayoutOrder = layoutOrder
+    Instance.new("UICorner", BotaoAba).CornerRadius = UDim.new(0, 6)
+    
+    local Indicador = Instance.new("Frame", BotaoAba)
+    Indicador.Name = "Indicador"
+    Indicador.Size = UDim2.new(0, 3, 0, 14)
+    Indicador.Position = UDim2.new(0, 10, 0.5, -7)
+    Indicador.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+    Indicador.Visible = false
+    Instance.new("UICorner", Indicador).CornerRadius = UDim.new(1, 0)
+
+    botoesAba[nomeAba] = BotaoAba
+    paginas[nomeAba] = PaginaScroll
+
+    BotaoAba.MouseButton1Click:Connect(function()
+        for _, p in pairs(paginas) do p.Visible = false end
+        for _, b in pairs(botoesAba) do 
+            b.BackgroundTransparency = 1
+            b.TextColor3 = Color3.fromRGB(140, 140, 140)
+            b.Font = Enum.Font.GothamMedium
+            b.Indicador.Visible = false
+        end
+        PaginaScroll.Visible = true
+        BotaoAba.BackgroundTransparency = 0.94
+        BotaoAba.TextColor3 = Color3.fromRGB(255, 255, 255)
+        BotaoAba.Font = Enum.Font.GothamBold
+        BotaoAba.Indicador.Visible = true
+    end)
+    
+    return PaginaScroll
+end
+
+-- Gerando as páginas fisicamente na memória
+local PageSurvivor = CriarEstruturaAba("Survivor", 1)
+local PageBeast    = CriarEstruturaAba("Beast", 2)
+local PageVisuals  = CriarEstruturaAba("Visuals", 3)
+local PagePlayer   = CriarEstruturaAba("Player", 4)
+
+-- =============================================================================
+-- [ÁREA DE MAPEAMENTO] INJETE SUAS FUNÇÕES EXATAMENTE AQUI ABAIXO:
+-- =============================================================================
+
+-- 🔴 1. FUNÇÕES PARA A ABA: SURVIVOR
+-- Use 'PageSurvivor' como parente dos seus objetos (Botões, Toggles, etc)
+-- Exemplo: Instance.new("TextButton", PageSurvivor)
+-- [ADICIONE AS FUNÇÕES DA ABA SURVIVOR AQUI]
+
+
+-- 🔴 2. FUNÇÕES PARA A ABA: BEAST
+-- Use 'PageBeast' como parente dos seus objetos
+-- [ADICIONE AS FUNÇÕES DA ABA BEAST AQUI]
+
+
+-- 🔴 3. FUNÇÕES PARA A ABA: VISUALS (ESP)
+-- Use 'PageVisuals' como parente dos seus objetos
+-- [ADICIONE AS FUNÇÕES DA ABA VISUALS AQUI]
+
+
+-- 🔴 4. FUNÇÕES PARA A ABA: PLAYER
+-- Use 'PagePlayer' como parente dos seus objetos
+-- [ADICIONE AS FUNÇÕES DA ABA PLAYER AQUI]
+
+
+-- =============================================================================
+-- ATIVAÇÃO PADRÃO DA INTERFACE
+-- =============================================================================
+paginas["Survivor"].Visible = true
+botoesAba["Survivor"].BackgroundTransparency = 0.94
+botoesAba["Survivor"].TextColor3 = Color3.fromRGB(255, 255, 255)
+botoesAba["Survivor"].Font = Enum.Font.GothamBold
+botoesAba["Survivor"].Indicador.Visible = true
+
+-- =============================================================================
+-- INTERFACE DE CONFIRMAÇÃO DE FECHAMENTO
+-- =============================================================================
+local ConfirmFrame = Instance.new("Frame", MainCanvas)
+ConfirmFrame.Name = "ConfirmFrame"
+ConfirmFrame.Size = UDim2.new(1, 0, 1, 0)
+ConfirmFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+ConfirmFrame.BackgroundTransparency = 0.2
+ConfirmFrame.Visible = false
+ConfirmFrame.ZIndex = 10
+
+local ConfirmBox = Instance.new("Frame", ConfirmFrame)
+ConfirmBox.Size = UDim2.new(0, 280, 0, 140)
+ConfirmBox.Position = UDim2.new(0.5, -140, 0.5, -70)
+ConfirmBox.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+Instance.new("UICorner", ConfirmBox).CornerRadius = UDim.new(0, 10)
+local cs = Instance.new("UIStroke", ConfirmBox)
+cs.Color = Color3.fromRGB(40, 40, 40)
+cs.Thickness = 1.5
+
+local AlertTitle = Instance.new("TextLabel", ConfirmBox)
+AlertTitle.Size = UDim2.new(1, 0, 0, 45)
+AlertTitle.BackgroundTransparency = 1
+AlertTitle.Font = Enum.Font.GothamBold
+AlertTitle.Text = "Fechar Hub?"
+AlertTitle.TextColor3 = Color3.fromRGB(255, 60, 60)
+AlertTitle.TextSize = 14
+
+local AlertMsg = Instance.new("TextLabel", ConfirmBox)
+AlertMsg.Size = UDim2.new(1, -30, 0, 40)
+AlertMsg.Position = UDim2.new(0, 15, 0, 40)
+AlertMsg.BackgroundTransparency = 1
+AlertMsg.Font = Enum.Font.GothamMedium
+AlertMsg.Text = "Deseja realmente fechar e encerrar o script?"
+AlertMsg.TextColor3 = Color3.fromRGB(200, 200, 200)
+AlertMsg.TextSize = 12
+AlertMsg.TextWrapped = true
+
+local YesBtn = Instance.new("TextButton", ConfirmBox)
+YesBtn.Size = UDim2.new(0, 110, 0, 32)
+YesBtn.Position = UDim2.new(0, 20, 1, -45)
+YesBtn.BackgroundColor3 = Color3.fromRGB(135, 35, 35)
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.Text = "Sim"
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.TextSize = 12
+Instance.new("UICorner", YesBtn).CornerRadius = UDim.new(0, 6)
+
+local NoBtn = Instance.new("TextButton", ConfirmBox)
+NoBtn.Size = UDim2.new(0, 110, 0, 32)
+NoBtn.Position = UDim2.new(1, -130, 1, -45)
+NoBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.Text = "Não"
+NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoBtn.TextSize = 12
+Instance.new("UICorner", NoBtn).CornerRadius = UDim.new(0, 6)
+
+-- =============================================================================
+-- BOTÃO VCN FLUTUANTE
+-- =============================================================================
+local OpenBtn = Instance.new("TextButton", ScreenGui)
+OpenBtn.Name = "VCN_Reopen"
+OpenBtn.Size = UDim2.new(0, 48, 0, 48)
+OpenBtn.Position = UDim2.new(0, 20, 0.1, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+OpenBtn.BackgroundTransparency = 0.15
+OpenBtn.Text = "VCN"
+OpenBtn.TextColor3 = Color3.fromRGB(0, 255, 130)
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.TextSize = 12
+OpenBtn.Visible = false
+Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1, 0)
+
+local NeonStroke = Instance.new("UIStroke", OpenBtn)
+NeonStroke.Thickness = 2.5
+NeonStroke.Color = Color3.fromRGB(0, 200, 100)
+
+-- =============================================================================
+-- SISTEMA DE INTERAÇÃO DOS BOTÕES CORE
+-- =============================================================================
+CloseBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = true end)
+NoBtn.MouseButton1Click:Connect(function() ConfirmFrame.Visible = false end)
+YesBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+MinimizeBtn.MouseButton1Click:Connect(function() 
+    local descer = TweenService:Create(MainCanvas, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Position = UDim2.new(0.5, -275, 1, 50)})
+    descer:Play()
+    descer.Completed:Connect(function()
+        MainCanvas.Visible = false
+        OpenBtn.Visible = true
+    end)
+end)
+
+OpenBtn.MouseButton1Click:Connect(function() 
+    OpenBtn.Visible = false
+    MainCanvas.Visible = true 
+    TweenService:Create(MainCanvas, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -275, 0.5, -175)}):Play()
+end)
+
+-- =============================================================================
+-- SISTEMA DE ARRASTAR COMPLETO (SUPORTE PARA CELULAR E PC)
+-- =============================================================================
+local dragging, dragInput, dragStart, startPos
+MainCanvas.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainCanvas.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainCanvas.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+
+local segurandoVCN, clickStartVCN, vcnStart
+OpenBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then segurandoVCN = true; clickStartVCN = i.Position; vcnStart = OpenBtn.Position end end)
+UserInputService.InputChanged:Connect(function(i) if segurandoVCN and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then local diff = i.Position - clickStartVCN; OpenBtn.Position = vcnStart + UDim2.new(0, diff.X, 0, diff.Y) end end)
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then segurandoVCN = false end end)
+
+-- =============================================================================
+-- FILA DE NOTIFICAÇÕES E ANIMAÇÃO DE SUBIDA
+-- =============================================================================
+task.spawn(function()
+    CriarNotificacao(NomeDoHub, "Seja bem vindo ao meu script de flee the facility espero que goste.", 5.0)
+    task.wait(5.4)
+    CriarNotificacao(NomeDoHub, "Script carregado com sucesso, divirta-se!", 3.0)
+    
+    TweenService:Create(MainCanvas, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -275, 0.5, -175)
+    }):Play()
+end)
