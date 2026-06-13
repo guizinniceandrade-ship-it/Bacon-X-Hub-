@@ -768,6 +768,105 @@ end)
 
 -- 🔴 4. FUNÇÕES PARA A ABA: PLAYER
 
+-- =============================================================================
+-- VALKYRIE CYBERNETICS X OVERLORD HUB - FINAL BUILD (FIXED)
+-- =============================================================================
+
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+
+-- Variáveis Globais
+_G.SpeedAtivo = false
+_G.SpeedValor = 16
+_G.SpeedDeitadoAtivo = false
+_G.SpeedDeitadoValor = 16
+_G.InfJumpAtivo = false
+_G.NoclipAtivo = false
+
+-- Instância do motor de impulso
+local BV = Instance.new("BodyVelocity")
+BV.MaxForce = Vector3.new(1, 0, 1) * 1e5 
+BV.Parent = nil 
+
+-- =============================================================================
+-- MOTOR PRINCIPAL (REVISADO: Rotação, Deitado e Noclip)
+-- =============================================================================
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    
+    if root and hum then
+        -- Detecção de estado: Prioriza o atributo "Crouching" do Flee the Facility
+        local estaDeitado = (char:GetAttribute("Crouching") == true)
+        
+        -- Lógica de ativação e valor
+        local estaAtivo = estaDeitado and _G.SpeedDeitadoAtivo or _G.SpeedAtivo
+        local velAlvo = estaDeitado and _G.SpeedDeitadoValor or _G.SpeedValor
+
+        -- Movimentação por Impulso
+        if estaAtivo and hum.MoveDirection.Magnitude > 0 then
+            hum.WalkSpeed = 0 -- Mata a fricção do jogo
+            hum.AutoRotate = false -- Corrige o erro de andar de costas
+            
+            BV.Parent = root
+            BV.Velocity = hum.MoveDirection * velAlvo
+            
+            -- Corrige a direção para onde você olha
+            root.CFrame = CFrame.new(root.Position, root.Position + hum.MoveDirection)
+        else
+            hum.WalkSpeed = estaDeitado and 8 or 16
+            hum.AutoRotate = true
+            BV.Parent = nil
+        end
+        
+        -- Noclip Reforçado
+        if _G.NoclipAtivo then
+            hum:ChangeState(Enum.HumanoidStateType.Physics)
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+-- Pulo Infinito
+UserInputService.JumpRequest:Connect(function()
+    if _G.InfJumpAtivo then
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- =============================================================================
+-- FUNÇÕES DE CONSTRUÇÃO (UI)
+-- =============================================================================
+local function CriarToggle(nome, varName)
+    -- (Mantém sua estrutura de Toggle aqui, apenas certifique-se de que o clique muda a global correta)
+    -- Exemplo: _G[varName] = not _G[varName]
+end
+
+-- =============================================================================
+-- CONSTRUÇÃO DA INTERFACE (Aba Player)
+-- =============================================================================
+
+-- 1. Speed (Toggle)
+CriarTogglePlayer("Speed", function(s) _G.SpeedAtivo = s end)
+CriarSliderPlayer("Speed Normal", 16, 100, 16, function(v) _G.SpeedValor = v end)
+
+-- 2. Speed deitado (Toggle)
+CriarTogglePlayer("Speed deitado", function(s) _G.SpeedDeitadoAtivo = s end)
+CriarSliderPlayer("Speed Deitado", 8, 100, 8, function(v) _G.SpeedDeitadoValor = v end)
+
+-- 3. Utilidades
+CriarTogglePlayer("Infinite Jump", function(s) _G.InfJumpAtivo = s end)
+CriarTogglePlayer("Noclip", function(s) _G.NoclipAtivo = s end)
 
 
 -- =============================================================================
