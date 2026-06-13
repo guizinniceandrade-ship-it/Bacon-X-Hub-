@@ -580,8 +580,179 @@ end)
 
 
 -- 🔴 3. FUNÇÕES PARA A ABA: VISUALS (ESP)
--- Use 'PageVisuals' como parente dos seus objetos
--- [ADICIONE AS FUNÇÕES DA ABA VISUALS AQUI]
+-- =============================================================================
+-- VALKYRIE CYBERNETICS - ABA ESP COMPLETA (VISUAIS)
+-- =============================================================================
+
+-- Título da Seção (Exatamente como você estruturou)
+local EspLabel = Instance.new("TextLabel", PageVisuals) -- Certifique-se de que o nome da sua aba bate com este parente
+EspLabel.Name = "EspSectionLabel"
+EspLabel.Size = UDim2.new(1, -10, 0, 25)
+EspLabel.BackgroundTransparency = 1
+EspLabel.Font = Enum.Font.GothamBold
+EspLabel.Text = "Esp --"
+EspLabel.TextColor3 = Color3.fromRGB(0, 200, 100) -- Verde Padrão do Hub
+EspLabel.TextSize = 13
+EspLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Variáveis Globais de Controle para os Toggles
+_G.EspPcAtivo = false
+_G.EspCapsulaAtivo = false
+_G.EspPortaoAtivo = false
+_G.EspPlayersAtivo = false
+
+-- =============================================================================
+-- FUNÇÃO CRIADORA DE TOGGLE SWITCH ANIMADO (EXCLUSIVA PARA OS BOTÕES DA ABA ESP)
+-- =============================================================================
+local function CriarToggleEspPremium(textoNome, funcaoCallback)
+    local RowFrame = Instance.new("Frame", PageVisuals)
+    RowFrame.Size = UDim2.new(1, -10, 0, 40)
+    RowFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+    Instance.new("UICorner", RowFrame).CornerRadius = UDim.new(0, 6)
+    
+    local RowStroke = Instance.new("UIStroke", RowFrame)
+    RowStroke.Color = Color3.fromRGB(35, 35, 35)
+    RowStroke.Thickness = 1
+
+    local Label = Instance.new("TextLabel", RowFrame)
+    Label.Size = UDim2.new(1, -70, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.GothamMedium
+    Label.Text = textoNome
+    Label.TextColor3 = Color3.fromRGB(230, 230, 230)
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- Fundo do Switch (Muda de cor ao ativar)
+    local SwitchBg = Instance.new("TextButton", RowFrame)
+    SwitchBg.Size = UDim2.new(0, 42, 0, 22)
+    SwitchBg.Position = UDim2.new(1, -54, 0.5, -11)
+    SwitchBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    SwitchBg.Text = ""
+    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+    
+    local SwitchStroke = Instance.new("UIStroke", SwitchBg)
+    SwitchStroke.Color = Color3.fromRGB(60, 60, 60)
+    SwitchStroke.Thickness = 1
+
+    -- Bolinha Deslizante Interna
+    local SliderCircle = Instance.new("Frame", SwitchBg)
+    SliderCircle.Size = UDim2.new(0, 16, 0, 16)
+    SliderCircle.Position = UDim2.new(0, 3, 0.5, -8)
+    SliderCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", SliderCircle).CornerRadius = UDim.new(1, 0)
+
+    local ativo = false
+
+    SwitchBg.MouseButton1Click:Connect(function()
+        ativo = not ativo
+        
+        -- Configuração da Animação do Botão
+        local CorAlvo = ativo and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(45, 45, 45)
+        local StrokeAlvo = ativo and Color3.fromRGB(0, 255, 130) or Color3.fromRGB(60, 60, 60)
+        local PosicaoAlvo = ativo and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+
+        -- Executa a transição de cor e movimento da bolinha
+        TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = CorAlvo}):Play()
+        TweenService:Create(SwitchStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = StrokeAlvo}):Play()
+        TweenService:Create(SliderCircle, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = PosicaoAlvo}):Play()
+
+        -- Ativa/Desativa o Hack de Verdade
+        funcaoCallback(ativo)
+    end)
+end
+
+-- =============================================================================
+-- LOGICAS DE ATUALIZAÇÃO E FUNÇÕES DO ESP (HIGHLIGHTS TRANSMÍSSIVEIS)
+-- =============================================================================
+local function GerenciarHighlight(objeto, nomeTag, cor, ativo)
+    if ativo then
+        if not objeto:FindFirstChild(nomeTag) then
+            local hl = Instance.new("Highlight")
+            hl.Name = nomeTag
+            hl.FillColor = cor
+            hl.FillTransparency = 0.55
+            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+            hl.OutlineTransparency = 0
+            hl.Adornee = objeto
+            hl.Parent = objeto
+        end
+    else
+        local antigo = objeto:FindFirstChild(nomeTag)
+        if antigo then antigo:Destroy() end
+    end
+end
+
+-- Loop infinito de varredura do mapa (Garante estabilidade e não puxa lag)
+task.spawn(function()
+    while task.wait(1) do
+        -- Lógica 1: Varredura de Computadores
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj.Name == "ComputerTable" or obj.Name:match("Computer")) and obj:IsA("Model") then
+                local corPc = Color3.fromRGB(0, 160, 255) -- Azul para PCs incompletos
+                local screen = obj:FindFirstChild("Screen", true)
+                if (screen and screen:IsA("Part") and screen.Color.G > 0.7) or obj:FindFirstChild("GreenLight", true) then
+                    corPc = Color3.fromRGB(0, 255, 120) -- Vira verde se estiver feito!
+                end
+                GerenciarHighlight(obj, "ValkyrieEspPC", corPc, _G.EspPcAtivo)
+            end
+        end
+
+        -- Lógica 2: Varredura de Cápsulas (Freeze Pods)
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj.Name == "FreezePod" or obj.Name:match("Tube") or obj.Name:match("Pod")) and obj:IsA("Model") then
+                GerenciarHighlight(obj, "ValkyrieEspCapsula", Color3.fromRGB(255, 0, 150), _G.EspCapsulaAtivo) -- Silhueta Rosa/Magenta
+            end
+        end
+
+        -- Lógica 3: Varredura de Portões de Saída
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if (obj.Name == "ExitGate" or obj.Name:match("Gate") or obj.Name:match("Exit")) and obj:IsA("Model") then
+                GerenciarHighlight(obj, "ValkyrieEspPortao", Color3.fromRGB(255, 235, 0), _G.EspPortaoAtivo) -- Amarelo Neon
+            end
+        end
+
+        -- Lógica 4: Varredura de Players (Sobreviventes vs Monstro)
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local corPlayer = Color3.fromRGB(255, 255, 255) -- Branco para sobreviventes
+                
+                -- Se for a Besta/Monstro da partida, detecta pelo Martelo e joga Vermelho Sangue
+                if p.Character:FindFirstChild("BeastEffect") or p.Character:FindFirstChild("Hammer") then
+                    corPlayer = Color3.fromRGB(255, 0, 0)
+                end
+                
+                GerenciarHighlight(p.Character, "ValkyrieEspPlayer", corPlayer, _G.EspPlayersAtivo)
+            end
+        end
+    end
+end)
+
+-- =============================================================================
+-- INSTANCIAÇÃO DOS BOTÕES ORDENADOS COM SWITCHES ANIMADOS
+-- =============================================================================
+
+CriarToggleEspPremium("Esp Pc", function(state)
+    _G.EspPcAtivo = state
+    CriarNotificacao("ESP", state and "Visual de Computadores Ligado" or "Visual Desativado", 1.5)
+end)
+
+CriarToggleEspPremium("Esp cápsula", function(state)
+    _G.EspCapsulaAtivo = state
+    CriarNotificacao("ESP", state and "Visual de Cápsulas Ligado" or "Visual Desativado", 1.5)
+end)
+
+CriarToggleEspPremium("Esp portão", function(state)
+    _G.EspPortaoAtivo = state
+    CriarNotificacao("ESP", state and "Visual de Portões Ligado" or "Visual Desativado", 1.5)
+end)
+
+CriarToggleEspPremium("Esp players", function(state)
+    _G.EspPlayersAtivo = state
+    CriarNotificacao("ESP", state and "Rastreamento de Players Ligado" or "Rastreamento Desativado", 1.5)
+end)
+
 
 
 -- 🔴 4. FUNÇÕES PARA A ABA: PLAYER
