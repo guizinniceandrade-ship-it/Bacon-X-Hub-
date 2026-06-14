@@ -561,8 +561,224 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =============================================================================
--- [ABA MAIN] - FUNÇÕES DA BESTA (VERSÃO CORRIGIDA SEM ERROS)
+-- [ABA MAIN] - FUNÇÕES DA BESTA (VERSÃO CORRIGIDA E ADAPTADA AO DESIGN ORIGINAL)
 -- =============================================================================
+
+-- 1. VARIÁVEIS DE CONTROLE DO SISTEMA
+local hitboxBestaAtiva = false
+local tamanhoHitbox = 2 
+local semDelayMartelo = false
+local semBrilhoMartelo = false
+local semMusicaAtivo = false
+
+-- 2. TEXTO INFORMATIVO (SUB-CABEÇALHO)
+local TargetPageMain = tabPages["Main"] 
+
+local TitleSectionBesta = Instance.new("TextLabel")
+TitleSectionBesta.Size = UDim2.new(1, -15, 0, 40)
+TitleSectionBesta.BackgroundTransparency = 1
+TitleSectionBesta.Font = Enum.Font.GothamBold
+TitleSectionBesta.Text = "FUNÇÕES DE BESTA"
+TitleSectionBesta.TextColor3 = Color3.fromRGB(0, 170, 255)
+TitleSectionBesta.TextSize = 14
+TitleSectionBesta.TextXAlignment = Enum.TextXAlignment.Left
+TitleSectionBesta.Parent = TargetPageMain
+
+-- FUNÇÃO AUXILIAR: Cria o Switch padrão do Hub
+local function CriarToggleBesta(texto, callback)
+    local MainBtn = Instance.new("TextButton")
+    local Corner = Instance.new("UICorner")
+    local Stroke = Instance.new("UIStroke")
+    
+    MainBtn.Size = UDim2.new(1, -15, 0, 40)
+    MainBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    MainBtn.Font = Enum.Font.GothamBold
+    MainBtn.Text = "  " .. texto
+    MainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MainBtn.TextSize = 14
+    MainBtn.TextXAlignment = Enum.TextXAlignment.Left
+    MainBtn.Parent = TargetPageMain
+    
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = MainBtn
+    Stroke.Thickness = 1; Stroke.Color = Color3.fromRGB(255, 255, 255); Stroke.Transparency = 0.92; Stroke.Parent = MainBtn
+    
+    local SwitchBg = Instance.new("Frame", MainBtn)
+    SwitchBg.Size = UDim2.new(0, 34, 0, 18)
+    SwitchBg.Position = UDim2.new(1, -44, 0.5, -9)
+    SwitchBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+    
+    local SwitchBall = Instance.new("Frame", SwitchBg)
+    SwitchBall.Size = UDim2.new(0, 14, 0, 14)
+    SwitchBall.Position = UDim2.new(0, 2, 0.5, -7)
+    SwitchBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", SwitchBall).CornerRadius = UDim.new(1, 0)
+    
+    local ativo = false
+    MainBtn.MouseButton1Click:Connect(function()
+        ativo = not ativo
+        local targetBgColor = ativo and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(45, 45, 45)
+        local targetBallPos = ativo and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        
+        game:GetService("TweenService"):Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetBgColor}):Play()
+        game:GetService("TweenService"):Create(SwitchBall, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = targetBallPos}):Play()
+        
+        -- Inverte a cor interna da bolinha quando ativo para dar o efeito do Hub original
+        SwitchBall.BackgroundColor3 = ativo and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(255, 255, 255)
+        
+        callback(ativo)
+    end)
+    return MainBtn
+end
+
+-- FUNÇÃO AUXILIAR: Slider REFEITO para idêntico design da imagem 1
+local function CriarSliderBesta(texto, min, max, callback)
+    local SliderFrame = Instance.new("Frame")
+    local SliderCorner = Instance.new("UICorner")
+    local SliderStroke = Instance.new("UIStroke")
+    local SliderText = Instance.new("TextLabel")
+    local SliderBar = Instance.new("Frame")
+    local SliderFill = Instance.new("Frame")
+    local SliderBtn = Instance.new("ImageButton")
+    
+    SliderFrame.Size = UDim2.new(1, -15, 0, 45)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    SliderFrame.Parent = TargetPageMain
+    
+    SliderCorner.CornerRadius = UDim.new(0, 6)
+    SliderCorner.Parent = SliderFrame
+    
+    SliderStroke.Thickness = 1
+    SliderStroke.Color = Color3.fromRGB(255, 255, 255)
+    SliderStroke.Transparency = 0.92
+    SliderStroke.Parent = SliderFrame
+    
+    SliderText.Size = UDim2.new(1, -20, 0, 20)
+    SliderText.Position = UDim2.new(0, 10, 0, 4)
+    SliderText.BackgroundTransparency = 1
+    SliderText.Font = Enum.Font.GothamBold
+    SliderText.Text = texto .. ": " .. min
+    SliderText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SliderText.TextSize = 13
+    SliderText.TextXAlignment = Enum.TextXAlignment.Left
+    SliderText.Parent = SliderFrame
+    
+    -- Barra de progresso principal (tornada mais grossa e descida um pouco)
+    SliderBar.Size = UDim2.new(1, -20, 0, 6)
+    SliderBar.Position = UDim2.new(0, 10, 0, 28)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    SliderBar.Parent = SliderFrame
+    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+    
+    SliderFill.Size = UDim2.new(0, 0, 1, 0)
+    SliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    SliderFill.Parent = SliderBar
+    Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+    
+    -- O Botão indicador agora é Azul, maior e flutua corretamente sobre a barra
+    SliderBtn.Size = UDim2.new(0, 14, 0, 14)
+    SliderBtn.Position = UDim2.new(1, -7, 0.5, -7)
+    SliderBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    SliderBtn.ZIndex = 3
+    SliderBtn.Parent = SliderFill
+    Instance.new("UICorner", SliderBtn).CornerRadius = UDim.new(1, 0)
+    
+    local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+    local segurando = false
+    
+    local function AtualizarSlider()
+        local percent = math.clamp((mouse.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        local valorFinal = math.floor(min + (max - min) * percent)
+        SliderText.Text = texto .. ": " .. valorFinal
+        callback(valorFinal)
+    end
+    
+    SliderBtn.MouseButton1Down:Connect(function() segurando = true end)
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then segurando = false end
+    end)
+    
+    mouse.Move:Connect(function()
+        if segurando then AtualizarSlider() end
+    end)
+end
+
+-- 3. CRIAÇÃO DOS BOTÕES NA TELA
+CriarToggleBesta("Hitbox", function(estado)
+    hitboxBestaAtiva = estado
+    if not estado then
+        for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+            if p ~= game:GetService("Players").LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                p.Character.Head.Size = Vector3.new(2, 2, 2)
+                p.Character.Head.CanCollide = true
+                p.Character.Head.Transparency = 0
+            end
+        end
+    end
+end)
+
+CriarSliderBesta("Hitbox ( eslider )", 2, 30, function(valor)
+    tamanhoHitbox = valor
+end)
+
+CriarToggleBesta("Tirar delay da marreta", function(estado)
+    semDelayMartelo = estado
+end)
+
+CriarToggleBesta("Tirar brilho", function(estado)
+    semBrilhoMartelo = estado
+end)
+
+CriarToggleBesta("Tirar música", function(estado)
+    semMusicaAtivo = estado
+end)
+
+-- 4. MOTOR EM SEGUNDO PLANO
+game:GetService("RunService").RenderStepped:Connect(function()
+    local Player = game:GetService("Players").LocalPlayer
+    
+    if hitboxBestaAtiva then
+        for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+            if p ~= Player and p.Character and p.Character:FindFirstChild("Head") then
+                local head = p.Character.Head
+                head.Size = Vector3.new(tamanhoHitbox, tamanhoHitbox, tamanhoHitbox)
+                head.CanCollide = false
+                head.Transparency = 0.5
+            end
+        end
+    end
+    
+    if Player.Character then
+        local martelo = Player.Character:FindFirstChild("Hammer") or Player.Backpack:FindFirstChild("Hammer")
+        if martelo then
+            if semDelayMartelo then
+                local cd1 = martelo:FindFirstChild("Cooldown")
+                local cd2 = martelo:FindFirstChild("Rate")
+                if cd1 then cd1.Value = 0 end
+                if cd2 then cd2.Value = 0 end
+                martelo:SetAttribute("Cooldown", 0)
+                martelo:SetAttribute("AttackDelay", 0)
+            end
+            if semBrilhoMartelo then
+                for _, ef in pairs(martelo:GetDescendants()) do
+                    if ef:IsA("Light") or ef:IsA("ParticleEmitter") or ef:IsA("Trail") then
+                        ef.Enabled = false
+                    end
+                end
+            end
+        end
+    end
+    
+    if semMusicaAtivo then
+        for _, som in pairs(game:GetService("SoundService"):GetDescendants()) do
+            if som:IsA("Sound") and (string.find(string.lower(som.Name), "beast") or string.find(string.lower(som.Name), "chase") or string.find(string.lower(som.Name), "terror")) then
+                som.Volume = 0
+            end
+        end
+    end
+end)
 
 
 
