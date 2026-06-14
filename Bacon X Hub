@@ -560,7 +560,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
- 
+
 -- =============================================================================
 -- [ABA ESP & NOTIFICAÇÕES] - VERSÃO CORRIGIDA E CALIBRADA TOTAL
 -- =============================================================================
