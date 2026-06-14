@@ -753,4 +753,108 @@ task.spawn(function()
     end
 end)
 
+-- =============================================================================
+-- [NOTIFICAÇÕES] - COLOCAR ABAIXO DO ESP (APENAS BESTA E PCS)
+-- =============================================================================
+
+-- 1. VARIÁVEIS DE CONTROLE DO SISTEMA
+local notifBestaAtivo = false
+local notifPcAtivo = false
+
+local StarterGui = game:GetService("StarterGui")
+local bestaAvisada = false
+local ultimoPcCount = 5
+
+-- 2. TEXTO INFORMATIVO (SUB-CABEÇALHO)
+local TitleSectionNotif = Instance.new("TextLabel")
+TitleSectionNotif.Size = UDim2.new(1, -15, 0, 40)
+TitleSectionNotif.BackgroundTransparency = 1
+TitleSectionNotif.Font = Enum.Font.GothamBold
+TitleSectionNotif.Text = "NOTIFICAÇÕES DO JOGO"
+TitleSectionNotif.TextColor3 = Color3.fromRGB(0, 170, 255)
+TitleSectionNotif.TextSize = 14
+TitleSectionNotif.TextXAlignment = Enum.TextXAlignment.Left
+TitleSectionNotif.Parent = TargetPageESP -- Gruda na mesma página de ESP
+
+-- FUNÇÃO AUXILIAR: Envia o pop-up nativo do Roblox no canto da tela
+local function EnviarNotificacao(titulo, texto, duracao)
+    StarterGui:SetCore("SendNotification", {
+        Title = titulo,
+        Text = texto,
+        Duration = duracao or 4,
+        Button1 = "OK"
+    })
+end
+
+-- 3. CRIAÇÃO DOS BOTÕES DE NOTIFICAÇÃO (Mesmo padrão Switch Verde)
+CriarToggleESP("Notificação de Besta", function(estado)
+    notifBestaAtivo = estado
+    if not estado then bestaAvisada = false end
+end)
+
+CriarToggleESP("Notificação de quantos PC", function(estado)
+    notifPcAtivo = estado
+end)
+
+-- 4. MOTOR LÓGICO DAS NOTIFICAÇÕES
+task.spawn(function()
+    while true do
+        task.wait(1) -- Varre a cada 1 segundo para poupar memória
+        
+        local computadoresNoMapa = 0
+        local todosComputadores = {}
+        
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj.Name == "ComputerTable" and obj:IsA("Model") then
+                computadoresNoMapa = computadoresNoMapa + 1
+                table.insert(todosComputadores, obj)
+            end
+        end
+        
+        -- Reset básico se voltar para o lobby/fim de jogo
+        if computadoresNoMapa == 0 then
+            bestaAvisada = false
+            ultimoPcCount = 5
+        else
+            -- [NOTIFICAÇÃO DE BESTA]
+            if notifBestaAtivo and not bestaAvisada then
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p.Character then
+                        if p.Character:FindFirstChild("Hammer") or p.Backpack:FindFirstChild("Hammer") or p.Character:FindFirstChild("Weapon") then
+                            EnviarNotificacao("👹 BESTA DETECTADA", "A Besta da rodada é: " .. p.Name, 6)
+                            bestaAvisada = true
+                            break
+                        end
+                    end
+                end
+            end
+            
+            -- [NOTIFICAÇÃO DE CONTAGEM DE PCS]
+            if notifPcAtivo then
+                local pcsRestantes = 0
                 
+                for _, comp in pairs(todosComputadores) do
+                    local screen = comp:FindFirstChild("Screen", true)
+                    local jaHackeado = false
+                    if screen and screen:IsA("BasePart") then
+                        if screen.BrickColor.Name == "Lime green" or screen.BrickColor.Name == "Dark green" or (screen.Color.G > 0.6 and screen.Color.R < 0.3) then
+                            jaHackeado = true
+                        end
+                    end
+                    if not jaHackeado then
+                        pcsRestantes = pcsRestantes + 1
+                    end
+                end
+                
+                if pcsRestantes < ultimoPcCount and pcsRestantes >= 0 then
+                    ultimoPcCount = pcsRestantes
+                    if pcsRestantes == 0 then
+                        EnviarNotificacao("⚡ SINAL ENERGIZADO", "Todos os PCs foram feitos! Os portões estão liberados!", 6)
+                    else
+                        EnviarNotificacao("💻 PC HACKEADO", "Um computador foi concluído! Faltam apenas " .. pcsRestantes .. " PCs.", 5)
+                    end
+                end
+            end
+        end
+    end
+end)
