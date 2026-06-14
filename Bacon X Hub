@@ -564,6 +564,231 @@ end)
 -- [ABA ESP] -------------------------------------------------------------------
 -- =============================================================================
 
+-- =============================================================================
+-- [ABA ESP] - FLEE THE FACILITY
+-- =============================================================================
+
+-- 1. VARIÁVEIS DE CONTROLE E SERVIÇOS
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local Player = Players.LocalPlayer
+
+local espComputadorAtivo = false
+local espCapsulasAtivo = false
+local espPlayerAtivo = false
+local espPortaoAtivo = false
+
+-- Pasta na CoreGui para guardar os elementos visuais do ESP sem bugar o jogo
+local EspFolder = CoreGui:FindFirstChild("BaconX_ESP") or Instance.new("Folder", CoreGui)
+EspFolder.Name = "BaconX_ESP"
+
+-- 2. TEXTO INFORMATIVO (CABEÇALHO)
+local TargetPageESP = tabPages["ESP"]
+local TitleSectionESP = Instance.new("TextLabel")
+TitleSectionESP.Size = UDim2.new(1, -15, 0, 30)
+TitleSectionESP.BackgroundTransparency = 1
+TitleSectionESP.Font = Enum.Font.GothamBold
+TitleSectionESP.Text = "SISTEMAS DE ESP (FLEE THE FACILITY)"
+TitleSectionESP.TextColor3 = Color3.fromRGB(0, 170, 255)
+TitleSectionESP.TextSize = 14
+TitleSectionESP.TextXAlignment = Enum.TextXAlignment.Left
+TitleSectionESP.Parent = TargetPageESP
+
+-- FUNÇÃO AUXILIAR: Cria o Switch Moderno na Direita (Igual ao da Main)
+local function CriarToggleESP(texto, callback)
+    local MainBtn = Instance.new("TextButton")
+    local Corner = Instance.new("UICorner")
+    local Stroke = Instance.new("UIStroke")
+    
+    MainBtn.Size = UDim2.new(1, -15, 0, 40)
+    MainBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    MainBtn.Font = Enum.Font.GothamBold
+    MainBtn.Text = "  " .. texto
+    MainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MainBtn.TextSize = 14
+    MainBtn.TextXAlignment = Enum.TextXAlignment.Left
+    MainBtn.Parent = TargetPageESP
+    
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = MainBtn
+
+    Stroke.Thickness = 1; Stroke.Color = Color3.fromRGB(255, 255, 255); Stroke.Transparency = 0.92; Stroke.Parent = MainBtn
+    
+    local SwitchBg = Instance.new("Frame", MainBtn)
+    SwitchBg.Size = UDim2.new(0, 34, 0, 18)
+    SwitchBg.Position = UDim2.new(1, -44, 0.5, -9)
+    SwitchBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+    
+    local SwitchBall = Instance.new("Frame", SwitchBg)
+    SwitchBall.Size = UDim2.new(0, 14, 0, 14)
+    SwitchBall.Position = UDim2.new(0, 2, 0.5, -7)
+    SwitchBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", SwitchBall).CornerRadius = UDim.new(1, 0)
+    
+    local ativo = false
+    MainBtn.MouseButton1Click:Connect(function()
+        ativo = not ativo
+        local targetBgColor = ativo and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(45, 45, 45)
+        local targetBallPos = ativo and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        
+        TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetBgColor}):Play()
+        TweenService:Create(SwitchBall, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = targetBallPos}):Play()
+        
+        callback(ativo)
+    end)
+    return MainBtn
+end
+
+-- FUNÇÃO CORE DO ESP: Desenha caixas 3D que brilham através das paredes (Highlight)
+local function CriarDestaqueESP(objeto, nome, corPadrao, tagIdentificacao)
+    if not objeto then return end
+    local idUnica = objeto:GetDebugId() .. "_" .. tagIdentificacao
+    
+    if EspFolder:FindFirstChild(idUnica) then return end -- Evita duplicar
+    
+    local Highlight = Instance.new("Highlight")
+    Highlight.Name = idUnica
+    Highlight.Adornee = objeto
+    Highlight.FillColor = corPadrao
+    Highlight.FillTransparency = 0.6
+    Highlight.OutlineColor = corPadrao
+    Highlight.OutlineTransparency = 0.2
+    Highlight.Parent = EspFolder
+    
+    -- Cria uma etiquetinha com o nome do objeto flutuando nele
+    local Billboard = Instance.new("BillboardGui")
+    Billboard.Name = idUnica .. "_Text"
+    Billboard.Adornee = objeto:IsA("Model") and (objeto.PrimaryPart or objeto:FindFirstChildOfClass("BasePart")) or objeto
+    Billboard.Size = UDim2.new(0, 100, 0, 30)
+    Billboard.AlwaysOnTop = true
+    Billboard.StudsOffset = Vector3.new(0, 3, 0)
+    Billboard.Parent = EspFolder
+    
+    local Label = Instance.new("TextLabel", Billboard)
+    Label.Size = UDim2.new(1, 0, 1, 0)
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.GothamBold
+    Label.Text = nome
+    Label.TextColor3 = corPadrao
+    Label.TextSize = 12
+    Label.TextStrokeTransparency = 0.3
+end
+
+-- Limpa os ESPs de uma categoria específica quando desativado
+local function LimparCategoriaESP(tagIdentificacao)
+    for _, child in pairs(EspFolder:GetChildren()) do
+        if string.find(child.Name, "_" .. tagIdentificacao) then
+            child:Destroy()
+        end
+    end
+end
+
+-- 3. CRIAÇÃO DOS BOTÕES TOGGLE (Visual Moderno)
+
+CriarToggleESP("ESP Computador", function(estado)
+    espComputadorAtivo = estado
+    if not estado then LimparCategoriaESP("Comp") end
+end)
+
+CriarToggleESP("ESP Cápsulas", function(estado)
+    espCapsulasAtivo = estado
+    if not estado then LimparCategoriaESP("Tube") end
+end)
+
+CriarToggleESP("ESP Player", function(estado)
+    espPlayerAtivo = estado
+    if not estado then LimparCategoriaESP("Player") end
+end)
+
+CriarToggleESP("ESP Portão de Saída", function(estado)
+    espPortaoAtivo = estado
+    if not estado then LimparCategoriaESP("Exit") end
+end)
+
+
+-- 4. MOTOR LÓGICO DO ESP (Varredura dinâmica a cada 1 segundo em segundo plano)
+task.spawn(function()
+    while true do
+        task.wait(1) -- Roda de forma otimizada para não dar lag no jogo
+        
+        -- LOOP [ESP COMPUTADORES]
+        if espComputadorAtivo then
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj.Name == "ComputerTable" then
+                    -- Checa se o computador já foi totalmente hackeado
+                    local screen = obj:FindFirstChild("Screen", true)
+                    local estaHacked = false
+                    if screen and screen:FindFirstChild("SurfaceGui") and screen.SurfaceGui:FindFirstChild("ImageLabel") then
+                        -- No Flee the Facility original, a tela fica verde ou muda o ID da imagem quando concluído
+                        if screen.SurfaceGui.ImageLabel.Image == "rbxassetid://1237146522" or screen.BrickColor == BrickColor.new("Dark green") then
+                            estaHacked = true
+                        end
+                    end
+                    
+                    local corComp = estaHacked and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(0, 170, 255) -- Verde se hackeado, Azul se pendente
+                    local textoComp = estaHacked and "PC [CONCLUÍDO]" or "PC [HACKEAR]"
+                    
+                    CriarDestaqueESP(obj, textoComp, corComp, "Comp")
+                    
+                    -- Atualização em tempo real da cor se o status mudar
+                    local h = EspFolder:FindFirstChild(obj:GetDebugId() .. "_Comp")
+                    if h then 
+                        h.FillColor = corComp
+                        h.OutlineColor = corComp
+                        local txt = EspFolder:FindFirstChild(obj:GetDebugId() .. "_Comp_Text")
+                        if txt and txt:FindFirstChildOfClass("TextLabel") then
+                            txt:FindFirstChildOfClass("TextLabel").TextColor3 = corComp
+                            txt:FindFirstChildOfClass("TextLabel").Text = textoComp
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- LOOP [ESP CÁPSULAS] (Tubes de congelamento)
+        if espCapsulasAtivo then
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj.Name == "Tube" or obj.Name == "FreezePod" then
+                    CriarDestaqueESP(obj, "Cápsula", Color3.fromRGB(255, 165, 0), "Tube") -- Laranja para as cápsulas
+                end
+            end
+        end
+        
+        -- LOOP [ESP PORTÃO DE SAÍDA]
+        if espPortaoAtivo then
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj.Name == "ExitDoor" or obj.Name == "ExitGate" then
+                    CriarDestaqueESP(obj, "Portão de Saída", Color3.fromRGB(255, 255, 0), "Exit") -- Amarelo para os portões
+                end
+            end
+        end
+        
+        -- LOOP [ESP PLAYERS] (Detecta quem é a besta e sobreviventes)
+        if espPlayerAtivo then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local char = p.Character
+                    local ehBesta = false
+                    
+                    -- No Flee the Facility a Besta segura o Martelo (Hammer) ou tem a Gem na cabeça
+                    if char:FindFirstChild("Hammer") or char:FindFirstChild("Weapon") or p.Backpack:FindFirstChild("Hammer") then
+                        ehBesta = true
+                    end
+                    
+                    local corPlayer = ehBesta and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 100) -- Vermelho Besta, Verde Sobrevivente
+                    local textoPlayer = ehBesta and "👹 BESTA: " .. p.Name or "👤 " .. p.Name
+                    
+                    CriarDestaqueESP(char, textoPlayer, corPlayer, "Player")
+                end
+            end
+        end
+        
+    end
+end)
 
 
 
