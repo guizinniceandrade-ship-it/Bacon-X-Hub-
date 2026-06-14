@@ -561,6 +561,237 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =============================================================================
+-- [ABA MAIN] - FUNÇÕES DA BESTA
+-- =============================================================================
+
+-- 1. VARIÁVEIS DE CONTROLE DO SISTEMA
+local hitboxBestaAtiva = false
+local tamanhoHitbox = 2 -- Padrão do Roblox
+local semDelayMartelo = false
+local semBrilhoMartelo = false
+local semMusicaAtivo = false
+
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local Player = Players.LocalPlayer
+
+-- 2. TEXTO INFORMATIVO (SUB-CABEÇALHO)
+local TargetPageMain = tabPages["Main"] -- Garanta que sua tabela de páginas tem a "Main"
+
+local TitleSectionBesta = Instance.new("TextLabel")
+TitleSectionBesta.Size = UDim2.new(1, -15, 0, 40)
+TitleSectionBesta.BackgroundTransparency = 1
+TitleSectionNotif.Font = Enum.Font.GothamBold
+TitleSectionBesta.Text = "FUNÇÕES DE BESTA"
+TitleSectionBesta.TextColor3 = Color3.fromRGB(0, 170, 255)
+TitleSectionBesta.TextSize = 14
+TitleSectionBesta.TextXAlignment = Enum.TextXAlignment.Left
+TitleSectionBesta.Parent = TargetPageMain
+
+-- FUNÇÃO AUXILIAR: Cria o Switch Moderno (Mesmo padrão visual dos outros)
+local function CriarToggleMain(texto, callback)
+    local MainBtn = Instance.new("TextButton")
+    local Corner = Instance.new("UICorner")
+    local Stroke = Instance.new("UIStroke")
+    
+    MainBtn.Size = UDim2.new(1, -15, 0, 40)
+    MainBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    MainBtn.Font = Enum.Font.GothamBold
+    MainBtn.Text = "  " .. texto
+    MainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MainBtn.TextSize = 14
+    MainBtn.TextXAlignment = Enum.TextXAlignment.Left
+    MainBtn.Parent = TargetPageMain
+    
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = MainBtn
+    Stroke.Thickness = 1; Stroke.Color = Color3.fromRGB(255, 255, 255); Stroke.Transparency = 0.92; Stroke.Parent = MainBtn
+    
+    local SwitchBg = Instance.new("Frame", MainBtn)
+    SwitchBg.Size = UDim2.new(0, 34, 0, 18)
+    SwitchBg.Position = UDim2.new(1, -44, 0.5, -9)
+    SwitchBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+    
+    local SwitchBall = Instance.new("Frame", SwitchBg)
+    SwitchBall.Size = UDim2.new(0, 14, 0, 14)
+    SwitchBall.Position = UDim2.new(0, 2, 0.5, -7)
+    SwitchBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", SwitchBall).CornerRadius = UDim.new(1, 0)
+    
+    local ativo = false
+    MainBtn.MouseButton1Click:Connect(function()
+        ativo = not ativo
+        local targetBgColor = ativo and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(45, 45, 45)
+        local targetBallPos = ativo and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        
+        TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetBgColor}):Play()
+        TweenService:Create(SwitchBall, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = targetBallPos}):Play()
+        
+        callback(ativo)
+    end)
+    return MainBtn
+end
+
+-- FUNÇÃO AUXILIAR: Cria o Slider Moderno para o tamanho da Hitbox
+local function CriarSliderMain(texto, min, max, callback)
+    local SliderFrame = Instance.new("Frame")
+    local SliderCorner = Instance.new("UICorner")
+    local SliderText = Instance.new("TextLabel")
+    local SliderBar = Instance.new("Frame")
+    local SliderFill = Instance.new("Frame")
+    local SliderBtn = Instance.new("ImageButton")
+    
+    SliderFrame.Size = UDim2.new(1, -15, 0, 50)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    SliderFrame.Parent = TargetPageMain
+    SliderCorner.CornerRadius = UDim.new(0, 6); SliderCorner.Parent = SliderFrame
+    
+    SliderText.Size = UDim2.new(1, -20, 0, 25)
+    SliderText.Position = UDim2.new(0, 10, 0, 2)
+    SliderText.BackgroundTransparency = 1
+    SliderText.Font = Enum.Font.GothamBold
+    SliderText.Text = texto .. ": " .. min
+    SliderText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SliderText.TextSize = 13
+    SliderText.TextXAlignment = Enum.TextXAlignment.Left
+    SliderText.Parent = SliderFrame
+    
+    SliderBar.Size = UDim2.new(1, -20, 0, 4)
+    SliderBar.Position = UDim2.new(0, 10, 0, 34)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    SliderBar.Parent = SliderFrame
+    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+    
+    SliderFill.Size = UDim2.new(0, 0, 1, 0)
+    SliderFill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    SliderFill.Parent = SliderBar
+    Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+    
+    SliderBtn.Size = UDim2.new(0, 12, 0, 12)
+    SliderBtn.Position = UDim2.new(0, -6, 0.5, -6)
+    SliderBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SliderBtn.Parent = SliderFill
+    Instance.new("UICorner", SliderBtn).CornerRadius = UDim.new(1, 0)
+    
+    local mouse = Player:GetMouse()
+    local segurando = false
+    
+    local function AtualizarSlider()
+        local percent = math.clamp((mouse.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        local valorFinal = math.floor(min + (max - min) * percent)
+        SliderText.Text = texto .. ": " .. valorFinal
+        callback(valorFinal)
+    end
+    
+    SliderBtn.MouseButton1Down:Connect(function() segurando = true end)
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then segurando = false end
+    end)
+    
+    mouse.Move:Connect(function()
+        if segurando then AtualizarSlider() end
+    end)
+end
+
+-- 3. CRIAÇÃO DOS ELEMENTOS INTERATIVOS
+
+CriarToggleMain("Ativar Hitbox de Besta", function(estado)
+    hitboxBestaAtiva = estado
+    if not estado then
+        -- Quando desliga, reseta a cabeça de todo mundo pro tamanho normal (2)
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= Player and p.Character and p.Character:FindFirstChild("Head") then
+                p.Character.Head.Size = Vector3.new(2, 1, 1)
+                p.Character.Head.CanCollide = true
+                p.Character.Head.Transparency = 0
+            end
+        end
+    end
+end)
+
+CriarSliderMain("Tamanho da Hitbox", 2, 30, function(valor)
+    tamanhoHitbox = valor
+end)
+
+CriarToggleMain("Tirar Delay da Marreta", function(estado)
+    semDelayMartelo = estado
+end)
+
+CriarToggleMain("Tirar Brilho da Marreta", function(estado)
+    semBrilhoMartelo = estado
+end)
+
+CriarToggleMain("Tirar Música de Perseguição", function(estado)
+    semMusicaAtivo = estado
+end)
+
+
+-- 4. MOTOR LÓGICO COMPLETO DA BESTA (Loop Otimizado em segundo plano)
+RunService.RenderStepped:Connect(function()
+    
+    -- [LÓGICA DA HITBOX SEGUIDA]
+    if hitboxBestaAtiva then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= Player and p.Character and p.Character:FindFirstChild("Head") then
+                local head = p.Character.Head
+                head.Size = Vector3.new(tamanhoHitbox, tamanhoHitbox, tamanhoHitbox)
+                head.CanCollide = false
+                head.Transparency = 0.5 -- Fica levemente transparente para você ver onde está batendo
+            end
+        end
+    end
+    
+    -- [LÓGICA DO DELAY E BRILHO DO MARTELO]
+    if Player.Character then
+        local martelo = Player.Character:FindFirstChild("Hammer") or Player.Backpack:FindFirstChild("Hammer")
+        if martelo then
+            -- Tirar Delay (Zera o tempo de animação de cooldown e hit de forma direta)
+            if semDelayMartelo then
+                local cooldown = martelo:FindFirstChild("Cooldown") or martelo:FindFirstChild("Rate")
+                if cooldown then cooldown.Value = 0 end
+                -- Se o jogo usar atributos internos
+                martelo:SetAttribute("Cooldown", 0)
+                martelo:SetAttribute("AttackDelay", 0)
+            end
+            
+            -- Tirar Brilho (Remove os efeitos de PointLight, Trails ou Particles da marreta)
+            if semBrilhoMartelo then
+                for _, efeito in pairs(martelo:GetDescendants()) do
+                    if efeito:IsA("Light") or efeito:IsA("ParticleEmitter") or efeito:IsA("Trail") then
+                        efeito.Enabled = false
+                    end
+                end
+            end
+        end
+    end
+    
+    -- [LÓGICA DE DETONAR A MÚSICA]
+    if semMusicaAtivo then
+        -- Músicas de perseguição do FtF costumam tocar no SoundService ou direto na pasta da Besta
+        for _, som in pairs(SoundService:GetDescendants()) do
+            if som:IsA("Sound") and (string.find(string.lower(som.Name), "beast") or string.find(string.lower(som.Name), "chase") or string.find(string.lower(som.Name), "terror")) then
+                som.Volume = 0
+            end
+        end
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character then
+                for _, som in pairs(p.Character:GetDescendants()) do
+                    if som:IsA("Sound") and (string.find(string.lower(som.Name), "beast") or string.find(string.lower(som.Name), "chase")) then
+                        som.Volume = 0
+                    end
+                end
+            end
+        end
+    end
+    
+end)
+
+-- =============================================================================
 -- [ABA ESP & NOTIFICAÇÕES] - VERSÃO CORRIGIDA E CALIBRADA TOTAL
 -- =============================================================================
 
