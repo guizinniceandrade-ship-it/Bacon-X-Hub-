@@ -346,14 +346,181 @@ end
 -- [ABA MAIN] ------------------------------------------------------------------
 -- =============================================================================
 
--- Exemplo de Botão na aba Main:
-CreateFunctionButton("Main", "Auto Farm (Exemplo)", function()
-    print("Script de Auto Farm Executado!")
-    -- Cole seu script de Auto Farm aqui dentro
+-- =============================================================================
+-- [ABA MAIN] ------------------------------------------------------------------
+-- =============================================================================
+
+-- 1. VARIÁVEIS DE CONTROLE
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Player = Players.LocalPlayer
+
+local speedAtivo = false
+local speedValor = 16 -- Padrão do Roblox
+
+local jumpAtivo = false
+local jumpValor = 50 -- Padrão do Roblox
+
+local infinitoJumpAtivo = false
+local noclipAtivo = false
+
+-- 2. TEXTO INFORMATIVO (CABEÇALHO)
+local TargetPage = tabPages["Main"]
+local TitleSection = Instance.new("TextLabel")
+TitleSection.Size = UDim2.new(1, -15, 0, 30)
+TitleSection.BackgroundTransparency = 1
+TitleSection.Font = Enum.Font.GothamBold
+TitleSection.Text = "MOVIMENTO DO PERSONAGEM"
+TitleSection.TextColor3 = Color3.fromRGB(0, 170, 255)
+TitleSection.TextSize = 14
+TitleSection.TextXAlignment = Enum.TextXAlignment.Left
+TitleSection.Parent = TargetPage
+
+-- Funções auxiliares exclusivas para criar o Slider e os Toggles com o seu visual:
+local function CriarToggleLocal(texto, callback)
+    local Btn = CreateFunctionButton("Main", texto .. ": DESLIGADO", nil)
+    local ativo = false
+    Btn.MouseButton1Click:Connect(function()
+        ativo = not ativo
+        Btn.Text = "  " .. texto .. (ativo and ": LIGADO" or ": DESLIGADO")
+        Btn.TextColor3 = ativo and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(230, 230, 230)
+        callback(ativo)
+    end)
+    return Btn
+end
+
+local function CriarSliderLocal(texto, min, max, padrao, callback)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, -15, 0, 45)
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Frame.Parent = TargetPage
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+    local Stroke = Instance.new("UIStroke", Frame)
+    Stroke.Thickness = 1; Stroke.Color = Color3.fromRGB(255, 255, 255); Stroke.Transparency = 0.92
+
+    local Label = Instance.new("TextLabel", Frame)
+    Label.Size = UDim2.new(1, -20, 0, 20)
+    Label.Position = UDim2.new(0, 10, 0, 2)
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.Gotham
+    Label.Text = texto .. ": " .. padrao
+    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local SliderBar = Instance.new("Frame", Frame)
+    SliderBar.Size = UDim2.new(1, -20, 0, 6)
+    SliderBar.Position = UDim2.new(0, 10, 0, 28)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Instance.new("UICorner", SliderBar)
+
+    local SliderBtn = Instance.new("TextButton", SliderBar)
+    SliderBtn.Size = UDim2.new(0, 14, 0, 14)
+    SliderBtn.Position = UDim2.new((padrao - min) / (max - min), -7, 0.5, -7)
+    SliderBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    SliderBtn.Text = ""
+    Instance.new("UICorner", SliderBtn).CornerRadius = UDim.new(1, 0)
+
+    local arrastando = false
+    SliderBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then arrastando = true end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then arrastando = false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if arrastando and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local xInput = input.Position.X
+            local xBarra = SliderBar.AbsolutePosition.X
+            local tamBarra = SliderBar.AbsoluteSize.X
+            local pct = math.clamp((xInput - xBarra) / tamBarra, 0, 1)
+            SliderBtn.Position = UDim2.new(pct, -7, 0.5, -7)
+            local valorFinal = math.floor(min + (pct * (max - min)))
+            Label.Text = texto .. ": " .. valorFinal
+            callback(valorFinal)
+        end
+    end)
+end
+
+-- 3. CRIAÇÃO DOS ELEMENTOS DA ABA NA PRÁTICA
+
+-- SPEED (Botão para Ligar/Desligar)
+CriarToggleLocal("Speed", function(estado)
+    speedAtivo = estado
+    if not estado and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+        Player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 -- Volta ao normal ao desligar
+    end
 end)
 
--- Adicione mais botões para a aba MAIN abaixo desta linha:
+-- SPEED SLIDER (Escolher a velocidade de 16 a 250)
+CriarSliderLocal("Velocidade", 16, 250, 16, function(valor)
+    speedValor = valor
+end)
 
+-- JUMP (Botão para Ligar/Desligar)
+CriarToggleLocal("Jump", function(estado)
+    jumpAtivo = estado
+    if not estado and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = Player.Character:FindFirstChildOfClass("Humanoid")
+        hum.JumpPower = 50
+        hum.JumpHeight = 7.2 -- Reseta ambos os tipos de pulo do Roblox
+    end
+end)
+
+-- JUMP SLIDER (Escolher força do pulo de 50 a 500)
+CriarSliderLocal("Força do Pulo", 50, 500, 50, function(valor)
+    jumpValor = valor
+end)
+
+-- INFINITO JUMP (Pular no ar sem parar)
+CriarToggleLocal("Infinito Jump", function(estado)
+    infinitoJumpAtivo = estado
+end)
+
+-- NOCLIP (Atravessar paredes)
+CriarToggleLocal("Noclip", function(estado)
+    noclipAtivo = estado
+end)
+
+
+-- 4. MOTORES LÓGICOS (Fazem as modificações físicas acontecerem no boneco)
+
+-- Motor do Speed e Jump combinado
+RunService.Stepped:Connect(function()
+    local char = Player.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            if speedAtivo then hum.WalkSpeed = speedValor end
+            if jumpAtivo then
+                hum.UseJumpPower = true
+                hum.JumpPower = jumpValor
+            end
+        end
+    end
+end)
+
+-- Motor do Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+    if infinitoJumpAtivo and Player.Character then
+        local hum = Player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- Motor do Noclip
+RunService.Stepped:Connect(function()
+    if noclipAtivo and Player.Character then
+        for _, part in pairs(Player.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
 
 
 -- =============================================================================
