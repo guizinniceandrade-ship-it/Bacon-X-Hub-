@@ -354,13 +354,14 @@ end
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local Player = Players.LocalPlayer
 
 local speedAtivo = false
-local speedValor = 16 -- Padrão do Roblox
+local speedValor = 16 
 
 local jumpAtivo = false
-local jumpValor = 50 -- Padrão do Roblox
+local jumpValor = 50 
 
 local infinitoJumpAtivo = false
 local noclipAtivo = false
@@ -377,16 +378,46 @@ TitleSection.TextSize = 14
 TitleSection.TextXAlignment = Enum.TextXAlignment.Left
 TitleSection.Parent = TargetPage
 
--- Funções auxiliares exclusivas para criar o Slider e os Toggles com o seu visual:
-local function CriarToggleLocal(texto, callback)
-    local Btn = CreateFunctionButton("Main", texto .. ": DESLIGADO", nil)
+-- Função exclusiva para criar o Toggle Animado com Fundo Verde e Texto Branco
+local function CriarToggleAnimado(texto, callback)
+    local Btn = Instance.new("TextButton")
+    local Corner = Instance.new("UICorner")
+    local Stroke = Instance.new("UIStroke")
+    
+    Btn.Size = UDim2.new(1, -15, 0, 40)
+    Btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20) -- Cor padrão escura
+    Btn.Font = Enum.Font.GothamBold
+    Btn.Text = "  " .. texto
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255) -- Texto sempre Branco Puro
+    Btn.TextSize = 14
+    Btn.TextXAlignment = Enum.TextXAlignment.Left
+    Btn.Parent = TargetPage
+    
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Btn
+
+    Stroke.Thickness = 1
+    Stroke.Color = Color3.fromRGB(255, 255, 255)
+    Stroke.Transparency = 0.92
+    Stroke.Parent = Btn
+    
     local ativo = false
+    
     Btn.MouseButton1Click:Connect(function()
         ativo = not ativo
-        Btn.Text = "  " .. texto .. (ativo and ": LIGADO" or ": DESLIGADO")
-        Btn.TextColor3 = ativo and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(230, 230, 230)
+        
+        -- Cores do efeito (Verde quando ativo, Escuro quando desativado)
+        local targetColor = ativo and Color3.fromRGB(0, 160, 80) or Color3.fromRGB(20, 20, 20)
+        local targetStrokeColor = ativo and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(255, 255, 255)
+        local targetStrokeTrans = ativo and 0.6 or 0.92
+        
+        -- Animação suave de transição de cor (0.2 segundos)
+        TweenService:Create(Btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetColor}):Play()
+        TweenService:Create(Stroke, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = targetStrokeColor, Transparency = targetStrokeTrans}):Play()
+        
         callback(ativo)
     end)
+    
     return Btn
 end
 
@@ -403,9 +434,9 @@ local function CriarSliderLocal(texto, min, max, padrao, callback)
     Label.Size = UDim2.new(1, -20, 0, 20)
     Label.Position = UDim2.new(0, 10, 0, 2)
     Label.BackgroundTransparency = 1
-    Label.Font = Enum.Font.Gotham
+    Label.Font = Enum.Font.GothamBold
     Label.Text = texto .. ": " .. padrao
-    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255) -- Texto do slider em branco também
     Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -443,50 +474,50 @@ local function CriarSliderLocal(texto, min, max, padrao, callback)
     end)
 end
 
--- 3. CRIAÇÃO DOS ELEMENTOS DA ABA NA PRÁTICA
+-- 3. CRIAÇÃO DOS ELEMENTOS NA INTERFACE
 
--- SPEED (Botão para Ligar/Desligar)
-CriarToggleLocal("Speed", function(estado)
+-- SPEED TOGGLE (Fica verde quando ativo)
+CriarToggleAnimado("Speed", function(estado)
     speedAtivo = estado
     if not estado and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
-        Player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 -- Volta ao normal ao desligar
+        Player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16 
     end
 end)
 
--- SPEED SLIDER (Escolher a velocidade de 16 a 250)
+-- SPEED SLIDER
 CriarSliderLocal("Velocidade", 16, 250, 16, function(valor)
     speedValor = valor
 end)
 
--- JUMP (Botão para Ligar/Desligar)
-CriarToggleLocal("Jump", function(estado)
+-- JUMP TOGGLE (Fica verde quando ativo)
+CriarToggleAnimado("Jump", function(estado)
     jumpAtivo = estado
     if not estado and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
         local hum = Player.Character:FindFirstChildOfClass("Humanoid")
         hum.JumpPower = 50
-        hum.JumpHeight = 7.2 -- Reseta ambos os tipos de pulo do Roblox
+        hum.JumpHeight = 7.2 
     end
 end)
 
--- JUMP SLIDER (Escolher força do pulo de 50 a 500)
+-- JUMP SLIDER
 CriarSliderLocal("Força do Pulo", 50, 500, 50, function(valor)
     jumpValor = valor
 end)
 
--- INFINITO JUMP (Pular no ar sem parar)
-CriarToggleLocal("Infinito Jump", function(estado)
+-- INFINITO JUMP TOGGLE (Fica verde quando ativo)
+CriarToggleAnimado("Infinito Jump", function(estado)
     infinitoJumpAtivo = estado
 end)
 
--- NOCLIP (Atravessar paredes)
-CriarToggleLocal("Noclip", function(estado)
+-- NOCLIP TOGGLE (Fica verde quando ativo)
+CriarToggleAnimado("Noclip", function(estado)
     noclipAtivo = estado
 end)
 
 
--- 4. MOTORES LÓGICOS (Fazem as modificações físicas acontecerem no boneco)
+-- 4. MOTORES LÓGICOS (Físicas em segundo plano)
 
--- Motor do Speed e Jump combinado
+-- Motor Speed e Jump
 RunService.Stepped:Connect(function()
     local char = Player.Character
     if char then
@@ -501,7 +532,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Motor do Infinite Jump
+-- Motor Infinite Jump
 UserInputService.JumpRequest:Connect(function()
     if infinitoJumpAtivo and Player.Character then
         local hum = Player.Character:FindFirstChildOfClass("Humanoid")
@@ -511,7 +542,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Motor do Noclip
+-- Motor Noclip
 RunService.Stepped:Connect(function()
     if noclipAtivo and Player.Character then
         for _, part in pairs(Player.Character:GetChildren()) do
@@ -521,7 +552,6 @@ RunService.Stepped:Connect(function()
         end
     end
 end)
-
 
 -- =============================================================================
 -- [ABA ESP] -------------------------------------------------------------------
