@@ -1,771 +1,385 @@
 -- =============================================================================
--- VALKYRIE CYBERNETICS X OVERLORD HUB - CÓDIGO 100% COMPLETO COM MAPA DE FUNÇÕES
+-- INTERFACE PRINCIPAL: BACON X HUB v1 (ORGANIZADO PARA SCRIPTS)
 -- =============================================================================
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local MarketplaceService = game:GetService("MarketplaceService")
+
 local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 
-local NomeDoHub = "Valkyrie CyberNetics X Overlord Hub"
-local NomeDoJogo = "Flee the Facility"
+-- Destruir GUI antiga para evitar sobreposição ao reexecutar
+if CoreGui:FindFirstChild("BaconXHubGui") then
+    CoreGui["BaconXHubGui"]:Destroy()
+end
 
-pcall(function()
-    local info = MarketplaceService:GetProductInfo(game.PlaceId)
-    if info and info.Name then NomeDoJogo = info.Name end
-end)
-
-local Antigo = game:GetService("CoreGui"):FindFirstChild("ValkyrieFTF_UI") or LocalPlayer:FindFirstChildOfClass("PlayerGui"):FindFirstChild("ValkyrieFTF_UI")
-if Antigo then Antigo:Destroy() end
-
+-- 1. CRIANDO A SCREEN GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ValkyrieFTF_UI"
+ScreenGui.Name = "BaconXHubGui"
+ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
-pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
-if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:FindFirstChildOfClass("PlayerGui") end
+-- =============================================================================
+-- PARTE 1: O BOTÃO FLUTUANTE (TOGGLE BUTTON) - COMPACTO (50x50)
+-- =============================================================================
+local ToggleButton = Instance.new("TextButton")
+local ButtonCorner = Instance.new("UICorner")
+local ButtonStroke = Instance.new("UIStroke")
+local ButtonTextGrad = Instance.new("UIGradient")
+local ButtonBordGrad = Instance.new("UIGradient")
+
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Parent = ScreenGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+ToggleButton.Position = UDim2.new(0.05, 0, 0.2, 0)
+ToggleButton.Size = UDim2.new(0, 50, 0, 50)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Text = "BXH"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 14
+ToggleButton.Active = true
+ToggleButton.Draggable = true
+
+ButtonCorner.CornerRadius = UDim.new(0, 12)
+ButtonCorner.Parent = ToggleButton
+
+-- Degradê no Texto do Botão (Azul, Branco e Preto)
+ButtonTextGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(0, 170, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(0, 0, 0))
+})
+ButtonTextGrad.Parent = ToggleButton
+
+-- Borda RGB do Botão
+ButtonStroke.Parent = ToggleButton
+ButtonStroke.Thickness = 2.5
+ButtonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+ButtonBordGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(0, 170, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(0, 0, 0))
+})
+ButtonBordGrad.Parent = ButtonStroke
+
+-- Animação do RGB do botão girando
+local currentRotation = 0
+game:GetService("RunService").RenderStepped:Connect(function(deltaTime)
+    local Speed = 150
+    currentRotation = (currentRotation + (Speed * deltaTime)) % 360
+    ButtonBordGrad.Rotation = currentRotation
+end)
 
 -- =============================================================================
--- SISTEMA DE NOTIFICAÇÕES
+-- PARTE 2: A INTERFACE PRINCIPAL (MAIN FRAME - 550x350) -> ARRASTÁVEL
 -- =============================================================================
-local function CriarNotificacao(titulo, mensagem, duracao)
-    local NotifFrame = Instance.new("Frame", ScreenGui)
-    NotifFrame.Size = UDim2.new(0, 260, 0, 70)
-    NotifFrame.Position = UDim2.new(1, 300, 1, -85)
-    NotifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    
-    local nc = Instance.new("UICorner", NotifFrame)
-    nc.CornerRadius = UDim.new(0, 8)
-    
-    local ns = Instance.new("UIStroke", NotifFrame)
-    ns.Color = Color3.fromRGB(0, 200, 100)
-    ns.Thickness = 1.5
+local MainFrame = Instance.new("Frame")
+local FrameCorner = Instance.new("UICorner")
+local FrameStroke = Instance.new("UIStroke")
+local TitleLabel = Instance.new("TextLabel")
+local TitleGradient = Instance.new("UIGradient")
 
-    local tTitle = Instance.new("TextLabel", NotifFrame)
-    tTitle.Size = UDim2.new(1, -20, 0, 25)
-    tTitle.Position = UDim2.new(0, 12, 0, 6)
-    tTitle.BackgroundTransparency = 1
-    tTitle.Font = Enum.Font.GothamBold
-    tTitle.TextColor3 = Color3.fromRGB(0, 255, 130)
-    tTitle.TextSize = 12
-    tTitle.TextXAlignment = Enum.TextXAlignment.Left
-    tTitle.Text = titulo
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MainFrame.Size = UDim2.new(0, 550, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175) 
+MainFrame.ClipsDescendants = true
+MainFrame.Visible = true 
+MainFrame.Active = true
 
-    local tMsg = Instance.new("TextLabel", NotifFrame)
-    tMsg.Size = UDim2.new(1, -24, 0, 35)
-    tMsg.Position = UDim2.new(0, 12, 0, 28)
-    tMsg.BackgroundTransparency = 1
-    tMsg.Font = Enum.Font.GothamMedium
-    tMsg.TextColor3 = Color3.fromRGB(220, 220, 220)
-    tMsg.TextSize = 11
-    tMsg.TextXAlignment = Enum.TextXAlignment.Left
-    tMsg.TextWrapped = true
-    tMsg.Text = mensagem
+FrameCorner.CornerRadius = UDim.new(0, 12)
+FrameCorner.Parent = MainFrame
 
-    TweenService:Create(NotifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -280, 1, -85)}):Play()
-    
-    task.delay(duracao, function()
-        local s = TweenService:Create(NotifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 300, 1, -85)})
-        s:Play()
-        s.Completed:Connect(function() NotifFrame:Destroy() end)
-    end)
-end
+-- Linha branca fina e semi-transparente ao redor do painel principal
+FrameStroke.Parent = MainFrame
+FrameStroke.Thickness = 1
+FrameStroke.Color = Color3.fromRGB(255, 255, 255)
+FrameStroke.Transparency = 0.85
+FrameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- SISTEMA PARA ARRASTAR A INTERFACE PRINCIPAL
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- Título no topo encostado à esquerda
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Parent = MainFrame
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0, 15, 0, 10)
+TitleLabel.Size = UDim2.new(0, 250, 0, 25)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "Bacon X Hub"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+TitleGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(0, 170, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(0, 0, 0))
+})
+TitleGradient.Parent = TitleLabel
 
 -- =============================================================================
--- PAINEL PRINCIPAL (MAIN CANVAS)
+-- PARTE 3: ABAS LATERAIS COM DISTANCIAMENTO
 -- =============================================================================
-local MainCanvas = Instance.new("Frame", ScreenGui)
-MainCanvas.Name = "MainCanvas"
-MainCanvas.BackgroundColor3 = Color3.fromRGB(19, 19, 19)
-MainCanvas.Size = UDim2.new(0, 550, 0, 350)
-MainCanvas.Position = UDim2.new(0.5, -275, 1, 50)
-MainCanvas.ClipsDescendants = true
-Instance.new("UICorner", MainCanvas).CornerRadius = UDim.new(0, 14)
+local TabFrame = Instance.new("Frame")
+local TabLayout = Instance.new("UIListLayout")
+local TabPadding = Instance.new("UIPadding")
 
-local LeftPanel = Instance.new("Frame", MainCanvas)
-LeftPanel.Name = "LeftPanel"
-LeftPanel.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
-LeftPanel.BorderSizePixel = 0
-LeftPanel.Size = UDim2.new(0, 170, 1, 0)
-Instance.new("UICorner", LeftPanel).CornerRadius = UDim.new(0, 14)
+TabFrame.Name = "TabFrame"
+TabFrame.Parent = MainFrame
+TabFrame.BackgroundTransparency = 1
+TabFrame.Position = UDim2.new(0, 10, 0, 55)
+TabFrame.Size = UDim2.new(0, 110, 0, 275)
 
-local EdgeHider = Instance.new("Frame", LeftPanel)
-EdgeHider.Name = "EdgeHider"
-EdgeHider.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
-EdgeHider.BorderSizePixel = 0
-EdgeHider.Position = UDim2.new(1, -10, 0, 0)
-EdgeHider.Size = UDim2.new(0, 10, 1, 0)
+TabLayout.Parent = TabFrame
+TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabLayout.Padding = UDim.new(0, 8)
 
--- =============================================================================
--- AS 3 LINHAS DIVISÓRIAS VERDES COLOACADAS EXATAMENTE ONDE PEDIU
--- =============================================================================
-local L1 = Instance.new("Frame", LeftPanel)
-L1.Name = "HeaderDivider"
-L1.Size = UDim2.new(0.8, 0, 0, 1)
-L1.Position = UDim2.new(0.1, 0, 0, 60)
-L1.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-L1.BorderSizePixel = 0
+TabPadding.Parent = TabFrame
+TabPadding.PaddingLeft = UDim.new(0, 5)
 
-local L2 = Instance.new("Frame", LeftPanel)
-L2.Name = "BottomDivider"
-L2.Size = UDim2.new(0.8, 0, 0, 1)
-L2.Position = UDim2.new(0.1, 0, 1, -55)
-L2.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-L2.BorderSizePixel = 0
+local ContentContainer = Instance.new("Frame")
+local ContainerStroke = Instance.new("UIStroke")
 
-local L3 = Instance.new("Frame", MainCanvas)
-L3.Name = "VerticalDivider"
-L3.Size = UDim2.new(0, 1, 0.9, 0)
-L3.Position = UDim2.new(0, 175, 0.05, 0)
-L3.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-L3.BorderSizePixel = 0
-
--- Cabeçalho de Textos
-local HeaderFrame = Instance.new("Frame", LeftPanel)
-HeaderFrame.BackgroundTransparency = 1
-HeaderFrame.Size = UDim2.new(1, 0, 0, 60)
-
-local Title1 = Instance.new("TextLabel", HeaderFrame)
-Title1.Position = UDim2.new(0, 16, 0, 14)
-Title1.Size = UDim2.new(1, -24, 0, 15)
-Title1.Font = Enum.Font.GothamBold
-Title1.Text = "Valkyrie CyberNetics"
-Title1.TextColor3 = Color3.fromRGB(0, 200, 100)
-Title1.TextSize = 11
-Title1.TextXAlignment = Enum.TextXAlignment.Left
-Title1.BackgroundTransparency = 1
-
-local Title2 = Instance.new("TextLabel", HeaderFrame)
-Title2.Position = UDim2.new(0, 16, 0, 30)
-Title2.Size = UDim2.new(1, -24, 0, 20)
-Title2.Font = Enum.Font.GothamMedium
-Title2.Text = NomeDoJogo
-Title2.TextColor3 = Color3.fromRGB(160, 160, 160)
-Title2.TextSize = 11
-Title2.TextXAlignment = Enum.TextXAlignment.Left
-Title2.BackgroundTransparency = 1
-
--- Menu de Rolagem das Abas
-local NavigationScroll = Instance.new("ScrollingFrame", LeftPanel)
-NavigationScroll.Position = UDim2.new(0, 0, 0, 65)
-NavigationScroll.Size = UDim2.new(1, 0, 1, -125)
-NavigationScroll.BackgroundTransparency = 1
-NavigationScroll.ScrollBarThickness = 0
-
-local NavList = Instance.new("UIListLayout", NavigationScroll)
-NavList.Padding = UDim.new(0, 4)
-NavList.SortOrder = Enum.SortOrder.LayoutOrder
-
--- Container Inferior dos Botões
-local BottomContainer = Instance.new("Frame", LeftPanel)
-BottomContainer.Position = UDim2.new(0, 0, 1, -55)
-BottomContainer.Size = UDim2.new(1, 0, 0, 55)
-BottomContainer.BackgroundTransparency = 1
-
-local CloseBtn = Instance.new("TextButton", BottomContainer)
-CloseBtn.Position = UDim2.new(0, 12, 0, 12)
-CloseBtn.Size = UDim2.new(0, 68, 0, 28)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(135, 35, 35)
-CloseBtn.Text = "Fechar"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 11
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
-
-local MinimizeBtn = Instance.new("TextButton", BottomContainer)
-MinimizeBtn.Position = UDim2.new(1, -80, 0, 12)
-MinimizeBtn.Size = UDim2.new(0, 68, 0, 28)
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(33, 33, 33)
-MinimizeBtn.Text = "Minimizar"
-MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeBtn.Font = Enum.Font.GothamBold
-MinimizeBtn.TextSize = 11
-Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 6)
-
--- Painel Base do Conteúdo
-local ContentContainer = Instance.new("Frame", MainCanvas)
 ContentContainer.Name = "ContentContainer"
-ContentContainer.Position = UDim2.new(0, 185, 0, 15)
-ContentContainer.Size = UDim2.new(1, -200, 1, -30)
+ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
+ContentContainer.Position = UDim2.new(0, 135, 0, 55)
+ContentContainer.Size = UDim2.new(0, 400, 0, 275)
+ContentContainer.ClipsDescendants = true
 
--- Tabela para gerenciar a troca das telas
-local paginas = {}
-local botoesAba = {}
+ContainerStroke.Parent = ContentContainer
+ContainerStroke.Thickness = 1
+ContainerStroke.Color = Color3.fromRGB(255, 255, 255)
+ContainerStroke.Transparency = 0.9
+ContainerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-local function CriarEstruturaAba(nomeAba, layoutOrder)
-    local PaginaScroll = Instance.new("ScrollingFrame", ContentContainer)
-    PaginaScroll.Name = nomeAba .. "Page"
-    PaginaScroll.Size = UDim2.new(1, 0, 1, 0)
-    PaginaScroll.BackgroundTransparency = 1
-    PaginaScroll.Visible = false
-    PaginaScroll.ScrollBarThickness = 2
-    PaginaScroll.ScrollBarImageColor3 = Color3.fromRGB(0, 200, 100)
+local tabs = {"Main", "ESP", "Misc"}
+local tabButtons = {}
+local tabPages = {}
+
+-- Criar de forma automática as páginas e botões das abas
+for i, tabName in ipairs(tabs) do
+    local Button = Instance.new("TextButton")
+    local BtnCorner = Instance.new("UICorner")
+    local BtnStroke = Instance.new("UIStroke")
     
-    local PaginaList = Instance.new("UIListLayout", PaginaScroll)
-    PaginaList.Padding = UDim.new(0, 6)
-    PaginaList.SortOrder = Enum.SortOrder.LayoutOrder
+    Button.Name = tabName .. "Tab"
+    Button.Parent = TabFrame
+    Button.Size = UDim2.new(1, -5, 0, 35)
+    Button.Font = Enum.Font.GothamBold
+    Button.Text = tabName
+    Button.TextSize = 14
+    Button.TextColor3 = (i == 1) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 150)
+    Button.BackgroundColor3 = (i == 1) and Color3.fromRGB(25, 25, 25) or Color3.fromRGB(15, 15, 15)
     
-    PaginaList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        PaginaScroll.CanvasSize = UDim2.new(0, 0, 0, PaginaList.AbsoluteContentSize.Y + 5)
-    end)
-    
-    local BotaoAba = Instance.new("TextButton", NavigationScroll)
-    BotaoAba.Name = nomeAba .. "Btn"
-    BotaoAba.Size = UDim2.new(1, -10, 0, 34)
-    BotaoAba.Position = UDim2.new(0, 5, 0, 0)
-    BotaoAba.BackgroundTransparency = 1
-    BotaoAba.Font = Enum.Font.GothamMedium
-    BotaoAba.Text = "      " .. nomeAba
-    BotaoAba.TextColor3 = Color3.fromRGB(150, 150, 150)
-    BotaoAba.TextSize = 12
-    BotaoAba.TextXAlignment = Enum.TextXAlignment.Left
-    BotaoAba.LayoutOrder = layoutOrder
-    Instance.new("UICorner", BotaoAba).CornerRadius = UDim.new(0, 6)
-    
-    local Indicador = Instance.new("Frame", BotaoAba)
-    Indicador.Name = "Indicador"
-    Indicador.Size = UDim2.new(0, 3, 0, 14)
-    Indicador.Position = UDim2.new(0, 10, 0.5, -7)
-    Indicador.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-    Indicador.Visible = false
-    Instance.new("UICorner", Indicador).CornerRadius = UDim.new(1, 0)
+    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.Parent = Button
 
-    botoesAba[nomeAba] = BotaoAba
-    paginas[nomeAba] = PaginaScroll
-
-    BotaoAba.MouseButton1Click:Connect(function()
-        for _, p in pairs(paginas) do p.Visible = false end
-        for _, b in pairs(botoesAba) do 
-            b.BackgroundTransparency = 1
-            b.TextColor3 = Color3.fromRGB(140, 140, 140)
-            b.Font = Enum.Font.GothamMedium
-            b.Indicador.Visible = false
-        end
-        PaginaScroll.Visible = true
-        BotaoAba.BackgroundTransparency = 0.94
-        BotaoAba.TextColor3 = Color3.fromRGB(255, 255, 255)
-        BotaoAba.Font = Enum.Font.GothamBold
-        BotaoAba.Indicador.Visible = true
-    end)
-    
-    return PaginaScroll
-end
-
--- Gerando as páginas fisicamente na memória
-local PageSurvivor = CriarEstruturaAba("Survivor", 1)
-local PageBeast    = CriarEstruturaAba("Beast", 2)
-local PageVisuals  = CriarEstruturaAba("Visuals", 3)
-local PagePlayer   = CriarEstruturaAba("Player", 4)
-
--- =============================================================================
--- [ÁREA DE MAPEAMENTO] INJETE SUAS FUNÇÕES EXATAMENTE AQUI ABAIXO:
--- =============================================================================
-
--- 🔴 1. FUNÇÕES PARA A ABA: SURVIVOR
-
--- =============================================================================
--- SISTEMA DE TELEPORTE COM FILTRO DE PC E RECUO DE SEGURANÇA (SURVIVOR)
--- =============================================================================
-
--- Título da Seção
-local TeleportLabel = Instance.new("TextLabel", PageSurvivor)
-TeleportLabel.Name = "TeleportSectionLabel"
-TeleportLabel.Size = UDim2.new(1, -10, 0, 25)
-TeleportLabel.BackgroundTransparency = 1
-TeleportLabel.Font = Enum.Font.GothamBold
-TeleportLabel.Text = "Teleportes --"
-TeleportLabel.TextColor3 = Color3.fromRGB(0, 200, 100)
-TeleportLabel.TextSize = 13
-TeleportLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Função Auxiliar para Criar as Linhas de Teleporte com o Botão ">"
-local function CriarLinhaTeleporte(textoNome, funcaoDestino)
-    local RowFrame = Instance.new("Frame", PageSurvivor)
-    RowFrame.Size = UDim2.new(1, -10, 0, 35)
-    RowFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-    Instance.new("UICorner", RowFrame).CornerRadius = UDim.new(0, 6)
-    
-    local RowStroke = Instance.new("UIStroke", RowFrame)
-    RowStroke.Color = Color3.fromRGB(35, 35, 35)
-    RowStroke.Thickness = 1
-
-    local Label = Instance.new("TextLabel", RowFrame)
-    Label.Size = UDim2.new(1, -50, 1, 0)
-    Label.Position = UDim2.new(0, 10, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Font = Enum.Font.GothamMedium
-    Label.Text = textoNome
-    Label.TextColor3 = Color3.fromRGB(230, 230, 230)
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-
-    local GoBtn = Instance.new("TextButton", RowFrame)
-    GoBtn.Size = UDim2.new(0, 30, 0, 25)
-    GoBtn.Position = UDim2.new(1, -35, 0.5, -12)
-    GoBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    GoBtn.Font = Enum.Font.GothamBold
-    GoBtn.Text = ">"
-    GoBtn.TextColor3 = Color3.fromRGB(0, 255, 130)
-    GoBtn.TextSize = 14
-    Instance.new("UICorner", GoBtn).CornerRadius = UDim.new(0, 4)
-    
-    local BtnStroke = Instance.new("UIStroke", GoBtn)
-    BtnStroke.Color = Color3.fromRGB(0, 200, 100)
+    BtnStroke.Parent = Button
     BtnStroke.Thickness = 1
-
-    GoBtn.MouseButton1Click:Connect(funcaoDestino)
-end
-
--- Função Principal do Tween com Recuo de Posição (CFrame com Offset)
-local function IniciarTweenVoando(cframeAlvo)
-    local car = LocalPlayer.Character
-    local hrp = car and car:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    -- Aplica o recuo: 3 studs para cima e 4 studs para trás em relação à rotação do objeto
-    -- Isso evita que você spawne "dentro" ou colando na parede do objeto
-    local posicaoFinal = cframeAlvo * CFrame.new(0, 3, 4)
-
-    local distancia = (hrp.Position - posicaoFinal.Position).Magnitude
-    local velocidade = 40 -- Velocidade do voo
-    local tempoDeVoo = distancia / velocidade
-
-    hrp.Anchored = true
-
-    local infoTween = TweenInfo.new(tempoDeVoo, Enum.EasingStyle.Linear)
-    local voo = TweenService:Create(hrp, infoTween, {CFrame = posicaoFinal})
+    BtnStroke.Color = Color3.fromRGB(255, 255, 255)
+    BtnStroke.Transparency = 0.88
     
-    CriarNotificacao("Teleporte", "Voando com recuo de segurança...", 2)
-    voo:Play()
+    tabButtons[tabName] = Button
+
+    -- Página de Conteúdo com Barra de Rolagem Automática
+    local Page = Instance.new("ScrollingFrame")
+    local PageList = Instance.new("UIListLayout")
+    local PagePadding = Instance.new("UIPadding")
+
+    Page.Name = tabName .. "Page"
+    Page.Parent = ContentContainer
+    Page.BackgroundTransparency = 1
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.ScrollBarThickness = 3
+    Page.ScrollBarImageColor3 = Color3.fromRGB(0, 170, 255)
+    Page.Visible = (i == 1)
     
-    voo.Completed:Connect(function()
-        hrp.Anchored = false
-        CriarNotificacao("Teleporte", "Chegou no ponto cego!", 1.5)
+    PageList.Parent = Page
+    PageList.SortOrder = Enum.SortOrder.LayoutOrder
+    PageList.Padding = UDim.new(0, 6)
+    
+    PagePadding.Parent = Page
+    PagePadding.PaddingTop = UDim.new(0, 8)
+    PagePadding.PaddingLeft = UDim.new(0, 10)
+    PagePadding.PaddingRight = UDim.new(0, 10)
+
+    -- Atualiza dinamicamente o tamanho útil da rolagem
+    PageList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Page.CanvasSize = UDim2.new(0, 0, 0, PageList.AbsoluteContentSize.Y + 15)
     end)
+
+    tabPages[tabName] = Page
 end
 
--- 1. LÓGICA DO TELEPORTE: PC (APENAS NÃO CONCLUÍDOS)
-CriarLinhaTeleporte("Teleporte Pc", function()
-    local computadores = {}
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if (obj.Name == "ComputerTable" or obj.Name:match("Computer")) and obj:IsA("Model") then
-            -- Verifica se o computador já foi hackeado/concluído
-            -- O FTF costuma usar uma Screen ou uma PointLight verde/azul quando pronto.
-            local esgotado = false
-            local screen = obj:FindFirstChild("Screen", true)
-            
-            -- Se a tela do PC mudou de cor para verde (0, 255, ...) ou sumiu o objetivo, consideramos feito
-            if screen and screen:IsA("Part") and screen.Color.G > 0.7 then
-                esgotado = true
-            end
-            
-            -- Também checa se existe alguma estampa ou texturas de concluído
-            if obj:FindFirstChild("GreenLight", true) or obj:FindFirstChild("Completed", true) then
-                esgotado = true
-            end
-
-            if not esgotado then
-                table.insert(computadores, obj)
-            end
-        end
-    end
-
-    if #computadores > 0 then
-        local pcEscolhido = computadores[math.random(1, #computadores)]
-        -- Usa o CFrame do objeto principal para calcular a rotação e o recuo certo
-        local primPart = pcEscolhido.PrimaryPart or pcEscolhido:FindFirstChild("Screen") or pcEscolhido:FindFirstChildOfClass("Part")
-        if primPart then
-            IniciarTweenVoando(primPart.CFrame)
-        end
-    else
-        CriarNotificacao("Aviso", "Todos os PCs deste mapa já foram feitos!", 3)
-    end
-end)
-
--- 2. LÓGICA DO TELEPORTE: CÁPSULA (COM RECUO)
-CriarLinhaTeleporte("Teleporte cápsula", function()
-    local capsulas = {}
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if (obj.Name == "FreezePod" or obj.Name:match("Tube") or obj.Name:match("Pod")) and obj:IsA("Model") then
-            table.insert(capsulas, obj)
-        end
-    end
-
-    if #capsulas > 0 then
-        local capsulaEscolhida = capsulas[math.random(1, #capsulas)]
-        local primPart = capsulaEscolhida.PrimaryPart or capsulaEscolhida:FindFirstChildOfClass("Part")
-        if primPart then
-            IniciarTweenVoando(primPart.CFrame)
-        end
-    else
-        CriarNotificacao("Erro", "Nenhuma cápsula encontrada.", 3)
-    end
-end)
-
--- 3. LÓGICA DO TELEPORTE: PORTÃO (COM RECUO)
-CriarLinhaTeleporte("Teleporte portão", function()
-    local portoes = {}
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if (obj.Name == "ExitGate" or obj.Name:match("Gate") or obj.Name:match("Exit")) and obj:IsA("Model") then
-            table.insert(portoes, obj)
-        end
-    end
-
-    if #portoes > 0 then
-        local portaoEscolhido = portoes[math.random(1, #portoes)]
-        local primPart = portaoEscolhido.PrimaryPart or portaoEscolhido:FindFirstChildOfClass("Part")
-        if primPart then
-            -- Portões são muito grandes, damos um offset um pouco maior para garantir que não vai bugar na parede
-            IniciarTweenVoando(primPart.CFrame * CFrame.new(0, 0, 2))
-        end
-    else
-        CriarNotificacao("Erro", "Nenhum portão localizado.", 3)
-    end
-end)
-
 -- =============================================================================
--- SEÇÃO: COMPUTADOR FUNÇÕES
+-- PARTE 4: SISTEMA DE ALTERNAÇÃO DE ABAS COM ANIMAÇÃO
 -- =============================================================================
+local currentTab = "Main"
 
--- Título da Seção atualizado exatamente como você pediu
-local HackingLabel = Instance.new("TextLabel", PageSurvivor)
-HackingLabel.Name = "HackingSectionLabel"
-HackingLabel.Size = UDim2.new(1, -10, 0, 25)
-HackingLabel.BackgroundTransparency = 1
-HackingLabel.Font = Enum.Font.GothamBold
-HackingLabel.Text = "Computador funções --"
-HackingLabel.TextColor3 = Color3.fromRGB(0, 200, 100) -- Mantendo o verde padrão
-HackingLabel.TextSize = 13
-HackingLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Variáveis Globais de Controle
-_G.SempreAcertarPC = false
-_G.HackRapidoAtivo = false
-
--- =============================================================================
--- FUNÇÃO CRIADORA DE TOGGLE SWITCH ANIMADO
--- =============================================================================
-local function CriarToggleAnimado(textoNome, funcaoCallback)
-    local RowFrame = Instance.new("Frame", PageSurvivor)
-    RowFrame.Size = UDim2.new(1, -10, 0, 40)
-    RowFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-    Instance.new("UICorner", RowFrame).CornerRadius = UDim.new(0, 6)
+local function switchTab(targetTab)
+    if currentTab == targetTab then return end
     
-    local RowStroke = Instance.new("UIStroke", RowFrame)
-    RowStroke.Color = Color3.fromRGB(35, 35, 35)
-    RowStroke.Thickness = 1
+    for name, page in pairs(tabPages) do
+        local btn = tabButtons[name]
+        if name == targetTab then
+            page.Visible = true
+            TweenService:Create(btn, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(25, 25, 25), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+        else
+            page.Visible = false
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(15, 15, 15), TextColor3 = Color3.fromRGB(150, 150, 150)}):Play()
+        end
+    end
+    currentTab = targetTab
+end
 
-    local Label = Instance.new("TextLabel", RowFrame)
-    Label.Size = UDim2.new(1, -70, 1, 0)
-    Label.Position = UDim2.new(0, 12, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Font = Enum.Font.GothamMedium
-    Label.Text = textoNome
-    Label.TextColor3 = Color3.fromRGB(230, 230, 230)
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-
-    -- Fundo do Toggle
-    local SwitchBg = Instance.new("TextButton", RowFrame)
-    SwitchBg.Size = UDim2.new(0, 42, 0, 22)
-    SwitchBg.Position = UDim2.new(1, -54, 0.5, -11)
-    SwitchBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    SwitchBg.Text = ""
-    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
-    
-    local SwitchStroke = Instance.new("UIStroke", SwitchBg)
-    SwitchStroke.Color = Color3.fromRGB(60, 60, 60)
-    SwitchStroke.Thickness = 1
-
-    -- Bolinha do Toggle
-    local SliderCircle = Instance.new("Frame", SwitchBg)
-    SliderCircle.Size = UDim2.new(0, 16, 0, 16)
-    SliderCircle.Position = UDim2.new(0, 3, 0.5, -8)
-    SliderCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", SliderCircle).CornerRadius = UDim.new(1, 0)
-
-    local ativo = false
-
-    SwitchBg.MouseButton1Click:Connect(function()
-        ativo = not ativo
-        
-        local CorAlvo = ativo and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(45, 45, 45)
-        local StrokeAlvo = ativo and Color3.fromRGB(0, 255, 130) or Color3.fromRGB(60, 60, 60)
-        local PosicaoAlvo = ativo and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
-
-        TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = CorAlvo}):Play()
-        TweenService:Create(SwitchStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = StrokeAlvo}):Play()
-        TweenService:Create(SliderCircle, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = PosicaoAlvo}):Play()
-
-        funcaoCallback(ativo)
+for name, btn in pairs(tabButtons) do
+    btn.MouseButton1Click:Connect(function()
+        switchTab(name)
     end)
 end
 
 -- =============================================================================
--- BOTÕES DESTA SEÇÃO
+-- PARTE 5: ANIMAÇÃO DE ABRIR E FECHAR
 -- =============================================================================
+local isOpen = true 
+local debounced = false
 
--- 1. Sempre Acertar PC
-local function IniciarThreadAutoHit()
-    task.spawn(function()
-        while _G.SempreAcertarPC do
-            local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-            local HackGui = PlayerGui and PlayerGui:FindFirstChild("ScreenGui") and PlayerGui.ScreenGui:FindFirstChild("HackGui") or PlayerGui:FindFirstChild("HackGui", true)
-            
-            if HackGui and HackGui.Enabled then
-                local PlayerMinigame = HackGui:FindFirstChild("ComputerProgress") or HackGui:FindFirstChild("MinigameFrame", true)
-                if PlayerMinigame then
-                    local Agulha = PlayerMinigame:FindFirstChild("Arrow") or PlayerMinigame:FindFirstChild("Pointer", true)
-                    local ZonaSucesso = PlayerMinigame:FindFirstChild("SuccessZone") or PlayerMinigame:FindFirstChild("GreenZone", true)
-                    
-                    if Agulha and ZonaSucesso then
-                        local distanciaZ = math.abs(Agulha.Rotation - ZonaSucesso.Rotation)
-                        if distanciaZ < 8 then
-                            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                            task.wait(0.05)
-                            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                            task.wait(0.5)
-                        end
-                    end
-                end
-            end
-            task.wait(0.01)
-        end
-    end)
-end
-
-CriarToggleAnimado("Sempre Acertar PC", function(state)
-    _G.SempreAcertarPC = state
-    if state then
-        IniciarThreadAutoHit()
-        CriarNotificacao("Hacking", "Skill Check no modo Auto-Hit Perfeito!", 2)
-    else
-        CriarNotificacao("Hacking", "Auto-Hit desligado.", 1.5)
-    end
-end)
-
--- 2. Fazer PC Mais Rápido
-local function IniciarThreadHackRapido()
-    task.spawn(function()
-        while _G.HackRapidoAtivo do
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj.Name == "ComputerTable" and obj:IsA("Model") then
-                    local Progresso = obj:FindFirstChild("Progress") or obj:FindFirstChild("Charge", true)
-                    
-                    if Progresso and Progresso:IsA("NumberValue") and Progresso.Value > 0 and Progresso.Value < 100 then
-                        Progresso.Value = Progresso.Value + 1.5
-                        task.wait(0.1)
-                    end
-                end
-            end
-            task.wait(0.1)
-        end
-    end)
-end
-
-CriarToggleAnimado("Fazer PC Mais Rápido", function(state)
-    _G.HackRapidoAtivo = state
-    if state then
-        IniciarThreadHackRapido()
-        CriarNotificacao("Hacking", "Velocidade de Hack aumentada com sucesso!", 2)
-    else
-        CriarNotificacao("Hacking", "Velocidade de Hack voltou ao padrão.", 1.5)
-    end
-end)
-
--- 🔴 2. FUNÇÕES PARA A ABA: BEAST
--- Use 'PageBeast' como parente dos seus objetos
--- [ADICIONE AS FUNÇÕES DA ABA BEAST AQUI]
-
-
--- 🔴 3. FUNÇÕES PARA A ABA: VISUALS (ESP)
-
--- =============================================================================
--- VALKYRIE CYBERNETICS - ABA ESP COMPLETA (ATUALIZADA E CORRIGIDA)
--- =============================================================================
-
--- Título da Seção (Alinhado com a sua interface)
-local EspLabel = Instance.new("TextLabel", PageVisuals) -- Lembre-se de ajustar 'PageVisuals' para a sua variável de aba
-EspLabel.Name = "EspSectionLabel"
-EspLabel.Size = UDim2.new(1, -10, 0, 25)
-EspLabel.BackgroundTransparency = 1
-EspLabel.Font = Enum.Font.GothamBold
-EspLabel.Text = "Esp --"
-EspLabel.TextColor3 = Color3.fromRGB(0, 200, 100) -- Verde padrão do Hub
-EspLabel.TextSize = 13
-EspLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Variáveis Globais de Controle para os Toggles
-_G.EspPcAtivo = false
-_G.EspCapsulaAtivo = false
-_G.EspPortaoAtivo = false
-_G.EspPlayersAtivo = false
-
--- =============================================================================
--- FUNÇÃO CRIADORA DE TOGGLE SWITCH ANIMADO
--- =============================================================================
-local function CriarToggleEspPremium(textoNome, funcaoCallback)
-    local RowFrame = Instance.new("Frame", PageVisuals)
-    RowFrame.Size = UDim2.new(1, -10, 0, 40)
-    RowFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-    Instance.new("UICorner", RowFrame).CornerRadius = UDim.new(0, 6)
+local function toggleMenu()
+    if debounced then return end
+    debounced = true
     
-    local RowStroke = Instance.new("UIStroke", RowFrame)
-    RowStroke.Color = Color3.fromRGB(35, 35, 35)
-    RowStroke.Thickness = 1
-
-    local Label = Instance.new("TextLabel", RowFrame)
-    Label.Size = UDim2.new(1, -70, 1, 0)
-    Label.Position = UDim2.new(0, 12, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Font = Enum.Font.GothamMedium
-    Label.Text = textoNome
-    Label.TextColor3 = Color3.fromRGB(230, 230, 230)
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-
-    local SwitchBg = Instance.new("TextButton", RowFrame)
-    SwitchBg.Size = UDim2.new(0, 42, 0, 22)
-    SwitchBg.Position = UDim2.new(1, -54, 0.5, -11)
-    SwitchBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    SwitchBg.Text = ""
-    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+    local targetPos
+    local targetVisible = true
     
-    local SwitchStroke = Instance.new("UIStroke", SwitchBg)
-    SwitchStroke.Color = Color3.fromRGB(60, 60, 60)
-    SwitchStroke.Thickness = 1
-
-    local SliderCircle = Instance.new("Frame", SwitchBg)
-    SliderCircle.Size = UDim2.new(0, 16, 0, 16)
-    SliderCircle.Position = UDim2.new(0, 3, 0.5, -8)
-    SliderCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", SliderCircle).CornerRadius = UDim.new(1, 0)
-
-    local ativo = false
-
-    SwitchBg.MouseButton1Click:Connect(function()
-        ativo = not ativo
-        
-        local CorAlvo = ativo and Color3.fromRGB(0, 180, 90) or Color3.fromRGB(45, 45, 45)
-        local StrokeAlvo = ativo and Color3.fromRGB(0, 255, 130) or Color3.fromRGB(60, 60, 60)
-        local PosicaoAlvo = ativo and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
-
-        TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = CorAlvo}):Play()
-        TweenService:Create(SwitchStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Color = StrokeAlvo}):Play()
-        TweenService:Create(SliderCircle, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = PosicaoAlvo}):Play()
-
-        funcaoCallback(ativo)
+    if not isOpen then
+        MainFrame.Visible = true
+        targetPos = UDim2.new(0.5, -275, 0.5, -175)
+        isOpen = true
+    else
+        targetPos = UDim2.new(0.5, -275, -1.5, 0)
+        isOpen = false
+        targetVisible = false
+    end
+    
+    local tween = TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = targetPos})
+    tween:Play()
+    
+    tween.Completed:Connect(function()
+        MainFrame.Visible = targetVisible
+        debounced = false
     end)
 end
 
+ToggleButton.MouseButton1Click:Connect(toggleMenu)
+
+
 -- =============================================================================
--- LOGICAS DE ATUALIZAÇÃO E FUNÇÕES DO ESP (HIGHLIGHTS)
+-- PARTE 6: FUNÇÃO AUTOMÁTICA PARA CRIAR BOTÕES COMPATÍVEIS
 -- =============================================================================
-local function GerenciarHighlight(objeto, nomeTag, corPreenchimento, corBorda, ativo)
-    if ativo then
-        local hl = objeto:FindFirstChild(nomeTag)
-        if not hl then
-            hl = Instance.new("Highlight")
-            hl.Name = nomeTag
-            hl.Adornee = objeto
-            hl.Parent = objeto
-        end
-        hl.FillColor = corPreenchimento
-        hl.FillTransparency = 0.6
-        hl.OutlineColor = corBorda
-        hl.OutlineTransparency = 0
-    else
-        local antigo = objeto:FindFirstChild(nomeTag)
-        if antigo then antigo:Destroy() end
+local function CreateFunctionButton(tabName, text, callback)
+    local targetPage = tabPages[tabName]
+    if not targetPage then return end
+    
+    local FuncButton = Instance.new("TextButton")
+    local Corner = Instance.new("UICorner")
+    local Stroke = Instance.new("UIStroke")
+    
+    FuncButton.Size = UDim2.new(1, -15, 0, 40) -- Ocupa o tamanho certinho da página
+    FuncButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    FuncButton.Font = Enum.Font.Gotham
+    FuncButton.Text = "  " .. text
+    FuncButton.TextColor3 = Color3.fromRGB(230, 230, 230)
+    FuncButton.TextSize = 14
+    FuncButton.TextXAlignment = Enum.TextXAlignment.Left
+    FuncButton.Parent = targetPage
+    
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = FuncButton
+
+    Stroke.Thickness = 1
+    Stroke.Color = Color3.fromRGB(255, 255, 255)
+    Stroke.Transparency = 0.92
+    Stroke.Parent = FuncButton
+    
+    -- Efeitos visuais de clique
+    FuncButton.MouseButton1Down:Connect(function() FuncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) end)
+    FuncButton.MouseButton1Up:Connect(function() FuncButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20) end)
+    
+    if callback then
+        FuncButton.MouseButton1Click:Connect(callback)
     end
+    
+    return FuncButton
 end
 
--- Loop de Varredura e Atualização Constante do Mapa
-task.spawn(function()
-    while task.wait(1) do
-        -- 1. ESP PC (Baseado na correção da Screenshot_20260613-012457.png)
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if (obj.Name == "ComputerTable" or obj.Name:match("Computer")) and obj:IsA("Model") then
-                local corFill = Color3.fromRGB(0, 70, 200)   -- Azul Forte Interno
-                local corOutline = Color3.fromRGB(0, 130, 255) -- Azul mais forte em volta
-                
-                local screen = obj:FindFirstChild("Screen", true)
-                local pcConcluido = false
-                
-                if screen and screen:IsA("Part") then
-                    -- Se a cor verde (G) for maior que azul (B), a tela está verde!
-                    if screen.Color.G > screen.Color.B then
-                        pcConcluido = true
-                    end
-                end
-                
-                if obj:FindFirstChild("GreenLight", true) or obj:FindFirstChild("Completed", true) then
-                    pcConcluido = true
-                end
-
-                if pcConcluido then
-                    corFill = Color3.fromRGB(0, 180, 70)     -- Verde interno
-                    corOutline = Color3.fromRGB(0, 255, 100)  -- Borda verde brilhante
-                end
-                
-                GerenciarHighlight(obj, "ValkyrieEspPC", corFill, corOutline, _G.EspPcAtivo)
-            end
-        end
-
-        -- 2. ESP CÁPSULA (Amarelo com Amarelo Mais Forte em volta)
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if (obj.Name == "FreezePod" or obj.Name:match("Tube") or obj.Name:match("Pod")) and obj:IsA("Model") then
-                local corFill = Color3.fromRGB(220, 220, 0)    -- Amarelo interno
-                local corOutline = Color3.fromRGB(255, 255, 0)  -- Amarelo bem forte em volta
-                GerenciarHighlight(obj, "ValkyrieEspCapsula", corFill, corOutline, _G.EspCapsulaAtivo)
-            end
-        end
-
-        -- 3. ESP PORTÃO
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if (obj.Name == "ExitGate" or obj.Name:match("Gate") or obj.Name:match("Exit")) and obj:IsA("Model") then
-                GerenciarHighlight(obj, "ValkyrieEspPortao", Color3.fromRGB(200, 100, 0), Color3.fromRGB(255, 130, 0), _G.EspPortaoAtivo)
-            end
-        end
-
-        -- 4. ESP PLAYERS (Sobreviventes Branco / Monstro Vermelho)
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local corFill = Color3.fromRGB(200, 200, 200)
-                local corOutline = Color3.fromRGB(255, 255, 255)
-                
-                if p.Character:FindFirstChild("BeastEffect") or p.Character:FindFirstChild("Hammer") then
-                    corFill = Color3.fromRGB(180, 0, 0)
-                    corOutline = Color3.fromRGB(255, 0, 0)
-                end
-                
-                GerenciarHighlight(p.Character, "ValkyrieEspPlayer", corFill, corOutline, _G.EspPlayersAtivo)
-            end
-        end
-    end
-end)
 
 -- =============================================================================
--- CRIAÇÃO DOS BOTÕES ORDENADOS NA ABA ESP
+-- 🛠️ ÁREA DE CONFIGURAÇÃO DE FUNÇÕES (SEUS SCRIPTS AQUI)
+-- =============================================================================
+-- Como usar: 
+-- Chame a função: CreateFunctionButton("NOME_DA_ABA", "Texto do Botão", function() -- seu script aqui -- end)
+
+-- =============================================================================
+-- [ABA MAIN] ------------------------------------------------------------------
 -- =============================================================================
 
-CriarToggleEspPremium("Esp Pc", function(state)
-    _G.EspPcAtivo = state
+-- Exemplo de Botão na aba Main:
+CreateFunctionButton("Main", "Auto Farm (Exemplo)", function()
+    print("Script de Auto Farm Executado!")
+    -- Cole seu script de Auto Farm aqui dentro
 end)
 
-CriarToggleEspPremium("Esp cápsula", function(state)
-    _G.EspCapsulaAtivo = state
+-- Adicione mais botões para a aba MAIN abaixo desta linha:
+
+
+
+-- =============================================================================
+-- [ABA ESP] -------------------------------------------------------------------
+-- =============================================================================
+
+-- Exemplo de Botão na aba ESP:
+CreateFunctionButton("ESP", "Player ESP (Exemplo)", function()
+    print("Script de ESP Executado!")
+    -- Cole seu script de ESP aqui dentro
 end)
 
-CriarToggleEspPremium("Esp portão", function(state)
-    _G.EspPortaoAtivo = state
+-- Adicione mais botões para a aba ESP abaixo desta linha:
+
+
+
+-- =============================================================================
+-- [ABA MISC] ------------------------------------------------------------------
+-- =============================================================================
+
+-- Exemplo de Botão na aba Misc:
+CreateFunctionButton("Misc", "Fly Hack (Exemplo)", function()
+    print("Script de Fly Executado!")
+    -- Cole seu script de Fly/Velocidade aqui dentro
 end)
 
-CriarToggleEspPremium("Esp players", function(state)
-    _G.EspPlayersAtivo = state
-end)
+-- Adicione mais botões para a aba MISC abaixo desta linha:
 
--- 🔴 4. FUNÇÕES PARA A ABA: PLAYER
 
- 
