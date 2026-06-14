@@ -561,5 +561,246 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =============================================================================
--- [ABA ESP] - FLEE THE FACILITY (CÓDIGO COMPLETO COM PORTÃO CORRIGIDO)
+-- [ABA ESP & NOTIFICAÇÕES] - VERSÃO CORRIGIDA E CALIBRADA TOTAL
 -- =============================================================================
+
+-- 1. VARIÁVEIS DE CONTROLE E SERVIÇOS
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
+local Player = Players.LocalPlayer
+
+local espComputadorAtivo = false
+local espCapsulasAtivo = false
+local espPlayerAtivo = false
+local espPortaoAtivo = false
+local notifBestaAtivo = false
+local notifPcAtivo = false
+
+local bestaAvisada = false
+local ultimoPcCount = 5
+
+-- Pasta limpa para os destaques
+local EspFolder = CoreGui:FindFirstChild("BaconX_ESP") or Instance.new("Folder", CoreGui)
+EspFolder.Name = "BaconX_ESP"
+
+-- 2. CABEÇALHOS DA INTERFACE
+local TargetPageESP = tabPages["ESP"]
+
+local TitleSectionESP = Instance.new("TextLabel")
+TitleSectionESP.Size = UDim2.new(1, -15, 0, 30)
+TitleSectionESP.BackgroundTransparency = 1
+TitleSectionESP.Font = Enum.Font.GothamBold
+TitleSectionESP.Text = "SISTEMAS DE ESP (FLEE THE FACILITY)"
+TitleSectionESP.TextColor3 = Color3.fromRGB(0, 170, 255)
+TitleSectionESP.TextSize = 14
+TitleSectionESP.TextXAlignment = Enum.TextXAlignment.Left
+TitleSectionESP.Parent = TargetPageESP
+
+-- FUNÇÃO AUXILIAR: Cria os toggles modernos verdes
+local function CriarToggleESP(texto, callback)
+    local MainBtn = Instance.new("TextButton")
+    local Corner = Instance.new("UICorner")
+    local Stroke = Instance.new("UIStroke")
+    
+    MainBtn.Size = UDim2.new(1, -15, 0, 40)
+    MainBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    MainBtn.Font = Enum.Font.GothamBold
+    MainBtn.Text = "  " .. texto
+    MainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MainBtn.TextSize = 14
+    MainBtn.TextXAlignment = Enum.TextXAlignment.Left
+    MainBtn.Parent = TargetPageESP
+    
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = MainBtn
+    Stroke.Thickness = 1; Stroke.Color = Color3.fromRGB(255, 255, 255); Stroke.Transparency = 0.92; Stroke.Parent = MainBtn
+    
+    local SwitchBg = Instance.new("Frame", MainBtn)
+    SwitchBg.Size = UDim2.new(0, 34, 0, 18)
+    SwitchBg.Position = UDim2.new(1, -44, 0.5, -9)
+    SwitchBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Instance.new("UICorner", SwitchBg).CornerRadius = UDim.new(1, 0)
+    
+    local SwitchBall = Instance.new("Frame", SwitchBg)
+    SwitchBall.Size = UDim2.new(0, 14, 0, 14)
+    SwitchBall.Position = UDim2.new(0, 2, 0.5, -7)
+    SwitchBall.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", SwitchBall).CornerRadius = UDim.new(1, 0)
+    
+    local ativo = false
+    MainBtn.MouseButton1Click:Connect(function()
+        ativo = not ativo
+        local targetBgColor = ativo and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(45, 45, 45)
+        local targetBallPos = ativo and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+        
+        TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = targetBgColor}):Play()
+        TweenService:Create(SwitchBall, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = targetBallPos}):Play()
+        
+        callback(ativo)
+    end)
+    return MainBtn
+end
+
+local function EnviarNotificacao(titulo, texto)
+    StarterGui:SetCore("SendNotification", {
+        Title = titulo,
+        Text = texto,
+        Duration = 5,
+        Button1 = "OK"
+    })
+end
+
+local function CriarDestaqueESP(objeto, corPadrao, tagIdentificacao)
+    if not objeto then return end
+    local idUnica = objeto:GetDebugId() .. "_" .. tagIdentificacao
+    
+    local Highlight = EspFolder:FindFirstChild(idUnica)
+    if not Highlight then
+        Highlight = Instance.new("Highlight")
+        Highlight.Name = idUnica
+        Highlight.Adornee = objeto
+        Highlight.FillTransparency = 0.6
+        Highlight.OutlineTransparency = 0.2
+        Highlight.Parent = EspFolder
+    end
+    Highlight.FillColor = corPadrao
+    Highlight.OutlineColor = corPadrao
+end
+
+local function LimparCategoriaESP(tagIdentificacao)
+    for _, child in pairs(EspFolder:GetChildren()) do
+        if string.find(child.Name, "_" .. tagIdentificacao) then
+            child:Destroy()
+        end
+    end
+end
+
+-- 3. INTERFACE DOS BOTÕES
+CriarToggleESP("ESP Computador", function(estado) espComputadorAtivo = estado; if not estado then LimparCategoriaESP("Comp") end end)
+CriarToggleESP("ESP Cápsulas", function(estado) espCapsulasAtivo = estado; if not estado then LimparCategoriaESP("Tube") end end)
+CriarToggleESP("ESP Player", function(estado) espPlayerAtivo = estado; if not estado then LimparCategoriaESP("Player") end end)
+CriarToggleESP("ESP Portão de Saída", function(estado) espPortaoAtivo = estado; if not estado then LimparCategoriaESP("Exit") end end)
+
+local TitleSectionNotif = Instance.new("TextLabel")
+TitleSectionNotif.Size = UDim2.new(1, -15, 0, 40)
+TitleSectionNotif.BackgroundTransparency = 1
+TitleSectionNotif.Font = Enum.Font.GothamBold
+TitleSectionNotif.Text = "NOTIFICAÇÕES DO JOGO"
+TitleSectionNotif.TextColor3 = Color3.fromRGB(0, 170, 255)
+TitleSectionNotif.TextSize = 14
+TitleSectionNotif.TextXAlignment = Enum.TextXAlignment.Left
+TitleSectionNotif.Parent = TargetPageESP
+
+CriarToggleESP("Notificação de Besta", function(estado) notifBestaAtivo = estado; if not estado then bestaAvisada = false end end)
+CriarToggleESP("Notificação de quantos PC", function(estado) notifPcAtivo = estado end)
+
+-- 4. MOTOR LÓGICO UNIFICADO (PRECISÃO MÁXIMA)
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        
+        local computadoresNoMapa = {}
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj.Name == "ComputerTable" and obj:IsA("Model") then
+                table.insert(computadoresNoMapa, obj)
+            end
+        end
+        
+        if #computadoresNoMapa == 0 then
+            bestaAvisada = false
+            ultimoPcCount = 5
+            LimparCategoriaESP("Comp")
+            LimparCategoriaESP("Tube")
+            LimparCategoriaESP("Exit")
+        else
+            -- [MOTOR COMPUTADORES]
+            if espComputadorAtivo then
+                for _, comp in pairs(computadoresNoMapa) do
+                    local corComp = Color3.fromRGB(0, 170, 255)
+                    local screen = comp:FindFirstChild("Screen", true)
+                    if screen and screen:IsA("BasePart") then
+                        if screen.BrickColor.Name == "Lime green" or screen.BrickColor.Name == "Dark green" or (screen.Color.G > 0.6 and screen.Color.R < 0.3) then
+                            corComp = Color3.fromRGB(0, 255, 0)
+                        end
+                    end
+                    CriarDestaqueESP(comp, corComp, "Comp")
+                end
+            end
+            
+            -- [MOTOR CÁPSULAS] (Correção do print: Pega o modelo FreezePod inteiro diretamente)
+            if espCapsulasAtivo then
+                for _, obj in pairs(Workspace:GetDescendants()) do
+                    if (obj.Name == "FreezePod" or obj.Name == "Tube") and obj:IsA("Model") then
+                        CriarDestaqueESP(obj, Color3.fromRGB(255, 165, 0), "Tube")
+                    end
+                end
+            end
+            
+            -- [MOTOR PORTÃO DE SAÍDA REAL] (Filtro anti-bug para ignorar portas normais)
+            if espPortaoAtivo then
+                for _, obj in pairs(Workspace:GetDescendants()) do
+                    if obj:IsA("Model") and (obj.Name == "ExitGate" or obj.Name == "ExitDoor" or obj.Parent.Name == "FourEconGates") then
+                        -- Se tiver uma peça chamada "Panel" ou "Door" e NÃO for uma porta comum de corredor
+                        if obj:FindFirstChild("Panel") or obj:FindFirstChild("Door") or obj:FindFirstChild("Gate") then
+                            if not obj:FindFirstChild("DoorFrame") then -- Portas comuns usam DoorFrame no FtF
+                                CriarDestaqueESP(obj, Color3.fromRGB(255, 255, 0), "Exit")
+                            end
+                        end
+                    end
+                end
+            end
+            
+            -- [MOTOR PLAYERS]
+            if espPlayerAtivo then
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local char = p.Character
+                        local ehBesta = (char:FindFirstChild("Hammer") or p.Backpack:FindFirstChild("Hammer") or char:FindFirstChild("Weapon")) and true or false
+                        local corPlayer = ehBesta and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 100)
+                        CriarDestaqueESP(char, corPlayer, "Player")
+                    end
+                end
+            end
+            
+            -- [NOTIFICAÇÃO DE BESTA]
+            if notifBestaAtivo and not bestaAvisada then
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p.Character and (p.Character:FindFirstChild("Hammer") or p.Backpack:FindFirstChild("Hammer")) then
+                        EnviarNotificacao("👹 BESTA DETECTADA", "A Besta da rodada é: " .. p.Name)
+                        bestaAvisada = true
+                        break
+                    end
+                end
+            end
+            
+            -- [NOTIFICAÇÃO DE QUANTOS PC]
+            if notifPcAtivo then
+                local pcsRestantes = 0
+                for _, comp in pairs(computadoresNoMapa) do
+                    local screen = comp:FindFirstChild("Screen", true)
+                    local jaHackeado = false
+                    if screen and screen:IsA("BasePart") then
+                        if screen.BrickColor.Name == "Lime green" or screen.BrickColor.Name == "Dark green" or (screen.Color.G > 0.6 and screen.Color.R < 0.3) then
+                            jaHackeado = true
+                        end
+                    end
+                    if not jaHackeado then pcsRestantes = pcsRestantes + 1 end
+                end
+                
+                if pcsRestantes < ultimoPcCount and pcsRestantes >= 0 then
+                    ultimoPcCount = pcsRestantes
+                    if pcsRestantes == 0 then
+                        EnviarNotificacao("⚡ SINAL ENERGIZADO", "Todos os PCs concluídos! Portões abertos!")
+                    else
+                        EnviarNotificacao("💻 PC HACKEADO", "Faltam apenas " .. pcsRestantes .. " computadores.")
+                    end
+                end
+            end
+            
+        end
+    end
+end)
