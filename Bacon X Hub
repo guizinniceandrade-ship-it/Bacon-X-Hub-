@@ -1,6 +1,3 @@
--- =============================================================================
--- [ASTRAL X HUB - VERSÃO INTEGRAL COM CARREGAMENTO INSTANTÂNEO DE SOM]
--- =============================================================================
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -21,25 +18,32 @@ Screen.ResetOnSpawn = false
 local UltimaPosicaoPainel = UDim2.new(0.5, -275, 0.5, -175)
 local Minimizado = false
 local menuAberto = false
-
--- Guardar as estruturas das abas para alternar visualmente e logicamente
 local AbasCriadas = {}
 
--- ==========================================
--- [1] SISTEMA DE SOM CORRIGIDO (SEM ATRASO)
--- ==========================================
-local CliqueSound = Instance.new("Sound", SoundService)
-CliqueSound.Name = "BotaoCliqueSom"
-CliqueSound.SoundId = "rbxassetid://116394299154002"
-CliqueSound.Volume = 1
+-- ⚠️ SISTEMA DE CONTROLE DE NOTIFICAÇÕES (NOVO E ARRUMADO)
+local ListaDeNotificacoes = {} -- Guarda todas as notificações ativas
+local PosicaoInicial = UDim2.new(1, -280, 1, -95) -- Posição da primeira
 
-task.spawn(function()
-    pcall(function()
-        ContentProvider:PreloadAsync({CliqueSound})
-    end)
-end)
+-- ==========================================
+-- [1] SISTEMA DE SOM (NÃO PARA MAIS!)
+-- ==========================================
+local function CriarSom()
+    local Som = Instance.new("Sound")
+    Som.SoundId = "rbxassetid://116394299154002"
+    Som.Volume = 1
+    Som.Parent = SoundService
+    return Som
+end
+
+local CliqueSound = CriarSom()
+ContentProvider:PreloadAsync({CliqueSound})
 
 local function TocarSom()
+    if not CliqueSound or not CliqueSound.IsLoaded then
+        CliqueSound = CriarSom()
+        ContentProvider:PreloadAsync({CliqueSound})
+        task.wait(0.05)
+    end
     CliqueSound:Play()
 end
 
@@ -72,12 +76,31 @@ local function IniciarEstrelas(Parent)
 end
 
 -- ==========================================
--- [3] SISTEMA DE NOTIFICAÇÕES (BORDA BRANCA)
+-- [3] SISTEMA DE NOTIFICAÇÕES (CORRIGIDO SEM SOBREPOR)
 -- ==========================================
+-- Função para atualizar a posição de TODAS as notificações ativas
+local function AtualizarPosicoesNotificacoes()
+    for indice, Notif in pairs(ListaDeNotificacoes) do
+        if Notif and Notif.Frame then
+            -- Calcula quanto essa notificação deve subir (cada uma fica 80px acima da próxima)
+            local novaPosicao = UDim2.new(
+                PosicaoInicial.X.Scale, 
+                PosicaoInicial.X.Offset, 
+                PosicaoInicial.Y.Scale, 
+                PosicaoInicial.Y.Offset - ((indice - 1) * 85) -- 85px de espaço entre elas
+            )
+            -- Move suavemente para a posição correta
+            TweenService:Create(Notif.Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = novaPosicao}):Play()
+        end
+    end
+end
+
 local function CriarNotificacao(tituloText, mensagemText, duracao)
+    duracao = duracao or 3
+
     local NotifFrame = Instance.new("Frame", Screen)
-    NotifFrame.Size = UDim2.new(0, 250, 0, 70)
-    NotifFrame.Position = UDim2.new(1, 300, 1, -90)
+    NotifFrame.Size = UDim2.new(0, 260, 0, 75)
+    NotifFrame.Position = UDim2.new(1, 320, 1, -95) -- Começa fora da tela (direita)
     NotifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     NotifFrame.ZIndex = 20
     Instance.new("UICorner", NotifFrame).CornerRadius = UDim.new(0, 8)
@@ -87,19 +110,19 @@ local function CriarNotificacao(tituloText, mensagemText, duracao)
     Stroke.Thickness = 1.5
 
     local T_Notif = Instance.new("TextLabel", NotifFrame)
-    T_Notif.Size = UDim2.new(1, -20, 0, 25)
+    T_Notif.Size = UDim2.new(1, -20, 0, 28)
     T_Notif.Position = UDim2.new(0, 10, 0, 5)
     T_Notif.BackgroundTransparency = 1
     T_Notif.Font = Enum.Font.GothamBold
     T_Notif.Text = tituloText
     T_Notif.TextColor3 = Color3.fromRGB(255, 255, 255)
-    T_Notif.TextSize = 14
+    T_Notif.TextSize = 15
     T_Notif.TextXAlignment = Enum.TextXAlignment.Left
     T_Notif.ZIndex = 21
 
     local M_Notif = Instance.new("TextLabel", NotifFrame)
-    M_Notif.Size = UDim2.new(1, -20, 0, 35)
-    M_Notif.Position = UDim2.new(0, 10, 0, 30)
+    M_Notif.Size = UDim2.new(1, -20, 0, 38)
+    M_Notif.Position = UDim2.new(0, 10, 0, 33)
     M_Notif.BackgroundTransparency = 1
     M_Notif.Font = Enum.Font.Gotham
     M_Notif.Text = mensagemText
@@ -109,15 +132,40 @@ local function CriarNotificacao(tituloText, mensagemText, duracao)
     M_Notif.TextXAlignment = Enum.TextXAlignment.Left
     M_Notif.ZIndex = 21
 
-    TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(1, -270, 1, -90)}):Play()
+    -- Adiciona essa notificação na lista
+    local NovaNotif = {Frame = NotifFrame}
+    table.insert(ListaDeNotificacoes, NovaNotif)
+
+    -- Entra na tela suavemente
+    TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = PosicaoInicial}):Play()
     
-    task.delay(duracao, function()
-        if NotifFrame and NotifFrame.Parent then
-            local Sair = TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(1, 300, 1, -90)})
-            Sair:Play()
-            Sair.Completed:Connect(function() NotifFrame:Destroy() end)
+    -- Atualiza a posição de todas para essa nova ficar embaixo
+    AtualizarPosicoesNotificacoes()
+
+    -- Função para remover a notificação
+    local function RemoverNotificacao()
+        if not NotifFrame or not NotifFrame.Parent then return end
+
+        -- Remove da lista
+        for i = #ListaDeNotificacoes, 1, -1 do
+            if ListaDeNotificacoes[i] and ListaDeNotificacoes[i].Frame == NotifFrame then
+                table.remove(ListaDeNotificacoes, i)
+                break
+            end
         end
-    end)
+
+        -- Animação de sair
+        local Sair = TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(1, 320, 1, NotifFrame.Position.Y.Offset)})
+        Sair:Play()
+        Sair.Completed:Connect(function() 
+            NotifFrame:Destroy() 
+            -- Depois que sai, arruma a posição das que ficaram
+            AtualizarPosicoesNotificacoes()
+        end)
+    end
+
+    -- Começa a contagem para remover
+    task.delay(duracao, RemoverNotificacao)
 end
 
 -- ==========================================
@@ -204,8 +252,8 @@ ContainerPaginas.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
 ContainerPaginas.CanvasSize = UDim2.new(0, 0, 0, 0)
 
 local GridBotoes = Instance.new("UIGridLayout", ContainerPaginas)
-GridBotoes.CellSize = UDim2.new(0, 170, 0, 40)
-GridBotoes.CellPadding = UDim2.new(0, 10, 0, 10)
+GridBotoes.CellSize = UDim2.new(0, 175, 0, 42)
+GridBotoes.CellPadding = UDim2.new(0, 12, 0, 12)
 GridBotoes.SortOrder = Enum.SortOrder.LayoutOrder
 
 GridBotoes:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -213,17 +261,18 @@ GridBotoes:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 end)
 
 -- =============================================================================
--- [ADICIONADO] FUNÇÕES AUXILIARES DE CRIAÇÃO DE ELEMENTOS DINÂMICOS
+-- FUNÇÕES AUXILIARES
 -- =============================================================================
 local function CriarBotaoScript(nomeDoBotao, funcaoCallback)
     local BotaoScript = Instance.new("TextButton", ContainerPaginas)
-    BotaoScript.Size = UDim2.new(0, 170, 0, 40)
+    BotaoScript.Size = UDim2.new(1, 0, 1, 0)
     BotaoScript.Text = nomeDoBotao
     BotaoScript.Font = Enum.Font.GothamMedium
     BotaoScript.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BotaoScript.TextSize = 12
+    BotaoScript.TextSize = 13
     BotaoScript.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     BotaoScript.ZIndex = 6
+    BotaoScript.AutoButtonColor = false
     Instance.new("UICorner", BotaoScript).CornerRadius = UDim.new(0, 6)
     
     local Stroke = Instance.new("UIStroke", BotaoScript)
@@ -238,18 +287,20 @@ end
 
 local function CriarTextoTitulo(texto)
     local TitleLabel = Instance.new("TextLabel", ContainerPaginas)
-    TitleLabel.Size = UDim2.new(0, 170, 0, 40)
+    TitleLabel.Size = UDim2.new(1, 0, 0, 30)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = texto
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TitleLabel.TextSize = 14
+    TitleLabel.TextSize = 15
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.ZIndex = 6
+    TitleLabel.LayoutOrder = -1
 end
 
 local function CriarToggleScript(nomeToggle, funcaoCallback)
     local ToggleFrame = Instance.new("Frame", ContainerPaginas)
+    ToggleFrame.Size = UDim2.new(1, 0, 1, 0)
     ToggleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     ToggleFrame.ZIndex = 6
     Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 6)
@@ -259,8 +310,8 @@ local function CriarToggleScript(nomeToggle, funcaoCallback)
     Stroke.Thickness = 1
     
     local Label = Instance.new("TextLabel", ToggleFrame)
-    Label.Size = UDim2.new(0.65, 0, 1, 0)
-    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Size = UDim2.new(0.65, -10, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = nomeToggle
     Label.Font = Enum.Font.GothamMedium
@@ -270,29 +321,30 @@ local function CriarToggleScript(nomeToggle, funcaoCallback)
     Label.ZIndex = 7
     
     local Switch = Instance.new("TextButton", ToggleFrame)
-    Switch.Size = UDim2.new(0, 40, 0, 20)
-    Switch.Position = UDim2.new(1, -50, 0.5, -10)
+    Switch.Size = UDim2.new(0, 42, 0, 22)
+    Switch.Position = UDim2.new(1, -54, 0.5, -11)
     Switch.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     Switch.Text = ""
     Switch.ZIndex = 7
+    Switch.AutoButtonColor = false
     Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
     
     local Indicator = Instance.new("Frame", Switch)
-    Indicator.Size = UDim2.new(0, 16, 0, 16)
-    Indicator.Position = UDim2.new(0, 2, 0.5, -8)
+    Indicator.Size = UDim2.new(0, 17, 0, 17)
+    Indicator.Position = UDim2.new(0, 2, 0.5, -8.5)
     Indicator.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     Indicator.ZIndex = 8
     Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
     
     local Ativo = false
     Switch.MouseButton1Click:Connect(function()
-        TocarSom()
+        TocarSom() 
         Ativo = not Ativo
         if Ativo then
-            TweenService:Create(Indicator, TweenInfo.new(0.2), {Position = UDim2.new(1, -18, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+            TweenService:Create(Indicator, TweenInfo.new(0.2), {Position = UDim2.new(1, -19, 0.5, -8.5), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
             Stroke.Color = Color3.fromRGB(255, 255, 255)
         else
-            TweenService:Create(Indicator, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -8), BackgroundColor3 = Color3.fromRGB(100, 100, 100)}):Play()
+            TweenService:Create(Indicator, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -8.5), BackgroundColor3 = Color3.fromRGB(100, 100, 100)}):Play()
             Stroke.Color = Color3.fromRGB(60, 60, 70)
         end
         funcaoCallback(Ativo)
@@ -301,6 +353,7 @@ end
 
 local function CriarSliderScript(nomeSlider, min, max, funcaoCallback)
     local SliderFrame = Instance.new("Frame", ContainerPaginas)
+    SliderFrame.Size = UDim2.new(1, 0, 1, 0)
     SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SliderFrame.ZIndex = 6
     Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
@@ -310,22 +363,23 @@ local function CriarSliderScript(nomeSlider, min, max, funcaoCallback)
     Stroke.Thickness = 1
     
     local Label = Instance.new("TextLabel", SliderFrame)
-    Label.Size = UDim2.new(1, -10, 0, 18)
-    Label.Position = UDim2.new(0, 10, 0, 3)
+    Label.Size = UDim2.new(1, -15, 0, 20)
+    Label.Position = UDim2.new(0, 10, 0, 4)
     Label.BackgroundTransparency = 1
     Label.Text = nomeSlider .. ": " .. tostring(min)
     Label.Font = Enum.Font.GothamMedium
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.TextSize = 10
+    Label.TextSize = 11
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.ZIndex = 7
     
     local SliderBar = Instance.new("TextButton", SliderFrame)
-    SliderBar.Size = UDim2.new(1, -20, 0, 6)
-    SliderBar.Position = UDim2.new(0, 10, 0.7, -3)
+    SliderBar.Size = UDim2.new(1, -20, 0, 7)
+    SliderBar.Position = UDim2.new(0, 10, 0.7, -3.5)
     SliderBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     SliderBar.Text = ""
     SliderBar.ZIndex = 7
+    SliderBar.AutoButtonColor = false
     Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
     
     local SliderFill = Instance.new("Frame", SliderBar)
@@ -337,7 +391,9 @@ local function CriarSliderScript(nomeSlider, min, max, funcaoCallback)
     
     local arrastando = false
     local function AtualizarSlider(input)
-        local posX = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+        local barPos = SliderBar.AbsolutePosition.X
+        local barTam = SliderBar.AbsoluteSize.X
+        local posX = math.clamp((input.Position.X - barPos) / barTam, 0, 1)
         SliderFill.Size = UDim2.new(posX, 0, 1, 0)
         local valorFinal = math.floor(min + (max - min) * posX)
         Label.Text = nomeSlider .. ": " .. tostring(valorFinal)
@@ -346,6 +402,7 @@ local function CriarSliderScript(nomeSlider, min, max, funcaoCallback)
     
     SliderBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            TocarSom() 
             arrastando = true
             AtualizarSlider(input)
         end
@@ -364,93 +421,32 @@ local function CriarSliderScript(nomeSlider, min, max, funcaoCallback)
     end)
 end
 
--- =============================================================================
--- [5] CONFIGURAÇÃO DO CONTEÚDO DE CADA ABA
--- =============================================================================
-local AutoFarmAtivo = false
-local VelocidadeFarm = 16 
+-- ==========================================
+-- [5] CONTEÚDO DAS ABAS (VAZIO + MARCAÇÕES)
+-- ==========================================
 
+-- ABA 1: MAIN
 local function CarregarConteudo_Main()
-    CriarTextoTitulo("Auto Farm")
-    
-    CriarToggleScript("Farm Coin", function(estado)
-        AutoFarmAtivo = estado
-        
-        if AutoFarmAtivo then
-            task.spawn(function()
-                while AutoFarmAtivo do
-                    task.wait(0.1)
-                    pcall(function()
-                        local ContainerMoedas = workspace:FindFirstChild("Normal") and workspace.Normal:FindFirstChild("CoinContainer")
-                        local Char = Player.Character
-                        local Root = Char and Char:FindFirstChild("HumanoidRootPart")
-                        
-                        if Root and ContainerMoedas then
-                            for _, moeda in pairs(ContainerMoedas:GetChildren()) do
-                                if not AutoFarmAtivo then break end
-                                
-                                if moeda:IsA("BasePart") and moeda.Transparency < 1 then
-                                    while AutoFarmAtivo and moeda.Parent and Root do
-                                        local distancia = (moeda.Position - Root.Position).Magnitude
-                                        if distancia < 3 then
-                                            Root.CFrame = moeda.CFrame
-                                            break
-                                        else
-                                            -- Interpolação suave simulando velocidade controlável pelo Slider
-                                            Root.CFrame = Root.CFrame:Lerp(CFrame.new(moeda.Position), (VelocidadeFarm / 100))
-                                        end
-                                        task.wait()
-                                    end
-                                end
-                            end
-                        end
-                    end)
-                end
-            end)
-        end
-    end)
-    
-    CriarSliderScript("Velocidade do Farm", 16, 50, function(valor)
-        VelocidadeFarm = valor
-        pcall(function()
-            if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-                Player.Character.Humanoid.WalkSpeed = valor
-            end
-        end)
-    end)
+    -- ⬇️⬇️⬇️ COLOQUE SEUS BOTÕES, TOGGLES OU SLIDERS DA ABA MAIN AQUI ⬇️⬇️⬇️
 end
 
+-- ABA 2: ESP
 local function CarregarConteudo_ESP()
-    CriarBotaoScript("Ver Jogadores (Esp)", function()
-        print("ESP Jogadores Ativado!")
-    end)
-    CriarBotaoScript("Ver Baús / Itens", function()
-        print("ESP Itens Ativado!")
-    end)
+    -- ⬇️⬇️⬇️ COLOQUE SEUS BOTÕES, TOGGLES OU SLIDERS DA ABA ESP AQUI ⬇️⬇️⬇️
 end
 
+-- ABA 3: LOCAL PLAYER
 local function CarregarConteudo_LocalPlayer()
-    CriarBotaoScript("Super Velocidade", function()
-        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-            Player.Character.Humanoid.WalkSpeed = 100
-        end
-    end)
-    CriarBotaoScript("Pulo Infinito", function()
-        print("Pulo infinito ativado!")
-    end)
+    -- ⬇️⬇️⬇️ COLOQUE SEUS BOTÕES, TOGGLES OU SLIDERS DA ABA LOCAL PLAYER AQUI ⬇️⬇️⬇️
 end
 
+-- ABA 4: TELEPORTE
 local function CarregarConteudo_Teleporte()
-    CriarBotaoScript("Teleportar para Loja", function()
-        print("Teleportado para a loja!")
-    end)
-    CriarBotaoScript("Teleportar para Spawn", function()
-        print("Teleportado para o Spawn!")
-    end)
+    -- ⬇️⬇️⬇️ COLOQUE SEUS BOTÕES, TOGGLES OU SLIDERS DA ABA TELEPORTE AQUI ⬇️⬇️⬇️
 end
 
 -- ==========================================
--- [6] GERENCIADOR INTERNO DAS ABAS
+-- [6] GERENCIADOR DE ABAS
 -- ==========================================
 local function AlternarAba(abaNome)
     for nome, componentes in pairs(AbasCriadas) do
@@ -463,12 +459,14 @@ local function AlternarAba(abaNome)
         end
     end
 
+    -- LIMPA TUDO AO TROCAR DE ABA
     for _, child in pairs(ContainerPaginas:GetChildren()) do
-        if child:IsA("TextButton") or child:IsA("Frame") or child:IsA("TextLabel") then
+        if child:IsA("GuiObject") and child ~= GridBotoes then
             child:Destroy()
         end
     end
 
+    -- CARREGA CONTEÚDO DA ABA SELECIONADA
     if abaNome == "Main" then
         CarregarConteudo_Main()
     elseif abaNome == "ESP" then
@@ -482,7 +480,7 @@ end
 
 local function CriarAbaLateral(nome)
     local btn = Instance.new("TextButton", ContainerAbas)
-    btn.Size = UDim2.new(1, 0, 0, 34)
+    btn.Size = UDim2.new(1, 0, 0, 36)
     btn.Text = nome
     btn.Font = Enum.Font.GothamMedium
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -490,6 +488,7 @@ local function CriarAbaLateral(nome)
     btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     btn.BackgroundTransparency = 0.3
     btn.ZIndex = 6
+    btn.AutoButtonColor = false
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
     local BtnStroke = Instance.new("UIStroke", btn)
@@ -509,7 +508,9 @@ for _, nome in pairs(abas) do CriarAbaLateral(nome) end
 
 AlternarAba("Main")
 
--- Perfil do Jogador Abaixo das Abas
+-- ==========================================
+-- PERFIL DO JOGADOR
+-- ==========================================
 local PerfilFrame = Instance.new("Frame", MainFrame)
 PerfilFrame.Size = UDim2.new(0, 140, 0, 55)
 PerfilFrame.Position = UDim2.new(0, 12, 1, -65)
@@ -535,6 +536,7 @@ InfoPerfil.Position = UDim2.new(0, 48, 0, 0)
 InfoPerfil.BackgroundTransparency = 1
 local LayoutInfo = Instance.new("UIListLayout", InfoPerfil)
 LayoutInfo.VerticalAlignment = Enum.VerticalAlignment.Center
+LayoutInfo.Padding = UDim.new(0, 2)
 
 local DisplayNameLabel = Instance.new("TextLabel", InfoPerfil)
 DisplayNameLabel.Size = UDim2.new(1, 0, 0, 15)
@@ -557,7 +559,7 @@ UserLabel.BackgroundTransparency = 1
 UserLabel.ZIndex = 6
 
 -- ==========================================
--- [7] BOTÃO FLUTUANTE DE ATIVAÇÃO
+-- BOTÃO FLUTUANTE
 -- ==========================================
 local FloatingBtn = Instance.new("ImageButton", Screen)
 FloatingBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -565,6 +567,7 @@ FloatingBtn.Position = UDim2.new(0, 20, 0.2, 0)
 FloatingBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 FloatingBtn.Visible = false 
 FloatingBtn.ZIndex = 10
+FloatingBtn.AutoButtonColor = false
 pcall(function()
     FloatingBtn.Image = "rbxthumb://type=Asset&id=107014357691540&w=150&h=150"
 end)
@@ -597,7 +600,7 @@ MinimizeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- [8] POP-UP DE FECHAMENTO SEGURO
+-- POPUP DE FECHAMENTO
 -- ==========================================
 local AlertFrame = Instance.new("Frame", Screen)
 AlertFrame.Name = "AlertFrame"
@@ -628,6 +631,7 @@ YesBtn.Text = "Sim"
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.TextSize = 12
 YesBtn.ZIndex = 26
+YesBtn.AutoButtonColor = false
 Instance.new("UICorner", YesBtn).CornerRadius = UDim.new(0, 5)
 
 local NoBtn = Instance.new("TextButton", AlertFrame)
@@ -639,6 +643,7 @@ NoBtn.Text = "Não"
 NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 NoBtn.TextSize = 12
 NoBtn.ZIndex = 26
+NoBtn.AutoButtonColor = false
 Instance.new("UICorner", NoBtn).CornerRadius = UDim.new(0, 5)
 
 CloseBtn.MouseButton1Click:Connect(function()
@@ -657,7 +662,7 @@ NoBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- [9] CONTROLE DE ARRASTAR
+-- SISTEMA DE ARRASTAR
 -- ==========================================
 local function ConfigurarArrastar(AlvoInput, ObjetoMover)
     local dragging, dragStart, startPos
@@ -685,13 +690,13 @@ ConfigurarArrastar(FloatingBtn, FloatingBtn)
 ConfigurarArrastar(DragBar, MainFrame)
 
 -- ==========================================
--- [10] CRONOGRAMA DE CARREGAMENTO
+-- INICIALIZAÇÃO
 -- ==========================================
-CriarNotificacao("Astral X Hub", "Script carregando aguarde...", 4)
+CriarNotificacao("Astral X Hub", "Script carregando, aguarde...", 4)
 
-task.wait(5)
+task.wait(3)
 
-CriarNotificacao("Astral X Hub", "Script carregado aproveite", 4)
+CriarNotificacao("Astral X Hub", "Carregado com sucesso!", 4)
 MainFrame.Visible = true
 FloatingBtn.Visible = true 
 menuAberto = true
