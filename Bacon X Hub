@@ -585,10 +585,130 @@ local function CarregarConteudo_ESP()
     -- ⬇️⬇️⬇️ COLOQUE SEUS BOTÕES, TOGGLES OU SLIDERS DA ABA ESP AQUI ⬇️⬇️⬇️
 end
 
+-- ===============================
 -- ABA 3: LOCAL PLAYER
+-- ===============================
 local function CarregarConteudo_LocalPlayer()
-    -- ⬇️⬇️⬇️ COLOQUE SEUS BOTÕES, TOGGLES OU SLIDERS DA ABA LOCAL PLAYER AQUI ⬇️⬇️⬇️
+
+    -- ✅ TÍTULO CENTRALIZADO DO JEITO QUE PEDIU
+    CriarTituloCentralizado("movimento do jogador")
+
+    -- VARIÁVEIS PARA CONTROLAR OS VALORES
+    local speedAtivado = false
+    local velocidadeEscolhida = 16 -- valor padrão
+    local jumpAtivado = false
+    local alturaEscolhida = 50 -- valor padrão
+    local puloInfinitoAtivado = false
+    local noclipAtivado = false
+
+    -- 🟢 SPEED
+    CriarToggle("Speed", function(ligado)
+        speedAtivado = ligado
+        local char = Player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            if ligado then
+                char.Humanoid.WalkSpeed = velocidadeEscolhida
+                CriarNotificacao("Speed", "Ativado | Velocidade: "..velocidadeEscolhida, 2)
+            else
+                char.Humanoid.WalkSpeed = 16 -- velocidade padrão do jogo
+                CriarNotificacao("Speed", "Desativado", 2)
+            end
+        end
+    end)
+
+    -- 🎚️ SLIDER VELOCIDADE (16 ATÉ 100)
+    CriarSlider("Velocidade do Speed", 16, 100, function(valor)
+        velocidadeEscolhida = valor
+        -- Se o speed estiver ligado, já atualiza na hora
+        if speedAtivado then
+            local char = Player.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.WalkSpeed = valor
+            end
+        end
+    end)
+
+    -- 🟢 JUMP
+    CriarToggle("Jump", function(ligado)
+        jumpAtivado = ligado
+        local char = Player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            if ligado then
+                char.Humanoid.JumpHeight = alturaEscolhida
+                CriarNotificacao("Jump", "Ativado | Altura: "..alturaEscolhida, 2)
+            else
+                char.Humanoid.JumpHeight = 7 -- altura padrão
+                CriarNotificacao("Jump", "Desativado", 2)
+            end
+        end
+    end)
+
+    -- 🎚️ SLIDER ALTURA DO JUMP
+    CriarSlider("Altura do Jump", 10, 100, function(valor)
+        alturaEscolhida = valor
+        if jumpAtivado then
+            local char = Player.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.JumpHeight = valor
+            end
+        end
+    end)
+
+    -- 🟢 PULO INFINITO
+    CriarToggle("Pulo Infinito", function(ligado)
+        puloInfinitoAtivado = ligado
+        if ligado then
+            CriarNotificacao("Pulo Infinito", "Ativado", 2)
+            -- Loop para pular sempre
+            task.spawn(function()
+                while puloInfinitoAtivado do
+                    task.wait(0.1)
+                    local char = Player.Character
+                    if char and char:FindFirstChild("Humanoid") then
+                        char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                end
+            end)
+        else
+            CriarNotificacao("Pulo Infinito", "Desativado", 2)
+        end
+    end)
+
+    -- 🟢 NOCLIP
+    CriarToggle("Noclip", function(ligado)
+        noclipAtivado = ligado
+        if ligado then
+            CriarNotificacao("Noclip", "Ativado", 2)
+            -- Loop para atravessar paredes
+            task.spawn(function()
+                while noclipAtivado do
+                    task.wait(0)
+                    local char = Player.Character
+                    if char then
+                        for _, parte in pairs(char:GetChildren()) do
+                            if parte:IsA("BasePart") then
+                                parte.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            -- Volta a colidir quando desligar
+            local char = Player.Character
+            if char then
+                for _, parte in pairs(char:GetChildren()) do
+                    if parte:IsA("BasePart") then
+                        parte.CanCollide = true
+                    end
+                end
+            end
+            CriarNotificacao("Noclip", "Desativado", 2)
+        end
+    end)
+
 end
+
 
 -- ABA 4: TELEPORTE
 local function CarregarConteudo_Teleporte()
