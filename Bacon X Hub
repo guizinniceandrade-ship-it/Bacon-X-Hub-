@@ -1,9 +1,11 @@
 -- =============================================================================
--- [ASTRAL X HUB - VERSÃO INTEGRAL COM SEPARAÇÃO DE ABAS]
+-- [ASTRAL X HUB - VERSÃO INTEGRAL COM CARREGAMENTO INSTANTÂNEO DE SOM]
 -- =============================================================================
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local ContentProvider = game:GetService("ContentProvider") -- Serviço para evitar atraso no som
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
@@ -24,7 +26,26 @@ local menuAberto = false
 local AbasCriadas = {}
 
 -- ==========================================
--- [1] SISTEMA DE ESTRELAS DINÂMICAS
+-- [1] SISTEMA DE SOM CORRIGIDO (SEM ATRASO)
+-- ==========================================
+local CliqueSound = Instance.new("Sound", SoundService)
+CliqueSound.Name = "BotaoCliqueSom"
+CliqueSound.SoundId = "rbxassetid://116394299154002" -- Seu novo ID de som aplicado
+CliqueSound.Volume = 1
+
+-- Força o carregamento do som antes de ser tocado para tirar o delay
+task.spawn(function()
+    pcall(function()
+        ContentProvider:PreloadAsync({CliqueSound})
+    end)
+end)
+
+local function TocarSom()
+    CliqueSound:Play()
+end
+
+-- ==========================================
+-- [2] SISTEMA DE ESTRELAS DINÂMICAS
 -- ==========================================
 local function IniciarEstrelas(Parent)
     for i = 1, 35 do
@@ -52,7 +73,7 @@ local function IniciarEstrelas(Parent)
 end
 
 -- ==========================================
--- [2] SISTEMA DE NOTIFICAÇÕES (BORDA BRANCA)
+-- [3] SISTEMA DE NOTIFICAÇÕES (BORDA BRANCA)
 -- ==========================================
 local function CriarNotificacao(tituloText, mensagemText, duracao)
     local NotifFrame = Instance.new("Frame", Screen)
@@ -92,20 +113,22 @@ local function CriarNotificacao(tituloText, mensagemText, duracao)
     TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(1, -270, 1, -90)}):Play()
     
     task.delay(duracao, function()
-        local Sair = TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(1, 300, 1, -90)})
-        Sair:Play()
-        Sair.Completed:Connect(function() NotifFrame:Destroy() end)
+        if NotifFrame and NotifFrame.Parent then
+            local Sair = TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(1, 300, 1, -90)})
+            Sair:Play()
+            Sair.Completed:Connect(function() NotifFrame:Destroy() end)
+        end
     end)
 end
 
 -- ==========================================
--- [3] INTERFACE PRINCIPAL
+-- [4] INTERFACE PRINCIPAL
 -- ==========================================
 local MainFrame = Instance.new("Frame", Screen)
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
 MainFrame.Position = UltimaPosicaoPainel
 MainFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
-MainFrame.Visible = false
+MainFrame.Visible = false 
 MainFrame.ClipsDescendants = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
@@ -174,7 +197,7 @@ ContainerAbas.ZIndex = 5
 local LayoutAbas = Instance.new("UIListLayout", ContainerAbas)
 LayoutAbas.Padding = UDim.new(0, 6)
 
--- Container Dinâmico Central (Onde os botões crescem sozinhos)
+-- Container Dinâmico Central
 local ContainerPaginas = Instance.new("ScrollingFrame", MainFrame)
 ContainerPaginas.Name = "PagesContainer"
 ContainerPaginas.Size = UDim2.new(1, -170, 1, -60)
@@ -193,7 +216,6 @@ GridBotoes:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ContainerPaginas.CanvasSize = UDim2.new(0, 0, 0, GridBotoes.AbsoluteContentSize.Y + 20)
 end)
 
--- Função auxiliar para criar botões de script dentro das abas de forma rápida
 local function CriarBotaoScript(nomeDoBotao, funcaoCallback)
     local BotaoScript = Instance.new("TextButton", ContainerPaginas)
     BotaoScript.Size = UDim2.new(0, 175, 0, 40)
@@ -209,11 +231,14 @@ local function CriarBotaoScript(nomeDoBotao, funcaoCallback)
     Stroke.Color = Color3.fromRGB(60, 60, 70)
     Stroke.Thickness = 1
     
-    BotaoScript.MouseButton1Click:Connect(funcaoCallback)
+    BotaoScript.MouseButton1Click:Connect(function()
+        TocarSom() 
+        funcaoCallback() 
+    end)
 end
 
 -- =============================================================================
--- [4] CONFIGURAÇÃO DO CONTEÚDO DE CADA ABA (INSIRA SEUS BOTÕES AQUI)
+-- [5] CONFIGURAÇÃO DO CONTEÚDO DE CADA ABA
 -- =============================================================================
 
 local function CarregarConteudo_Main()
@@ -275,10 +300,9 @@ local function CarregarConteudo_Teleporte()
 end
 
 -- ==========================================
--- [5] GERENCIADOR INTERNO DAS ABAS
+-- [6] GERENCIADOR INTERNO DAS ABAS
 -- ==========================================
 local function AlternarAba(abaNome)
-    -- 1. Altera a cor das bordas das abas laterais
     for nome, componentes in pairs(AbasCriadas) do
         if nome == abaNome then
             componentes.Stroke.Color = Color3.fromRGB(255, 255, 255)
@@ -289,14 +313,12 @@ local function AlternarAba(abaNome)
         end
     end
 
-    -- 2. Limpa os botões antigos que estavam na tela
     for _, child in pairs(ContainerPaginas:GetChildren()) do
         if child:IsA("TextButton") then
             child:Destroy()
         end
     end
 
-    -- 3. Identifica qual aba foi clicada e chama sua respectiva função de carregamento
     if abaNome == "Main" then
         CarregarConteudo_Main()
     elseif abaNome == "ESP" then
@@ -327,15 +349,14 @@ local function CriarAbaLateral(nome)
     AbasCriadas[nome] = {Botao = btn, Stroke = BtnStroke}
 
     btn.MouseButton1Click:Connect(function()
+        TocarSom() 
         AlternarAba(nome)
     end)
 end
 
--- Gerando as abas laterais automaticamente
 local abas = {"Main", "ESP", "Local Player", "Teleporte"}
 for _, nome in pairs(abas) do CriarAbaLateral(nome) end
 
--- Define a aba "Main" como ativa por padrão ao iniciar o script
 AlternarAba("Main")
 
 -- Perfil do Jogador Abaixo das Abas
@@ -386,12 +407,13 @@ UserLabel.BackgroundTransparency = 1
 UserLabel.ZIndex = 6
 
 -- ==========================================
--- [6] BOTÃO FLUTUANTE DE ATIVAÇÃO
+-- [7] BOTÃO FLUTUANTE DE ATIVAÇÃO
 -- ==========================================
 local FloatingBtn = Instance.new("ImageButton", Screen)
 FloatingBtn.Size = UDim2.new(0, 50, 0, 50)
 FloatingBtn.Position = UDim2.new(0, 20, 0.2, 0)
 FloatingBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+FloatingBtn.Visible = false 
 FloatingBtn.ZIndex = 10
 pcall(function()
     FloatingBtn.Image = "rbxthumb://type=Asset&id=107014357691540&w=150&h=150"
@@ -403,11 +425,13 @@ FloatStroke.Thickness = 1.5
 
 FloatingBtn.MouseButton1Click:Connect(function()
     if Minimizado then return end
+    TocarSom() 
     menuAberto = not menuAberto
     MainFrame.Visible = menuAberto
 end)
 
 MinimizeBtn.MouseButton1Click:Connect(function()
+    TocarSom() 
     Minimizado = not Minimizado
     if Minimizado then
         TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(0, 550, 0, 45)}):Play()
@@ -423,7 +447,7 @@ MinimizeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- [7] POP-UP DE FECHAMENTO SEGURO
+-- [8] POP-UP DE FECHAMENTO SEGURO
 -- ==========================================
 local AlertFrame = Instance.new("Frame", Screen)
 AlertFrame.Name = "AlertFrame"
@@ -433,7 +457,8 @@ AlertFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 AlertFrame.Visible = false
 AlertFrame.ZIndex = 25
 Instance.new("UICorner", AlertFrame).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", AlertFrame).Color = Color3.fromRGB(255, 255, 255)
+local AlertStroke = Instance.new("UIStroke", AlertFrame)
+AlertStroke.Color = Color3.fromRGB(255, 255, 255)
 
 local AlertTitle = Instance.new("TextLabel", AlertFrame)
 AlertTitle.Size = UDim2.new(1, 0, 0, 50)
@@ -466,12 +491,23 @@ NoBtn.TextSize = 12
 NoBtn.ZIndex = 26
 Instance.new("UICorner", NoBtn).CornerRadius = UDim.new(0, 5)
 
-CloseBtn.MouseButton1Click:Connect(function() AlertFrame.Visible = true end)
-NoBtn.MouseButton1Click:Connect(function() AlertFrame.Visible = false end)
-YesBtn.MouseButton1Click:Connect(function() Screen:Destroy() end)
+CloseBtn.MouseButton1Click:Connect(function()
+    TocarSom() 
+    AlertFrame.Visible = true 
+end)
+
+YesBtn.MouseButton1Click:Connect(function()
+    TocarSom() 
+    Screen:Destroy() 
+end)
+
+NoBtn.MouseButton1Click:Connect(function()
+    TocarSom() 
+    AlertFrame.Visible = false 
+end)
 
 -- ==========================================
--- [8] CONTROLE DE ARRASTAR
+-- [9] CONTROLE DE ARRASTAR
 -- ==========================================
 local function ConfigurarArrastar(AlvoInput, ObjetoMover)
     local dragging, dragStart, startPos
@@ -499,12 +535,13 @@ ConfigurarArrastar(FloatingBtn, FloatingBtn)
 ConfigurarArrastar(DragBar, MainFrame)
 
 -- ==========================================
--- [9] CRONOGRAMA DE CARREGAMENTO
+-- [10] CRONOGRAMA DE CARREGAMENTO
 -- ==========================================
-CriarNotificacao("Astral X Hub", "Script carregando aguarde...", 3)
-task.wait(3)
-task.wait(2)
+CriarNotificacao("Astral X Hub", "Script carregando aguarde...", 4)
 
-CriarNotificacao("Astral X Hub", "Script carregado...", 4)
+task.wait(5)
+
+CriarNotificacao("Astral X Hub", "Script carregado aproveite", 4)
 MainFrame.Visible = true
+FloatingBtn.Visible = true 
 menuAberto = true
