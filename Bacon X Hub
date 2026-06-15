@@ -421,6 +421,156 @@ local function CriarSliderScript(nomeSlider, min, max, funcaoCallback)
     end)
 end
 
+-- =============================================================================
+-- FUNÇÕES PARA CRIAR BOTÕES / TOGGLES / SLIDERS
+-- =============================================================================
+
+-- Função para Texto Centralizado
+local function CriarTituloCentralizado(texto)
+    local Titulo = Instance.new("TextLabel", ContainerPaginas)
+    Titulo.Size = UDim2.new(1, 0, 0, 30)
+    Titulo.BackgroundTransparency = 1
+    Titulo.Text = "«««  "..texto.."  »»»"
+    Titulo.Font = Enum.Font.GothamBold
+    Titulo.TextColor3 = Color3.fromRGB(255, 255, 255) -- Texto branco
+    Titulo.TextSize = 14
+    Titulo.TextWrapped = true
+    Titulo.TextXAlignment = Enum.TextXAlignment.Center -- Centralizado
+    Titulo.ZIndex = 6
+    Titulo.LayoutOrder = -1 -- Fica sempre no topo
+end
+
+-- Toggle: liga/desliga (fica branco quando ativado)
+local function CriarToggle(Nome, FuncaoAoMudar)
+    local Ativado = false
+    local ToggleFrame = Instance.new("Frame", ContainerPaginas)
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 42)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    ToggleFrame.ZIndex = 6
+    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 6)
+    
+    local Stroke = Instance.new("UIStroke", ToggleFrame)
+    Stroke.Color = Color3.fromRGB(60, 60, 70)
+    Stroke.Thickness = 1
+    
+    local Label = Instance.new("TextLabel", ToggleFrame)
+    Label.Size = UDim2.new(0.65, -10, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Nome
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 7
+    
+    local BotaoLigaDesliga = Instance.new("TextButton", ToggleFrame)
+    BotaoLigaDesliga.Size = UDim2.new(0, 42, 0, 22)
+    BotaoLigaDesliga.Position = UDim2.new(1, -54, 0.5, -11)
+    BotaoLigaDesliga.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    BotaoLigaDesliga.Text = ""
+    BotaoLigaDesliga.ZIndex = 7
+    BotaoLigaDesliga.AutoButtonColor = false
+    Instance.new("UICorner", BotaoLigaDesliga).CornerRadius = UDim.new(1, 0)
+    
+    local Indicador = Instance.new("Frame", BotaoLigaDesliga)
+    Indicador.Size = UDim2.new(0, 16, 0, 16)
+    Indicador.Position = UDim2.new(0, 3, 0.5, -8)
+    Indicador.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    Indicador.ZIndex = 8
+    Instance.new("UICorner", Indicador).CornerRadius = UDim.new(1, 0)
+    
+    local function AtualizarVisual()
+        if Ativado then
+            Indicador.Position = UDim2.new(0, 23, 0.5, -8)
+            Indicador.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Branco quando ligado
+            Stroke.Color = Color3.fromRGB(255, 255, 255) -- Borda branca
+        else
+            Indicador.Position = UDim2.new(0, 3, 0.5, -8)
+            Indicador.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            Stroke.Color = Color3.fromRGB(60, 60, 70)
+        end
+    end
+    
+    BotaoLigaDesliga.MouseButton1Click:Connect(function()
+        TocarSom()
+        Ativado = not Ativado
+        AtualizarVisual()
+        FuncaoAoMudar(Ativado)
+    end)
+end
+
+-- Slider: para velocidade e altura
+local function CriarSlider(Nome, min, max, FuncaoAoAlterar)
+    local SliderFrame = Instance.new("Frame", ContainerPaginas)
+    SliderFrame.Size = UDim2.new(1, 0, 0, 42)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SliderFrame.ZIndex = 6
+    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
+    
+    local Stroke = Instance.new("UIStroke", SliderFrame)
+    Stroke.Color = Color3.fromRGB(60, 60, 70)
+    Stroke.Thickness = 1
+    
+    local Label = Instance.new("TextLabel", SliderFrame)
+    Label.Size = UDim2.new(1, -15, 0, 20)
+    Label.Position = UDim2.new(0, 10, 0, 4)
+    Label.BackgroundTransparency = 1
+    Label.Text = Nome..": "..tostring(min)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 11
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 7
+    
+    local SliderBar = Instance.new("TextButton", SliderFrame)
+    SliderBar.Size = UDim2.new(1, -20, 0, 7)
+    SliderBar.Position = UDim2.new(0, 10, 0.7, -3.5)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    SliderBar.Text = ""
+    SliderBar.ZIndex = 7
+    SliderBar.AutoButtonColor = false
+    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+    
+    local SliderFill = Instance.new("Frame", SliderBar)
+    SliderFill.Size = UDim2.new(0, 0, 1, 0)
+    SliderFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SliderFill.BorderSizePixel = 0
+    SliderFill.ZIndex = 8
+    Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+    
+    local arrastando = false
+    local function AtualizarSlider(input)
+        local barPos = SliderBar.AbsolutePosition.X
+        local barTam = SliderBar.AbsoluteSize.X
+        local posX = math.clamp((input.Position.X - barPos) / barTam, 0, 1)
+        SliderFill.Size = UDim2.new(posX, 0, 1, 0)
+        local valorFinal = math.floor(min + (max - min) * posX)
+        Label.Text = Nome..": "..tostring(valorFinal)
+        FuncaoAoAlterar(valorFinal)
+    end
+    
+    SliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            TocarSom()
+            arrastando = true
+            AtualizarSlider(input)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if arrastando and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            AtualizarSlider(input)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            arrastando = false
+        end
+    end)
+end
+
 -- ==========================================
 -- [5] CONTEÚDO DAS ABAS (VAZIO + MARCAÇÕES)
 -- ==========================================
