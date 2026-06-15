@@ -241,17 +241,84 @@ end
 -- [5] CONFIGURAÇÃO DO CONTEÚDO DE CADA ABA
 -- =============================================================================
 
-local function CarregarConteudo_Main()
     -- ================
     -- [ ABA MAIN ]
     -- ================
     
-    CriarBotaoScript("Invisibilidade", function()
-        print("Script de invisibilidade ativado!")
+-- Variáveis de controle para o MM2 funcionar (Coloque antes da função)
+local AutoFarmAtivo = false
+local VelocidadeFarm = 16 -- Valor padrão inicial (Velocidade normal do Roblox)
+
+local function CarregarConteudo_Main()
+    -- ==========================================
+    -- [ ABA MAIN ]
+    -- ==========================================
+    
+    -- 1. Auto Farm -- texto (Em branco)
+    CriarTextoTitulo("Auto Farm")
+    
+    -- 2. Farm Coin -- botão (Toggle animado que fica branco quando ativo)
+    CriarToggleScript("Farm Coin", function(estado)
+        AutoFarmAtivo = estado
+        
+        if AutoFarmAtivo then
+            task.spawn(function()
+                while AutoFarmAtivo do
+                    task.wait(0.1)
+                    pcall(function()
+                        -- Procura o container de moedas oficial do Murder Mystery 2
+                        local ContainerMoedas = workspace:FindFirstChild("Normal") and workspace.Normal:FindFirstChild("CoinContainer")
+                        local Char = Player.Character
+                        local Root = Char and Char:FindFirstChild("HumanoidRootPart")
+                        local Hum = Char and Char:FindFirstChild("Humanoid")
+                        
+                        if Root and Hum and ContainerMoedas then
+                            for _, moeda in pairs(ContainerMoedas:GetChildren()) do
+                                if not AutoFarmAtivo then break end
+                                
+                                -- Verifica se a moeda é válida para coleta
+                                if moeda:IsA("TouchTransmitter") or (moeda:IsA("BasePart") and moeda.Transparency < 1) then
+                                    
+                                    -- Voa/Move suavemente até a moeda usando a velocidade do Slider
+                                    while AutoFarmAtivo and moeda.Parent and Root do
+                                        local distancia = (moeda.Position - Root.Position).Magnitude
+                                        if distancia < 3 then
+                                            -- Se estiver muito perto, encosta direto para coletar
+                                            Root.CFrame = moeda.CFrame
+                                            break
+                                        else
+                                            -- Move na direção da moeda respeitando a velocidade configurada no Slider
+                                            Root.Velocity = (moeda.Position - Root.Position).Unit * VelocidadeFarm
+                                        end
+                                        task.wait()
+                                    end
+                                    
+                                end
+                            end
+                        end
+                    end)
+                end
+            end)
+        else
+            -- Limpa a velocidade ao desligar para o personagem não continuar voando sozinho
+            pcall(function()
+                if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+                    Player.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                end
+            end)
+        end
     end)
     
-    CriarBotaoScript("Dinheiro Infinito", function()
-        print("Script de dinheiro ativado!")
+    -- 3. Velocidade do Farm -- eslider (De 16 até 50 e cor branca)
+    CriarSliderScript("Velocidade do Farm", 16, 50, function(valor)
+        VelocidadeFarm = valor
+        
+        -- Aplica também no WalkSpeed do personagem caso queira andar rápido
+        pcall(function()
+            if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+                Player.Character.Humanoid.WalkSpeed = valor
+            end
+        end)
     end)
 end
 
