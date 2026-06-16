@@ -524,7 +524,7 @@ local function CarregarConteudo_LocalPlayer()
                 -- Mantém a altura que você escolheu
                 if jumpLigado then
                     char.Humanoid.JumpHeight = alturaPulo
-                    char.Humanoid.JumpPower = alturaPulo * 4.2
+                    char.Humanoid.JumpPow = alturaPulo * 4.2
                 end
             end
         end
@@ -535,16 +535,15 @@ end
 local function CarregarConteudo_Teleporte() end
 
 -- ==========================================
--- GERENCIADOR DE ABAS
+-- GERENCIADOR DE ABAS ✅ AJUSTADO CONFORME SEU PEDIDO
 -- ==========================================
 local function AlternarAba(abaNome)
+    -- ⚠️ AQUI: SÓ ATIVA A LINHA BRANCA NA ABA SELECIONADA, NADA MUDA ALÉM DISSO
     for nome, componentes in pairs(AbasCriadas) do
         if nome == abaNome then
-            componentes.Stroke.Color = Color3.fromRGB(255, 255, 255)
-            componentes.Stroke.Thickness = 1.5
+            componentes.Stroke.Enabled = true -- Mostra linha branca
         else
-            componentes.Stroke.Color = Color3.fromRGB(45, 45, 50)
-            componentes.Stroke.Thickness = 1
+            componentes.Stroke.Enabled = false -- Esconde linha das outras
         end
     end
 
@@ -567,16 +566,19 @@ local function CriarAbaLateral(nome)
     btn.Size = UDim2.new(1, 0, 0, 36)
     btn.Text = nome
     btn.Font = Enum.Font.GothamMedium
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255) -- COR DO TEXTO FIXA, NÃO MUDA
     btn.TextSize = 12
-    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25) -- COR DE FUNDO FIXA, NÃO MUDA
     btn.BackgroundTransparency = 0.3
     btn.ZIndex = 6
     btn.AutoButtonColor = false
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
+    -- ⚠️ BORDA QUE SÓ APARECE QUANDO SELECIONADO
     local BtnStroke = Instance.new("UIStroke", btn)
-    BtnStroke.Thickness = 1
+    BtnStroke.Color = Color3.fromRGB(255, 255, 255) -- SEMPRE BRANCA
+    BtnStroke.Thickness = 1.5
+    BtnStroke.Enabled = false -- COMEÇA DESATIVADA
     BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
     AbasCriadas[nome] = {Botao = btn, Stroke = BtnStroke}
@@ -588,7 +590,7 @@ end
 local abas = {"Main", "ESP", "Local Player", "Teleporte"}
 for _, nome in pairs(abas) do CriarAbaLateral(nome) end
 
-AlternarAba("Main")
+AlternarAba("Main") -- Já deixa a primeira aba com linha branca
 
 -- ==========================================
 -- PERFIL DO JOGADOR (NO LUGAR CERTO, EMBAIXO)
