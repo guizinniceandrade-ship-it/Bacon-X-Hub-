@@ -1,0 +1,555 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local ContentProvider = game:GetService("ContentProvider")
+local Workspace = game:GetService("Workspace")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- Evitar duplicação da interface
+if PlayerGui:FindFirstChild("AstralX_Hub_Oficial") then 
+    PlayerGui.AstralX_Hub_Oficial:Destroy() 
+end
+
+local Screen = Instance.new("ScreenGui", PlayerGui)
+Screen.Name = "AstralX_Hub_Oficial"
+Screen.ResetOnSpawn = false
+
+local UltimaPosicaoPainel = UDim2.new(0.5, -275, 0.5, -175)
+local Minimizado = false
+local menuAberto = false
+local AbasCriadas = {}
+
+-- ⚠️ SISTEMA DE CONTROLE DE NOTIFICAÇÕES (ORGANIZADO)
+local ListaDeNotificacoes = {}
+local PosicaoInicial = UDim2.new(1, -280, 1, -95)
+
+-- 🎵 VARIAVEIS DO SISTEMA DE MÚSICA
+local MusicaAtual = nil
+local ListaDeMusicas = {}
+local IndiceAtual = 1
+local AtualizacaoBarra = nil
+
+-- ==========================================
+-- [1] SISTEMA DE SOM (NÃO PARA MAIS!)
+-- ==========================================
+local function CriarSom()
+    local Som = Instance.new("Sound")
+    Som.SoundId = "rbxassetid://116394299154002"
+    Som.Volume = 1
+    Som.Parent = SoundService
+    return Som
+end
+
+local CliqueSound = CriarSom()
+ContentProvider:PreloadAsync({CliqueSound})
+
+local function TocarSom()
+    if not CliqueSound or not CliqueSound.IsLoaded then
+        CliqueSound = CriarSom()
+        ContentProvider:PreloadAsync({CliqueSound})
+        task.wait(0.05)
+    end
+    CliqueSound:Play()
+end
+
+-- ==========================================
+-- [2] SISTEMA DE ESTRELAS DINÂMICAS
+-- ==========================================
+local function IniciarEstrelas(Parent)
+    for i = 1, 35 do
+        local Estrela = Instance.new("Frame", Parent)
+        local tamanho = math.random(1, 3)
+        Estrela.Size = UDim2.new(0, tamanho, 0, tamanho)
+        Estrela.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        Estrela.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Estrela.BorderSizePixel = 0
+        Estrela.BackgroundTransparency = math.random(2, 6) / 10
+        Estrela.ZIndex = 1
+        Instance.new("UICorner", Estrela).CornerRadius = UDim.new(1, 0)
+        
+        task.spawn(function()
+            while Estrela.Parent do
+                local tempo = math.random(6, 12)
+                local novaPos = UDim2.new(math.random(), 0, math.random(), 0)
+                local info = TweenInfo.new(tempo, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+                local tween = TweenService:Create(Estrela, info, {Position = novaPos})
+                tween:Play()
+                task.wait(tempo)
+            end
+        end)
+    end
+end
+
+-- ==========================================
+-- [3] SISTEMA DE NOTIFICAÇÕES (CORRIGIDO SEM SOBREPOR)
+-- ==========================================
+local function AtualizarPosicoesNotificacoes()
+    for indice, Notif in pairs(ListaDeNotificacoes) do
+        if Notif and Notif.Frame then
+            local novaPosicao = UDim2.new(
+                PosicaoInicial.X.Scale, 
+                PosicaoInicial.X.Offset, 
+                PosicaoInicial.Y.Scale, 
+                PosicaoInicial.Y.Offset - ((indice - 1) * 85)
+            )
+            TweenService:Create(Notif.Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = novaPosicao}):Play()
+        end
+    end
+end
+
+local function CriarNotificacao(tituloText, mensagemText, duracao)
+    duracao = duracao or 3
+
+    local NotifFrame = Instance.new("Frame", Screen)
+    NotifFrame.Size = UDim2.new(0, 260, 0, 75)
+    NotifFrame.Position = UDim2.new(1, 320, 1, -95)
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    NotifFrame.ZIndex = 20
+    Instance.new("UICorner", NotifFrame).CornerRadius = UDim.new(0, 8)
+    
+    local Stroke = Instance.new("UIStroke", NotifFrame)
+    Stroke.Color = Color3.fromRGB(255, 255, 255)
+    Stroke.Thickness = 1.5
+
+    local T_Notif = Instance.new("TextLabel", NotifFrame)
+    T_Notif.Size = UDim2.new(1, -20, 0, 28)
+    T_Notif.Position = UDim2.new(0, 10, 0, 5)
+    T_Notif.BackgroundTransparency = 1
+    T_Notif.Font = Enum.Font.GothamBold
+    T_Notif.Text = tituloText
+    T_Notif.TextColor3 = Color3.fromRGB(255, 255, 255)
+    T_Notif.TextSize = 15
+    T_Notif.TextXAlignment = Enum.TextXAlignment.Left
+    T_Notif.ZIndex = 21
+
+    local M_Notif = Instance.new("TextLabel", NotifFrame)
+    M_Notif.Size = UDim2.new(1, -20, 0, 38)
+    M_Notif.Position = UDim2.new(0, 10, 0, 33)
+    M_Notif.BackgroundTransparency = 1
+    M_Notif.Font = Enum.Font.Gotham
+    M_Notif.Text = mensagemText
+    M_Notif.TextColor3 = Color3.fromRGB(180, 180, 180)
+    M_Notif.TextSize = 12
+    M_Notif.TextWrapped = true
+    M_Notif.TextXAlignment = Enum.TextXAlignment.Left
+    M_Notif.ZIndex = 21
+
+    local NovaNotif = {Frame = NotifFrame}
+    table.insert(ListaDeNotificacoes, NovaNotif)
+
+    TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = PosicaoInicial}):Play()
+    AtualizarPosicoesNotificacoes()
+
+    local function RemoverNotificacao()
+        if not NotifFrame or not NotifFrame.Parent then return end
+
+        for i = #ListaDeNotificacoes, 1, -1 do
+            if ListaDeNotificacoes[i] and ListaDeNotificacoes[i].Frame == NotifFrame then
+                table.remove(ListaDeNotificacoes, i)
+                break
+            end
+        end
+
+        local Sair = TweenService:Create(NotifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Position = UDim2.new(1, 320, 1, NotifFrame.Position.Y.Offset)})
+        Sair:Play()
+        Sair.Completed:Connect(function() 
+            NotifFrame:Destroy() 
+            AtualizarPosicoesNotificacoes()
+        end)
+    end
+
+    task.delay(duracao, RemoverNotificacao)
+end
+
+-- ==========================================
+-- [4] INTERFACE PRINCIPAL
+-- ==========================================
+local MainFrame = Instance.new("Frame", Screen)
+MainFrame.Size = UDim2.new(0, 550, 0, 350)
+MainFrame.Position = UltimaPosicaoPainel
+MainFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
+MainFrame.Visible = false 
+MainFrame.ClipsDescendants = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+
+IniciarEstrelas(MainFrame)
+
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
+MainStroke.Thickness = 2
+
+local DragBar = Instance.new("Frame", MainFrame)
+DragBar.Size = UDim2.new(1, 0, 0, 45)
+DragBar.BackgroundTransparency = 1
+DragBar.ZIndex = 5
+
+local Titulo = Instance.new("TextLabel", DragBar)
+Titulo.Size = UDim2.new(0, 250, 1, 0)
+Titulo.Position = UDim2.new(0, 15, 0, 0)
+Titulo.BackgroundTransparency = 1
+Titulo.Font = Enum.Font.GothamBold
+Titulo.Text = "Astral X Hub"
+Titulo.TextColor3 = Color3.fromRGB(255, 255, 255)
+Titulo.TextSize = 18
+Titulo.TextXAlignment = Enum.TextXAlignment.Left
+Titulo.ZIndex = 6
+
+local Controls = Instance.new("Frame", DragBar)
+Controls.Name = "Controls"
+Controls.Size = UDim2.new(0, 80, 1, 0)
+Controls.Position = UDim2.new(1, -90, 0, 0)
+Controls.BackgroundTransparency = 1
+Controls.ZIndex = 5
+
+local ControlsList = Instance.new("UIListLayout", Controls)
+ControlsList.FillDirection = Enum.FillDirection.Horizontal
+ControlsList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+ControlsList.VerticalAlignment = Enum.VerticalAlignment.Center
+ControlsList.Padding = UDim.new(0, 12)
+
+local MinimizeBtn = Instance.new("TextButton", Controls)
+MinimizeBtn.Size = UDim2.new(0, 24, 0, 24)
+MinimizeBtn.BackgroundTransparency = 1
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Text = "—"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.TextSize = 14
+MinimizeBtn.ZIndex = 6
+
+local CloseBtn = Instance.new("TextButton", Controls)
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(250, 100, 100)
+CloseBtn.TextSize = 14
+CloseBtn.ZIndex = 6
+
+local ContainerAbas = Instance.new("Frame", MainFrame)
+ContainerAbas.Size = UDim2.new(0, 140, 1, -135)
+ContainerAbas.Position = UDim2.new(0, 12, 0, 50)
+ContainerAbas.BackgroundTransparency = 1
+ContainerAbas.ZIndex = 5
+
+local LayoutAbas = Instance.new("UIListLayout", ContainerAbas)
+LayoutAbas.Padding = UDim.new(0, 6)
+
+local ContainerPaginas = Instance.new("ScrollingFrame", MainFrame)
+ContainerPaginas.Name = "PagesContainer"
+ContainerPaginas.Size = UDim2.new(1, -170, 1, -110) -- Diminuí espaço para caber o player
+ContainerPaginas.Position = UDim2.new(0, 160, 0, 50)
+ContainerPaginas.BackgroundTransparency = 1
+ContainerPaginas.ZIndex = 5
+ContainerPaginas.ScrollBarThickness = 2
+ContainerPaginas.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
+ContainerPaginas.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+-- Layout um embaixo do outro
+local LayoutBotoes = Instance.new("UIListLayout", ContainerPaginas)
+LayoutBotoes.FillDirection = Enum.FillDirection.Vertical
+LayoutBotoes.HorizontalAlignment = Enum.HorizontalAlignment.Center
+LayoutBotoes.VerticalAlignment = Enum.VerticalAlignment.Top
+LayoutBotoes.Padding = UDim.new(0, 10)
+LayoutBotoes.SortOrder = Enum.SortOrder.LayoutOrder
+
+LayoutBotoes:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ContainerPaginas.CanvasSize = UDim2.new(0, 0, 0, LayoutBotoes.AbsoluteContentSize.Y + 20)
+end)
+
+-- ✨ PLAYER DE MÚSICA (IGUAL DA SUA IMAGEM!)
+local PlayerMusica = Instance.new("Frame", MainFrame)
+PlayerMusica.Size = UDim2.new(1, -20, 0, 80)
+PlayerMusica.Position = UDim2.new(0, 10, 1, -85)
+PlayerMusica.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+PlayerMusica.ZIndex = 10
+Instance.new("UICorner", PlayerMusica).CornerRadius = UDim.new(0, 8)
+local StrokePlayer = Instance.new("UIStroke", PlayerMusica)
+StrokePlayer.Color = Color3.fromRGB(255, 255, 255)
+
+-- Nome da música atual
+local NomeMusicaLabel = Instance.new("TextLabel", PlayerMusica)
+NomeMusicaLabel.Size = UDim2.new(1, -20, 0, 20)
+NomeMusicaLabel.Position = UDim2.new(0, 10, 0, 5)
+NomeMusicaLabel.BackgroundTransparency = 1
+NomeMusicaLabel.Font = Enum.Font.GothamBold
+NomeMusicaLabel.Text = "Nenhuma música tocando"
+NomeMusicaLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+NomeMusicaLabel.TextSize = 12
+NomeMusicaLabel.TextXAlignment = Enum.TextXAlignment.Center
+NomeMusicaLabel.ZIndex = 11
+
+-- Barra de Progresso
+local BarraFundo = Instance.new("Frame", PlayerMusica)
+BarraFundo.Size = UDim2.new(1, -30, 0, 4)
+BarraFundo.Position = UDim2.new(0.5, -135, 0, 30)
+BarraFundo.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+BarraFundo.ZIndex = 11
+Instance.new("UICorner", BarraFundo).CornerRadius = UDim.new(1, 0)
+
+local BarraProgresso = Instance.new("Frame", BarraFundo)
+BarraProgresso.Size = UDim2.new(0, 0, 1, 0)
+BarraProgresso.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+BarraProgresso.ZIndex = 12
+Instance.new("UICorner", BarraProgresso).CornerRadius = UDim.new(1, 0)
+
+-- Tempo atual / Duração
+local TempoAtual = Instance.new("TextLabel", PlayerMusica)
+TempoAtual.Size = UDim2.new(0, 40, 0, 15)
+TempoAtual.Position = UDim2.new(0, 10, 0, 22)
+TempoAtual.BackgroundTransparency = 1
+TempoAtual.Font = Enum.Font.Gotham
+TempoAtual.Text = "0:00"
+TempoAtual.TextColor3 = Color3.fromRGB(255, 255, 255)
+TempoAtual.TextSize = 10
+TempoAtual.ZIndex = 11
+
+local TempoTotal = Instance.new("TextLabel", PlayerMusica)
+TempoTotal.Size = UDim2.new(0, 40, 0, 15)
+TempoTotal.Position = UDim2.new(1, -50, 0, 22)
+TempoTotal.BackgroundTransparency = 1
+TempoTotal.Font = Enum.Font.Gotham
+TempoTotal.Text = "0:00"
+TempoTotal.TextColor3 = Color3.fromRGB(255, 255, 255)
+TempoTotal.TextSize = 10
+TempoTotal.ZIndex = 11
+
+-- Botões de Controle
+local BotoesContainer = Instance.new("Frame", PlayerMusica)
+BotoesContainer.Size = UDim2.new(1, 0, 0, 30)
+BotoesContainer.Position = UDim2.new(0, 0, 0, 40)
+BotoesContainer.BackgroundTransparency = 1
+local BotoesLayout = Instance.new("UIListLayout", BotoesContainer)
+BotoesLayout.FillDirection = Enum.FillDirection.Horizontal
+BotoesLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+BotoesLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+BotoesLayout.Padding = UDim.new(0, 25)
+
+-- Botão: Voltar
+local VoltarBtn = Instance.new("TextButton", BotoesContainer)
+VoltarBtn.Size = UDim2.new(0, 25, 0, 25)
+VoltarBtn.BackgroundTransparency = 1
+VoltarBtn.Font = Enum.Font.GothamBold
+VoltarBtn.Text = "◀"
+VoltarBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+VoltarBtn.TextSize = 18
+VoltarBtn.ZIndex = 12
+
+-- Botão: Play/Pause
+local PlayPauseBtn = Instance.new("TextButton", BotoesContainer)
+PlayPauseBtn.Size = UDim2.new(0, 28, 0, 28)
+PlayPauseBtn.BackgroundTransparency = 1
+PlayPauseBtn.Font = Enum.Font.GothamBold
+PlayPauseBtn.Text = "▶"
+PlayPauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayPauseBtn.TextSize = 20
+PlayPauseBtn.ZIndex = 12
+
+-- Botão: Avançar
+local AvancarBtn = Instance.new("TextButton", BotoesContainer)
+AvancarBtn.Size = UDim2.new(0, 25, 0, 25)
+AvancarBtn.BackgroundTransparency = 1
+AvancarBtn.Font = Enum.Font.GothamBold
+AvancarBtn.Text = "▶▶"
+AvancarBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AvancarBtn.TextSize = 16
+AvancarBtn.ZIndex = 12
+
+-- Função para formatar tempo (segundos -> 0:00)
+local function FormatarTempo(segundos)
+    local min = math.floor(segundos / 60)
+    local seg = math.floor(segundos % 60)
+    return string.format("%d:%02d", min, seg)
+end
+
+-- Atualiza barra e tempo em tempo real
+local function AtualizarPlayer()
+    if not MusicaAtual or not MusicaAtual.IsPlaying then
+        PlayPauseBtn.Text = "▶"
+        return
+    end
+    PlayPauseBtn.Text = "⏸"
+    TempoAtual.Text = FormatarTempo(MusicaAtual.TimePosition)
+    TempoTotal.Text = FormatarTempo(MusicaAtual.TimeLength)
+    BarraProgresso.Size = UDim2.new(MusicaAtual.TimePosition / MusicaAtual.TimeLength, 0, 1, 0)
+end
+
+-- Parar tudo
+local function PararMusica()
+    if MusicaAtual then
+        MusicaAtual:Stop()
+        MusicaAtual:Destroy()
+        MusicaAtual = nil
+    end
+    if AtualizacaoBarra then AtualizacaoBarra:Disconnect() end
+    NomeMusicaLabel.Text = "Nenhuma música tocando"
+    TempoAtual.Text = "0:00"
+    TempoTotal.Text = "0:00"
+    BarraProgresso.Size = UDim2.new(0,0,1,0)
+    PlayPauseBtn.Text = "▶"
+end
+
+-- Tocar música por índice
+local function TocarMusicaIndice(indice)
+    if not ListaDeMusicas[indice] then return end
+    PararMusica()
+    IndiceAtual = indice
+
+    local dados = ListaDeMusicas[indice]
+    MusicaAtual = Instance.new("Sound")
+    MusicaAtual.Name = "MusicaDoHub"
+    MusicaAtual.SoundId = "rbxassetid://"..dados.id
+    MusicaAtual.Volume = 0.5
+    MusicaAtual.Looped = false
+    MusicaAtual.Parent = SoundService
+    MusicaAtual:Play()
+
+    NomeMusicaLabel.Text = dados.nome
+    CriarNotificacao("🎵 Tocando agora", dados.nome, 3)
+
+    -- Atualiza a barra a cada 0.2s
+    AtualizacaoBarra = game:GetService("RunService").RenderStepped:Connect(AtualizarPlayer)
+
+    -- Quando acabar, toca a próxima
+    MusicaAtual.Ended:Connect(function()
+        if IndiceAtual < #ListaDeMusicas then
+            TocarMusicaIndice(IndiceAtual + 1)
+        end
+    end)
+end
+
+-- Ações dos botões do player
+PlayPauseBtn.MouseButton1Click:Connect(function()
+    TocarSom()
+    if not MusicaAtual then return end
+    if MusicaAtual.IsPlaying then
+        MusicaAtual:Pause()
+        PlayPauseBtn.Text = "▶"
+    else
+        MusicaAtual:Resume()
+        PlayPauseBtn.Text = "⏸"
+    end
+end)
+
+VoltarBtn.MouseButton1Click:Connect(function()
+    TocarSom()
+    local novo = IndiceAtual - 1
+    if novo < 1 then novo = #ListaDeMusicas end
+    TocarMusicaIndice(novo)
+end)
+
+AvancarBtn.MouseButton1Click:Connect(function()
+    TocarSom()
+    local novo = IndiceAtual + 1
+    if novo > #ListaDeMusicas then novo = 1 end
+    TocarMusicaIndice(novo)
+end)
+
+-- =============================================================================
+-- FUNÇÕES COM TUDO BRANCO
+-- =============================================================================
+
+-- TÍTULO EXATO: ««««« texto »»»»» e CENTRALIZADO
+local function CriarTituloPrincipal(texto)
+    local Titulo = Instance.new("TextLabel", ContainerPaginas)
+    Titulo.Size = UDim2.new(1, 0, 0, 30)
+    Titulo.BackgroundTransparency = 1
+    Titulo.Text = "««««« "..texto.." »»»»»"
+    Titulo.Font = Enum.Font.GothamBold
+    Titulo.TextColor3 = Color3.fromRGB(255, 255, 255) -- SEMPRE BRANCO
+    Titulo.TextSize = 16
+    Titulo.TextXAlignment = Enum.TextXAlignment.Center -- CENTRALIZADO NO MEIO
+    Titulo.ZIndex = 6
+    Titulo.LayoutOrder = -1
+end
+
+-- Toggle: Tudo branco quando ligado
+local function CriarToggle(Nome, FuncaoAoMudar)
+    local Ativado = false
+    local ToggleFrame = Instance.new("Frame", ContainerPaginas)
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 42)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    ToggleFrame.ZIndex = 6
+    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 6)
+    
+    local Stroke = Instance.new("UIStroke", ToggleFrame)
+    Stroke.Color = Color3.fromRGB(50, 50, 55)
+    Stroke.Thickness = 1
+
+    local Label = Instance.new("TextLabel", ToggleFrame)
+    Label.Size = UDim2.new(1, -60, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = Nome
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255) -- BRANCO
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 7
+
+    local Botao = Instance.new("TextButton", ToggleFrame)
+    Botao.Size = UDim2.new(0, 40, 0, 22)
+    Botao.Position = UDim2.new(1, -52, 0.5, -11)
+    Botao.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    Botao.Text = ""
+    Botao.ZIndex = 7
+    Botao.AutoButtonColor = false
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(1, 0)
+
+    local Bolinha = Instance.new("Frame", Botao)
+    Bolinha.Size = UDim2.new(0, 16, 0, 16)
+    Bolinha.Position = UDim2.new(0, 3, 0.5, -8)
+    Bolinha.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+    Bolinha.ZIndex = 8
+    Instance.new("UICorner", Bolinha).CornerRadius = UDim.new(1, 0)
+
+    local function Atualizar()
+        if Ativado then
+            Bolinha.Position = UDim2.new(0, 21, 0.5, -8)
+            Bolinha.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- BRANCO LIGADO
+            Stroke.Color = Color3.fromRGB(255, 255, 255) -- BORDA BRANCA
+        else
+            Bolinha.Position = UDim2.new(0, 3, 0.5, -8)
+            Bolinha.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+            Stroke.Color = Color3.fromRGB(50, 50, 55)
+        end
+    end
+
+    Botao.MouseButton1Click:Connect(function()
+        TocarSom()
+        Ativado = not Ativado
+        Atualizar()
+        FuncaoAoMudar(Ativado)
+    end)
+end
+
+-- Slider: Bolinha e barra SEMPRE BRANCA
+local function CriarSlider(Nome, min, max, FuncaoAoAlterar)
+    local SliderFrame = Instance.new("Frame", ContainerPaginas)
+    SliderFrame.Size = UDim2.new(1, 0, 0, 46)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    SliderFrame.ZIndex = 6
+    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
+
+    local Stroke = Instance.new("UIStroke", SliderFrame)
+    Stroke.Color = Color3.fromRGB(50, 50, 55)
+    Stroke.Thickness = 1
+
+    local Label = Instance.new("TextLabel", SliderFrame)
+    Label.Size = UDim2.new(1, -20, 0, 20)
+    Label.Position = UDim2.new(0, 12, 0, 5)
+    Label.BackgroundTransparency = 1
+    Label.Text = Nome..": "..min
+    Label.Font = Enum.Font.Gotham
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255) -- TEXTO BRANCO
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 7
+
+    local Barra = Instance.new("Frame", SliderFrame)
+    Barra.Size = UDim2.new(1, -24, 0, 6)
+    Barra.Position = UDim2.new(0, 12, 0, 32)
+    Barra.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    Barra.ZIndex = 7
+    Instance.new("UICorner", Barra).
