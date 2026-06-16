@@ -428,7 +428,234 @@ end
 local function CarregarConteudo_Main() end
 
 -- ABA 2: ESP
-local function CarregarConteudo_ESP() end
+-- ABA 2: ESP (TUDO FUNCIONAL PARA MM2)
+local ESP_ATIVO = {
+    Murderer = {Highlight = false, Distancia = false, Nome = false, Funcao = false, Linha = false},
+    Sheriff = {Highlight = false, Distancia = false, Nome = false, Funcao = false, Linha = false},
+    Inocente = {Highlight = false, Distancia = false, Nome = false, Funcao = false, Linha = false}
+}
+
+-- Variáveis para guardar os objetos do ESP
+local ObjetosESP = {
+    Textos = {},
+    Destaques = {},
+    Linhas = {}
+}
+
+-- Função principal que atualiza todo o ESP
+local function AtualizarESP()
+    -- Limpa tudo antes de recriar
+    for _, Obj in pairs(ObjetosESP.Textos) do if Obj then Obj:Destroy() end end
+    for _, Obj in pairs(ObjetosESP.Destaques) do if Obj then Obj:Destroy() end end
+    for _, Obj in pairs(ObjetosESP.Linhas) do if Obj then Obj:Destroy() end end
+    ObjetosESP = {Textos = {}, Destaques = {}, Linhas = {}}
+
+    local PlayerAtual = Players.LocalPlayer
+    if not PlayerAtual.Character or not PlayerAtual.Character:FindFirstChild("HumanoidRootPart") then return end
+    local MinhaPosicao = PlayerAtual.Character.HumanoidRootPart.Position
+
+    -- Percorre todos os jogadores
+    for _, Jogador in pairs(Players:GetPlayers()) do
+        if Jogador == PlayerAtual then continue end
+        if not Jogador.Character then continue end
+        
+        local Humanoid = Jogador.Character:FindFirstChildWhichIsA("Humanoid")
+        local RootPart = Jogador.Character:FindFirstChild("HumanoidRootPart")
+        if not Humanoid or not RootPart or Humanoid.Health <= 0 then continue end
+
+        -- DESCOBRE A FUNÇÃO NO MM2
+        local FuncaoJogador = "Inocente" -- padrão
+        local CorFuncao = Color3.fromRGB(80, 255, 80) -- verde inocente
+
+        -- Verifica se é Assassino (nome geralmente tem cor ou tem a tag)
+        if Jogador.Character:FindFirstChild("IsMurderer") or Jogador.Team.Name:lower():find("murder") or Jogador.Character:FindFirstChild("Knife") then
+            FuncaoJogador = "Assassino"
+            CorFuncao = Color3.fromRGB(255, 40, 40) -- vermelho
+        -- Verifica se é Xerife
+        elseif Jogador.Character:FindFirstChild("IsSheriff") or Jogador.Team.Name:lower():find("sheriff") or Jogador.Character:FindFirstChild("Gun") then
+            FuncaoJogador = "Xerife"
+            CorFuncao = Color3.fromRGB(80, 140, 255) -- azul
+        end
+
+        -- Define qual ESP usar
+        local ConfigESP
+        if FuncaoJogador == "Assassino" then
+            ConfigESP = ESP_ATIVO.Murderer
+        elseif FuncaoJogador == "Xerife" then
+            ConfigESP = ESP_ATIVO.Sheriff
+        else
+            ConfigESP = ESP_ATIVO.Inocente
+        end
+
+        -- ======================================
+        -- 1. HIGHLIGHT (DESTAQUE NO CORPO)
+        -- ======================================
+        if ConfigESP.Highlight then
+            local Destaque = Instance.new("Highlight")
+            Destaque.Name = "ESP_Highlight"
+            Destaque.Adornee = Jogador.Character
+            Destaque.FillColor = CorFuncao
+            Destaque.OutlineColor = Color3.new(1,1,1)
+            Destaque.FillTransparency = 0.6
+            Destaque.OutlineTransparency = 0
+            Destaque.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            Destaque.Parent = game:GetService("CoreGui")
+            table.insert(ObjetosESP.Destaques, Destaque)
+        end
+
+        -- ======================================
+        -- 2. LINHA ATÉ O JOGADOR
+        -- ======================================
+        if ConfigESP.Linha then
+            local Linha = Instance.new("LineHandleAdornment")
+            Linha.Name = "ESP_Linha"
+            Linha.Color3 = CorFuncao
+            Linha.Thickness = 2
+            Linha.ZIndex = 10
+            Linha.Adornee = RootPart
+            Linha.Length = (MinhaPosicao - RootPart.Position).Magnitude
+            Linha.CFrame = CFrame.new(RootPart.Position, MinhaPosicao)
+            Linha.Parent = game:GetService("CoreGui")
+            table.insert(ObjetosESP.Linhas, Linha)
+        end
+
+        -- ======================================
+        -- 3. TEXTO ACIMA DA CABEÇA
+        -- ======================================
+        if ConfigESP.Nome or ConfigESP.Funcao or ConfigESP.Distancia then
+            -- Calcula distância
+            local Distancia = math.floor((MinhaPosicao - RootPart.Position).Magnitude)
+            
+            -- Monta o texto
+            local TextoFinal = ""
+            if ConfigESP.Nome then TextoFinal = TextoFinal .. Jogador.DisplayName .. "\n" end
+            if ConfigESP.Funcao then TextoFinal = TextoFinal .. "[" .. FuncaoJogador .. "]\n" end
+            if ConfigESP.Distancia then TextoFinal = TextoFinal .. Distancia .. "m" end
+
+            -- Cria a etiqueta 3D
+            local Texto = Instance.new("BillboardGui")
+            Texto.Name = "ESP_Texto"
+            Texto.Adornee = RootPart
+            Texto.Size = UDim2.new(0, 200, 0, 80)
+            Texto.Scale = 0.1
+            Texto.AlwaysOnTop = true
+            Texto.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1,0,1,0)
+            Label.BackgroundTransparency = 1
+            Label.Font = Enum.Font.GothamBold
+            Label.Text = TextoFinal
+            Label.TextColor3 = CorFuncao
+            Label.TextSize = 14
+            Label.TextStrokeTransparency = 0.2
+            Label.TextStrokeColor3 = Color3.new(0,0,0)
+            Label.Parent = Texto
+
+            Texto.Parent = game:GetService("CoreGui")
+            table.insert(ObjetosESP.Textos, Texto)
+        end
+    end
+end
+
+-- Loop para atualizar o ESP constantemente
+task.spawn(function()
+    while true do
+        task.wait(0.1) -- atualiza 10 vezes por segundo
+        local ok, err = pcall(AtualizarESP)
+        if not ok then warn("Erro ESP:", err) end
+    end
+end)
+
+-- ======================================
+-- CONTEÚDO DA ABA ESP
+-- ======================================
+local function CarregarConteudo_ESP()
+    -- ========== ESP MURDERER ==========
+    CriarTituloPrincipal("Esp Murderer")
+
+    CriarToggle("Highlight", function(ligado)
+        ESP_ATIVO.Murderer.Highlight = ligado
+        CriarNotificacao("ESP Murderer", ligado and "Highlight Ativado ✅" or "Highlight Desativado ❌", 2)
+    end)
+
+    CriarToggle("Distância", function(ligado)
+        ESP_ATIVO.Murderer.Distancia = ligado
+        CriarNotificacao("ESP Murderer", ligado and "Distância Ativada ✅" or "Distância Desativada ❌", 2)
+    end)
+
+    CriarToggle("Nome", function(ligado)
+        ESP_ATIVO.Murderer.Nome = ligado
+        CriarNotificacao("ESP Murderer", ligado and "Nome Ativado ✅" or "Nome Desativado ❌", 2)
+    end)
+
+    CriarToggle("Função", function(ligado)
+        ESP_ATIVO.Murderer.Funcao = ligado
+        CriarNotificacao("ESP Murderer", ligado and "Função Ativada ✅" or "Função Desativada ❌", 2)
+    end)
+
+    CriarToggle("Linha", function(ligado)
+        ESP_ATIVO.Murderer.Linha = ligado
+        CriarNotificacao("ESP Murderer", ligado and "Linha Ativada ✅" or "Linha Desativada ❌", 2)
+    end)
+
+    -- ========== ESP SHERIFF ==========
+    CriarTituloPrincipal("Esp Sherif")
+
+    CriarToggle("Highlight", function(ligado)
+        ESP_ATIVO.Sheriff.Highlight = ligado
+        CriarNotificacao("ESP Sherif", ligado and "Highlight Ativado ✅" or "Highlight Desativado ❌", 2)
+    end)
+
+    CriarToggle("Distância", function(ligado)
+        ESP_ATIVO.Sheriff.Distancia = ligado
+        CriarNotificacao("ESP Sherif", ligado and "Distância Ativada ✅" or "Distância Desativada ❌", 2)
+    end)
+
+    CriarToggle("Nome", function(ligado)
+        ESP_ATIVO.Sheriff.Nome = ligado
+        CriarNotificacao("ESP Sherif", ligado and "Nome Ativado ✅" or "Nome Desativado ❌", 2)
+    end)
+
+    CriarToggle("Função", function(ligado)
+        ESP_ATIVO.Sheriff.Funcao = ligado
+        CriarNotificacao("ESP Sherif", ligado and "Função Ativada ✅" or "Função Desativada ❌", 2)
+    end)
+
+    CriarToggle("Linha", function(ligado)
+        ESP_ATIVO.Sheriff.Linha = ligado
+        CriarNotificacao("ESP Sherif", ligado and "Linha Ativada ✅" or "Linha Desativada ❌", 2)
+    end)
+
+    -- ========== ESP INOCENTE ==========
+    CriarTituloPrincipal("esp inocente")
+
+    CriarToggle("Highlight", function(ligado)
+        ESP_ATIVO.Inocente.Highlight = ligado
+        CriarNotificacao("esp inocente", ligado and "Highlight Ativado ✅" or "Highlight Desativado ❌", 2)
+    end)
+
+    CriarToggle("Distância", function(ligado)
+        ESP_ATIVO.Inocente.Distancia = ligado
+        CriarNotificacao("esp inocente", ligado and "Distância Ativada ✅" or "Distância Desativada ❌", 2)
+    end)
+
+    CriarToggle("Nome", function(ligado)
+        ESP_ATIVO.Inocente.Nome = ligado
+        CriarNotificacao("esp inocente", ligado and "Nome Ativado ✅" or "Nome Desativado ❌", 2)
+    end)
+
+    CriarToggle("Função", function(ligado)
+        ESP_ATIVO.Inocente.Funcao = ligado
+        CriarNotificacao("esp inocente", ligado and "Função Ativada ✅" or "Função Desativada ❌", 2)
+    end)
+
+    CriarToggle("Linha", function(ligado)
+        ESP_ATIVO.Inocente.Linha = ligado
+        CriarNotificacao("esp inocente", ligado and "Linha Ativada ✅" or "Linha Desativada ❌", 2)
+    end)
+end
+
 
 -- ABA 3: LOCAL PLAYER
 local function CarregarConteudo_LocalPlayer()
