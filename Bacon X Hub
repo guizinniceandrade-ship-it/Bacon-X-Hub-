@@ -429,6 +429,221 @@ local function CarregarConteudo_Main() end
 
 -- ABA 2: ESP
 
+-- ==========================================
+-- [5] SISTEMA ESP (ARRUMADO + COM IDs)
+-- ==========================================
+-- ✅ AGORA COM IDs ÚNICOS PARA CADA OPÇÃO
+local ESP_ATIVO = {
+    -- ASSASSINO (ID: "esp_murderer")
+    Murderer = {
+        Id = "esp_murderer",
+        Habilitado = false,
+        Config = {
+            {Id = "murderer_highlight", Nome = "Highlight", Ativo = false},
+            {Id = "murderer_distancia", Nome = "Distância", Ativo = false},
+            {Id = "murderer_nome", Nome = "Nome", Ativo = false},
+            {Id = "murderer_funcao", Nome = "Função", Ativo = false},
+            {Id = "murderer_linha", Nome = "Linha", Ativo = false}
+        }
+    },
+    -- XERIFE (ID: "esp_sheriff")
+    Sheriff = {
+        Id = "esp_sheriff",
+        Habilitado = false,
+        Config = {
+            {Id = "sheriff_highlight", Nome = "Highlight", Ativo = false},
+            {Id = "sheriff_distancia", Nome = "Distância", Ativo = false},
+            {Id = "sheriff_nome", Nome = "Nome", Ativo = false},
+            {Id = "sheriff_funcao", Nome = "Função", Ativo = false},
+            {Id = "sheriff_linha", Nome = "Linha", Ativo = false}
+        }
+    },
+    -- INOCENTE (ID: "esp_inocente")
+    Inocente = {
+        Id = "esp_inocente",
+        Habilitado = false,
+        Config = {
+            {Id = "inocente_highlight", Nome = "Highlight", Ativo = false},
+            {Id = "inocente_distancia", Nome = "Distância", Ativo = false},
+            {Id = "inocente_nome", Nome = "Nome", Ativo = false},
+            {Id = "inocente_funcao", Nome = "Função", Ativo = false},
+            {Id = "inocente_linha", Nome = "Linha", Ativo = false}
+        }
+    }
+}
+
+local ObjetosESP = {}
+local CORES = {
+    Murderer = Color3.fromRGB(255, 35, 35),
+    Sheriff = Color3.fromRGB(35, 120, 255),
+    Inocente = Color3.fromRGB(85, 255, 85)
+}
+
+-- Função para pegar valor de uma config pelo ID
+local function PegarConfiguracaoESP(tipo, idOpcao)
+    for _, opcao in pairs(ESP_ATIVO[tipo].Config) do
+        if opcao.Id == idOpcao then
+            return opcao.Ativo
+        end
+    end
+    return false
+end
+
+local function PegarFuncaoJogador(jogador)
+    if not jogador.Character then return "Inocente", CORES.Inocente end
+    
+    if jogador.Team then
+        local nomeTime = jogador.Team.Name:lower()
+        if nomeTime:find("murder") or nomeTime:find("assassino") then
+            return "Murderer", CORES.Murderer
+        elseif nomeTime:find("sheriff") or nomeTime:find("xerife") then
+            return "Sheriff", CORES.Sheriff
+        end
+    end
+
+    local ferramenta = jogador.Character:FindFirstChildOfClass("Tool")
+    if ferramenta then
+        local nomeFerramenta = ferramenta.Name:lower()
+        if nomeFerramenta:find("knife") or nomeFerramenta:find("faca") then
+            return "Murderer", CORES.Murderer
+        elseif nomeFerramenta:find("gun") or nomeFerramenta:find("pistol") or nomeFerramenta:find("arma") then
+            return "Sheriff", CORES.Sheriff
+        end
+    end
+
+    return "Inocente", CORES.Inocente
+end
+
+local function LimparESP()
+    for _, obj in pairs(ObjetosESP) do
+        if obj and obj:IsA("Instance") then obj:Destroy() end
+    end
+    table.clear(ObjetosESP)
+end
+
+local function AtualizarESP()
+    LimparESP()
+    local eu = Players.LocalPlayer
+    if not eu.Character or not eu.Character:FindFirstChild("HumanoidRootPart") then return end
+    local minhaPos = eu.Character.HumanoidRootPart.Position
+
+    for _, jogador in pairs(Players:GetPlayers()) do
+        if jogador == eu then continue end
+        if not jogador.Character then continue end
+        
+        local root = jogador.Character:FindFirstChild("HumanoidRootPart")
+        local hum = jogador.Character:FindFirstChild("Humanoid")
+        if not root or not hum or hum.Health <= 0 then continue end
+
+        local funcao, cor = PegarFuncaoJogador(jogador)
+        local configAtiva = ESP_ATIVO[funcao]
+        if not configAtiva or not configAtiva.Habilitado then continue end
+
+        -- ✅ USANDO OS IDs PARA VERIFICAR SE ESTÁ ATIVADO
+        if PegarConfiguracaoESP(funcao, configAtiva.Id .. "_highlight") then
+            local destaque = Instance.new("Highlight")
+            destaque.Adornee = jogador.Character
+            destaque.FillColor = cor
+            destaque.OutlineColor = Color3.new(1,1,1)
+            destaque.FillTransparency = 0.5
+            destaque.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            destaque.Parent = CoreGui
+            table.insert(ObjetosESP, destaque)
+        end
+
+        if PegarConfiguracaoESP(funcao, configAtiva.Id .. "_linha") then
+            local linha = Instance.new("LineHandleAdornment")
+            linha.Adornee = root
+            linha.Length = (minhaPos - root.Position).Magnitude
+            linha.CFrame = CFrame.new(root.Position, minhaPos)
+            linha.Color3 = cor
+            linha.Thickness = 2.5
+            linha.ZIndex = 10
+            linha.Parent = CoreGui
+            table.insert(ObjetosESP, linha)
+        end
+
+        if PegarConfiguracaoESP(funcao, configAtiva.Id .. "_nome") or PegarConfiguracaoESP(funcao, configAtiva.Id .. "_funcao") or PegarConfiguracaoESP(funcao, configAtiva.Id .. "_distancia") then
+            local distancia = math.floor((minhaPos - root.Position).Magnitude)
+
+            local textoFinal = ""
+            if PegarConfiguracaoESP(funcao, configAtiva.Id .. "_nome") then textoFinal = textoFinal .. jogador.DisplayName .. "\n" end
+            if PegarConfiguracaoESP(funcao, configAtiva.Id .. "_funcao") then textoFinal = textoFinal .. "["..(funcao == "Murderer" and "Assassino" or funcao == "Sheriff" and "Xerife" or "Inocente").."]\n" end
+            if PegarConfiguracaoESP(funcao, configAtiva.Id .. "_distancia") then textoFinal = textoFinal .. distancia .. "m" end
+
+            local placa = Instance.new("BillboardGui")
+            placa.Adornee = root
+            placa.Size = UDim2.new(0, 200, 0, 100)
+            placa.Position = UDim2.new(0,0,0,-2)
+            placa.AlwaysOnTop = true
+            placa.MaxDistance = 150
+            placa.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1,0,1,0)
+            label.BackgroundTransparency = 1
+            label.Font = Enum.Font.GothamBold
+            label.Text = textoFinal
+            label.TextColor3 = cor
+            label.TextSize = 14
+            label.TextStrokeTransparency = 0.1
+            label.TextStrokeColor3 = Color3.new(0,0,0)
+            label.Parent = placa
+
+            placa.Parent = CoreGui
+            table.insert(ObjetosESP, placa)
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(AtualizarESP)
+
+-- ==========================================
+-- CONTEÚDO DA ABA ESP (COM LÓGICA DOS IDs)
+-- ==========================================
+local function CarregarConteudo_ESP()
+    -- ✅ SEÇÃO ASSASSINO
+    CriarTituloPrincipal("ESP - Assassino")
+    -- Toggle principal para ligar/desligar todo o ESP do Assassino
+    CriarToggle("Ativar ESP Assassino", function(ligado)
+        ESP_ATIVO.Murderer.Habilitado = ligado
+    end)
+    -- Opções individuais com referência pelo ID
+    for _, opcao in pairs(ESP_ATIVO.Murderer.Config) do
+        CriarToggle(opcao.Nome, function(ativo)
+            for _, cfg in pairs(ESP_ATIVO.Murderer.Config) do
+                if cfg.Id == opcao.Id then cfg.Ativo = ativo end
+            end
+        end)
+    end
+
+    -- ✅ SEÇÃO XERIFE
+    CriarTituloPrincipal("ESP - Xerife")
+    CriarToggle("Ativar ESP Xerife", function(ligado)
+        ESP_ATIVO.Sheriff.Habilitado = ligado
+    end)
+    for _, opcao in pairs(ESP_ATIVO.Sheriff.Config) do
+        CriarToggle(opcao.Nome, function(ativo)
+            for _, cfg in pairs(ESP_ATIVO.Sheriff.Config) do
+                if cfg.Id == opcao.Id then cfg.Ativo = ativo end
+            end
+        end)
+    end
+
+    -- ✅ SEÇÃO INOCENTE
+    CriarTituloPrincipal("ESP - Inocente")
+    CriarToggle("Ativar ESP Inocente", function(ligado)
+        ESP_ATIVO.Inocente.Habilitado = ligado
+    end)
+    for _, opcao in pairs(ESP_ATIVO.Inocente.Config) do
+        CriarToggle(opcao.Nome, function(ativo)
+            for _, cfg in pairs(ESP_ATIVO.Inocente.Config) do
+                if cfg.Id == opcao.Id then cfg.Ativo = ativo end
+            end
+        end)
+    end
+end
+
 -- ABA 3: LOCAL PLAYER
 local function CarregarConteudo_LocalPlayer()
     CriarTituloPrincipal("MOVIMENTO DO PERSONAGEM")
