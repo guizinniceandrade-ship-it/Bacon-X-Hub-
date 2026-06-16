@@ -552,4 +552,486 @@ local function CriarSlider(Nome, min, max, FuncaoAoAlterar)
     Barra.Position = UDim2.new(0, 12, 0, 32)
     Barra.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
     Barra.ZIndex = 7
-    Instance.new("UICorner", Barra).
+    Instance.new("UICorner", Barra).CornerRadius = UDim.new(1, 0)
+
+    local Preenchimento = Instance.new("Frame", Barra)
+    Preenchimento.Size = UDim2.new(0, 0, 1, 0)
+    Preenchimento.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- BRANCO
+    Preenchimento.BorderSizePixel = 0
+    Preenchimento.ZIndex = 8
+    Instance.new("UICorner", Preenchimento).CornerRadius = UDim.new(1, 0)
+
+    local BolinhaBranca = Instance.new("Frame", Barra)
+    BolinhaBranca.Size = UDim2.new(0, 14, 0, 14)
+    BolinhaBranca.Position = UDim2.new(0, -7, 0.5, -7)
+    BolinhaBranca.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- BOLINHA BRANCA
+    BolinhaBranca.ZIndex = 9
+    Instance.new("UICorner", BolinhaBranca).CornerRadius = UDim.new(1, 0)
+
+    local arrastando = false
+    local function Atualizar(input)
+        local posBarra = Barra.AbsolutePosition.X
+        local tamBarra = Barra.AbsoluteSize.X
+        local porcentagem = math.clamp((input.Position.X - posBarra) / tamBarra, 0, 1)
+        
+        Preenchimento.Size = UDim2.new(porcentagem, 0, 1, 0)
+        BolinhaBranca.Position = UDim2.new(porcentagem, -7, 0.5, -7)
+        
+        local valor = math.floor(min + (max - min) * porcentagem)
+        Label.Text = Nome..": "..valor
+        FuncaoAoAlterar(valor)
+    end
+
+    Barra.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            TocarSom()
+            arrastando = true
+            Atualizar(input)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if arrastando and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            Atualizar(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            arrastando = false
+        end
+    end)
+end
+
+-- ✨ NOVO BOTÃO: ADICIONAR MÚSICA NA LISTA
+local function AdicionarMusica(NomeMusica, ID)
+    table.insert(ListaDeMusicas, {nome = NomeMusica, id = ID})
+    local indice = #ListaDeMusicas
+
+    local BotaoFrame = Instance.new("Frame", ContainerPaginas)
+    BotaoFrame.Size = UDim2.new(1, 0, 0, 42)
+    BotaoFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 230)
+    BotaoFrame.ZIndex = 6
+    Instance.new("UICorner", BotaoFrame).CornerRadius = UDim.new(0, 6)
+    
+    local Stroke = Instance.new("UIStroke", BotaoFrame)
+    Stroke.Color = Color3.fromRGB(50, 50, 55)
+    Stroke.Thickness = 1
+
+    local Label = Instance.new("TextLabel", BotaoFrame)
+    Label.Size = UDim2.new(1, -10, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = NomeMusica
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255) -- BRANCO
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Center
+    Label.ZIndex = 7
+
+    local Botao = Instance.new("TextButton", BotaoFrame)
+    Botao.Size = UDim2.new(1, 0, 1, 0)
+    Botao.BackgroundTransparency = 1
+    Botao.Text = ""
+    Botao.ZIndex = 8
+    Botao.AutoButtonColor = false
+
+    Botao.MouseButton1Click:Connect(function()
+        TocarSom()
+        TocarMusicaIndice(indice)
+    end)
+end
+
+-- ✨ NOVO BOTÃO: PARAR MÚSICA
+local function CriarBotaoPararMusica()
+    local BotaoFrame = Instance.new("Frame", ContainerPaginas)
+    BotaoFrame.Size = UDim2.new(1, 0, 0, 42)
+    BotaoFrame.BackgroundColor3 = Color3.fromRGB(40, 20, 25)
+    BotaoFrame.ZIndex = 6
+    Instance.new("UICorner", BotaoFrame).CornerRadius = UDim.new(0, 6)
+    
+    local Stroke = Instance.new("UIStroke", BotaoFrame)
+    Stroke.Color = Color3.fromRGB(200, 50, 50)
+    Stroke.Thickness = 1
+
+    local Label = Instance.new("TextLabel", BotaoFrame)
+    Label.Size = UDim2.new(1, -10, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = "⏹️ PARAR MÚSICA"
+    Label.Font = Enum.Font.GothamBold
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Center
+    Label.ZIndex = 7
+
+    local Botao = Instance.new("TextButton", BotaoFrame)
+    Botao.Size = UDim2.new(1, 0, 1, 0)
+    Botao.BackgroundTransparency = 1
+    Botao.Text = ""
+    Botao.ZIndex = 8
+    Botao.AutoButtonColor = false
+
+    Botao.MouseButton1Click:Connect(function()
+        TocarSom()
+        PararMusica()
+        CriarNotificacao("🎵 Música", "Músicas paradas!", 2)
+    end)
+end
+
+-- ==========================================
+-- [5] CONTEÚDO DAS ABAS
+-- ==========================================
+
+-- ABA 1: MAIN
+local function CarregarConteudo_Main() end
+
+-- ABA 2: ESP
+local function CarregarConteudo_ESP() end
+
+-- ABA 3: LOCAL PLAYER
+local function CarregarConteudo_LocalPlayer()
+    CriarTituloPrincipal("movimento do jogador")
+
+    local speedLigado = false
+    local velocidadeAtual = 16
+    local jumpLigado = false
+    local alturaPulo = 10
+    local puloInfinitoLigado = false
+    local noclipLigado = false
+
+    CriarToggle("Speed", function(ligado)
+        speedLigado = ligado
+        local char = Player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = ligado and velocidadeAtual or 16
+            CriarNotificacao("Speed", ligado and "Ativado" or "Desativado", 2)
+        end
+    end)
+
+    CriarSlider("Velocidade (Speed)", 16, 100, function(valor)
+        velocidadeAtual = valor
+        if speedLigado then
+            local char = Player.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.WalkSpeed = valor
+            end
+        end
+    end)
+
+    CriarToggle("Jump", function(ligado)
+        jumpLigado = ligado
+        local char = Player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.JumpHeight = ligado and alturaPulo or 7
+            CriarNotificacao("Jump", ligado and "Ativado" or "Desativado", 2)
+        end
+    end)
+
+    CriarSlider("Força do Pulo (Jump)", 10, 300, function(valor)
+        alturaPulo = valor
+        if jumpLigado then
+            local char = Player.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.JumpHeight = valor
+            end
+        end
+    end)
+
+    CriarToggle("Infinito Jump", function(ligado)
+        puloInfinitoLigado = ligado
+        CriarNotificacao("Infinito Jump", ligado and "Ativado" or "Desativado", 2)
+    end)
+
+    CriarToggle("Noclip", function(ligado)
+        noclipLigado = ligado
+        if ligado then
+            task.spawn(function()
+                while noclipLigado do
+                    task.wait(0)
+                    local char = Player.Character
+                    if char then
+                        for _, parte in pairs(char:GetChildren()) do
+                            if parte:IsA("BasePart") then parte.CanCollide = false end
+                        end
+                    end
+                end
+                local char = Player.Character
+                if char then
+                    for _, parte in pairs(char:GetChildren()) do
+                        if parte:IsA("BasePart") then parte.CanCollide = true end
+                    end
+                end
+            end)
+        end
+    end)
+
+    UserInputService.JumpRequest:Connect(function()
+        if puloInfinitoLigado then
+            local char = Player.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end)
+end
+
+-- ABA 4: TELEPORTE
+local function CarregarConteudo_Teleporte() end
+
+-- 🎵 ABA 5: MÚSICA (COM PLAYER COMPLETO!)
+local function CarregarConteudo_Musica()
+    CriarTituloPrincipal("MÚSICAS TOP")
+
+    -- 🛑 BOTÃO PARAR
+    CriarBotaoPararMusica()
+
+    -- ✅ ADICIONE SUAS MÚSICAS AQUI!
+    -- Formato: AdicionarMusica("NOME DA MÚSICA", ID_DA_MÚSICA)
+
+    AdicionarMusica("FUNK MAIS TOP 1", 123456789)
+    AdicionarMusica("MELODY 2026", 987654321)
+    AdicionarMusica("RAP NACIONAL", 456789123)
+    AdicionarMusica("INTERNACIONAL TOP", 789123456)
+
+    -- COLOCA MUITAS AQUI EMBAIXO 👇
+    -- AdicionarMusica("SUA MÚSICA", 000000000)
+    -- AdicionarMusica("SUA MÚSICA", 000000000)
+
+end
+
+-- ==========================================
+-- GERENCIADOR DE ABAS
+-- ==========================================
+local function AlternarAba(abaNome)
+    for nome, componentes in pairs(AbasCriadas) do
+        if nome == abaNome then
+            componentes.Stroke.Color = Color3.fromRGB(255, 255, 255)
+            componentes.Stroke.Thickness = 1.5
+        else
+            componentes.Stroke.Color = Color3.fromRGB(45, 45, 50)
+            componentes.Stroke.Thickness = 1
+        end
+    end
+
+    -- LIMPA AO TROCAR
+    for _, child in pairs(ContainerPaginas:GetChildren()) do
+        if child:IsA("GuiObject") and child ~= LayoutBotoes then
+            child:Destroy()
+        end
+    end
+
+    -- CARREGA
+    if abaNome == "Main" then CarregarConteudo_Main()
+    elseif abaNome == "ESP" then CarregarConteudo_ESP()
+    elseif abaNome == "Local Player" then CarregarConteudo_LocalPlayer()
+    elseif abaNome == "Teleporte" then CarregarConteudo_Teleporte()
+    elseif abaNome == "Música" then CarregarConteudo_Musica() end
+end
+
+local function CriarAbaLateral(nome)
+    local btn = Instance.new("TextButton", ContainerAbas)
+    btn.Size = UDim2.new(1, 0, 0, 36)
+    btn.Text = nome
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 12
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    btn.BackgroundTransparency = 0.3
+    btn.ZIndex = 6
+    btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    local BtnStroke = Instance.new("UIStroke", btn)
+    BtnStroke.Thickness = 1
+    BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    AbasCriadas[nome] = {Botao = btn, Stroke = BtnStroke}
+
+    btn.MouseButton1Click:Connect(function() TocarSom() AlternarAba(nome) end)
+end
+
+-- LISTA DE ABAS
+local abas = {"Main", "ESP", "Local Player", "Teleporte", "Música"}
+for _, nome in pairs(abas) do CriarAbaLateral(nome) end
+
+AlternarAba("Main")
+
+-- ==========================================
+-- PERFIL DO JOGADOR
+-- ==========================================
+local PerfilFrame = Instance.new("Frame", MainFrame)
+PerfilFrame.Size = UDim2.new(0, 140, 0, 55)
+PerfilFrame.Position = UDim2.new(0, 12, 1, -140)
+PerfilFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+PerfilFrame.BackgroundTransparency = 0.3
+PerfilFrame.ZIndex = 5
+Instance.new("UICorner", PerfilFrame).CornerRadius = UDim.new(0, 8)
+local PerfilStroke = Instance.new("UIStroke", PerfilFrame)
+PerfilStroke.Color = Color3.fromRGB(45, 45, 50)
+
+local Avatar = Instance.new("ImageLabel", PerfilFrame)
+Avatar.Size = UDim2.new(0, 36, 0, 36)
+Avatar.Position = UDim2.new(0, 6, 0, 9)
+Avatar.ZIndex = 6
+pcall(function() Avatar.Image = Players:GetUserThumbnailAsync(Player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420) end)
+Instance.new("UICorner", Avatar).CornerRadius = UDim.new(1, 0)
+
+local InfoPerfil = Instance.new("Frame", PerfilFrame)
+InfoPerfil.Size = UDim2.new(1, -50, 1, 0)
+InfoPerfil.Position = UDim2.new(0, 48, 0, 0)
+InfoPerfil.BackgroundTransparency = 1
+local LayoutInfo = Instance.new("UIListLayout", InfoPerfil)
+LayoutInfo.VerticalAlignment = Enum.VerticalAlignment.Center
+LayoutInfo.Padding = UDim.new(0, 2)
+
+local DisplayNameLabel = Instance.new("TextLabel", InfoPerfil)
+DisplayNameLabel.Size = UDim2.new(1, 0, 0, 15)
+DisplayNameLabel.Text = Player.DisplayName
+DisplayNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+DisplayNameLabel.Font = Enum.Font.GothamBold
+DisplayNameLabel.TextSize = 11
+DisplayNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+DisplayNameLabel.BackgroundTransparency = 1
+DisplayNameLabel.ZIndex = 6
+
+local UserLabel = Instance.new("TextLabel", InfoPerfil)
+UserLabel.Size = UDim2.new(1, 0, 0, 13)
+UserLabel.Text = "@" .. Player.Name
+UserLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
+UserLabel.Font = Enum.Font.Gotham
+UserLabel.TextSize = 9
+UserLabel.TextXAlignment = Enum.TextXAlignment.Left
+UserLabel.BackgroundTransparency = 1
+UserLabel.ZIndex = 6
+
+-- ==========================================
+-- BOTÃO FLUTUANTE
+-- ==========================================
+local FloatingBtn = Instance.new("ImageButton", Screen)
+FloatingBtn.Size = UDim2.new(0, 50, 0, 50)
+FloatingBtn.Position = UDim2.new(0, 20, 0.2, 0)
+FloatingBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+FloatingBtn.Visible = false 
+FloatingBtn.ZIndex = 10
+FloatingBtn.AutoButtonColor = false
+pcall(function() FloatingBtn.Image = "rbxthumb://type=Asset&id=107014357691540&w=150&h=150" end)
+Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(0, 8)
+local FloatStroke = Instance.new("UIStroke", FloatingBtn)
+FloatStroke.Color = Color3.fromRGB(255, 255, 255)
+FloatStroke.Thickness = 1.5
+
+FloatingBtn.MouseButton1Click:Connect(function()
+    if Minimizado then return end
+    TocarSom() 
+    menuAberto = not menuAberto
+    MainFrame.Visible = menuAberto
+end)
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    TocarSom() 
+    Minimizado = not Minimizado
+    if Minimizado then
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(0, 550, 0, 45)}):Play()
+        ContainerAbas.Visible = false
+        PerfilFrame.Visible = false
+        ContainerPaginas.Visible = false
+        PlayerMusica.Visible = false
+    else
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(0, 550, 0, 350)}):Play()
+        ContainerAbas.Visible = true
+        PerfilFrame.Visible = true
+        ContainerPaginas.Visible = true
+        PlayerMusica.Visible = true
+    end
+end)
+
+-- ==========================================
+-- POPUP DE FECHAMENTO
+-- ==========================================
+local AlertFrame = Instance.new("Frame", Screen)
+AlertFrame.Name = "AlertFrame"
+AlertFrame.Size = UDim2.new(0, 280, 0, 130)
+AlertFrame.Position = UDim2.new(0.5, -140, 0.5, -65)
+AlertFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+AlertFrame.Visible = false
+AlertFrame.ZIndex = 25
+Instance.new("UICorner", AlertFrame).CornerRadius = UDim.new(0, 8)
+local AlertStroke = Instance.new("UIStroke", AlertFrame)
+AlertStroke.Color = Color3.fromRGB(255, 255, 255)
+
+local AlertTitle = Instance.new("TextLabel", AlertFrame)
+AlertTitle.Size = UDim2.new(1, 0, 0, 50)
+AlertTitle.BackgroundTransparency = 1
+AlertTitle.Font = Enum.Font.GothamBold
+AlertTitle.Text = "Deseja mesmo fechar o script?"
+AlertTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AlertTitle.TextSize = 13
+AlertTitle.ZIndex = 26
+
+local YesBtn = Instance.new("TextButton", AlertFrame)
+YesBtn.Size = UDim2.new(0, 100, 0, 32)
+YesBtn.Position = UDim2.new(0.15, 0, 0.55, 0)
+YesBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.Text = "Sim"
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.TextSize = 12
+YesBtn.ZIndex = 26
+YesBtn.AutoButtonColor = false
+Instance.new("UICorner", YesBtn).CornerRadius = UDim.new(0, 5)
+
+local NoBtn = Instance.new("TextButton", AlertFrame)
+NoBtn.Size = UDim2.new(0, 100, 0, 32)
+NoBtn.Position = UDim2.new(0.55, 0, 0.55, 0)
+NoBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.Text = "Não"
+NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoBtn.TextSize = 12
+NoBtn.ZIndex = 26
+NoBtn.AutoButtonColor = false
+Instance.new("UICorner", NoBtn).CornerRadius = UDim.new(0, 5)
+
+CloseBtn.MouseButton1Click:Connect(function() TocarSom() AlertFrame.Visible = true end)
+YesBtn.MouseButton1Click:Connect(function() TocarSom() Screen:Destroy() end)
+NoBtn.MouseButton1Click:Connect(function() TocarSom() AlertFrame.Visible = false end)
+
+-- ==========================================
+-- SISTEMA DE ARRASTAR
+-- ==========================================
+local function ConfigurarArrastar(AlvoInput, ObjetoMover)
+    local dragging, dragStart, startPos
+    AlvoInput.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = ObjetoMover.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+            local delta = input.Position - dragStart
+            ObjetoMover.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+ConfigurarArrastar(FloatingBtn, FloatingBtn)
+ConfigurarArrastar(DragBar, MainFrame)
+
+-- ==========================================
+-- INICIALIZAÇÃO
+-- ==========================================
+CriarNotificacao("Astral X Hub", "Script carregando, aguarde...", 4)
+task.wait(3)
+CriarNotificacao("Astral X Hub", "Carregado com sucesso!", 4)
+MainFrame.Visible = true
+FloatingBtn.Visible = true 
+menuAberto = true
+
