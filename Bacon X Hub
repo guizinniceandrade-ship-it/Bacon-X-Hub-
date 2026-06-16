@@ -429,9 +429,6 @@ local function CarregarConteudo_Main() end
 
 -- ABA 2: ESP
 
- 
-
-
 -- ABA 3: LOCAL PLAYER
 local function CarregarConteudo_LocalPlayer()
     CriarTituloPrincipal("MOVIMENTO DO PERSONAGEM")
