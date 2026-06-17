@@ -429,6 +429,262 @@ end
 -- =====================
 -- CONTEÚDO DA ABA LOCAL PLAYER
 -- =====================
+-- ==========================================
+-- 🛠️ CÓDIGO COMPLETO E CORRIGIDO (SEU CÓDIGO + AJUSTES)
+-- ==========================================
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character, humanoid, rootPart
+
+-- Atualiza personagem ao respawnar
+local function atualizarReferencia()
+    character = player.Character
+    if character then
+        humanoid = character:FindFirstChild("Humanoid")
+        rootPart = character:FindFirstChild("HumanoidRootPart")
+    end
+end
+
+player.CharacterAdded:Connect(atualizarReferencia)
+atualizarReferencia()
+
+-- ✅ FUNÇÃO DE TOGGLE ANIMADO (PERFEITO: BOLINHA DIREITA/ESQUERDA, SEM TEXTO BOTÃO)
+local function CriarToggleAnimado(texto, pai, funcao)
+    local ToggleFrame = Instance.new("Frame", pai)
+    ToggleFrame.Size = UDim2.new(1, -8, 0, 36)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+    ToggleFrame.BorderSizePixel = 0
+    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0,8)
+
+    local Texto = Instance.new("TextLabel", ToggleFrame)
+    Texto.Size = UDim2.new(1, -60, 1, 0)
+    Texto.Position = UDim2.new(0, 12, 0, 0)
+    Texto.BackgroundTransparency = 1
+    Texto.Text = texto
+    Texto.TextColor3 = Color3.new(1,1,1)
+    Texto.Font = Enum.Font.Gotham
+    Texto.TextSize = 14
+    Texto.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Botao = Instance.new("TextButton", ToggleFrame)
+    Botao.Size = UDim2.new(0, 46, 0, 24)
+    Botao.Position = UDim2.new(1, -54, 0.5, -12)
+    Botao.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Botao.BorderSizePixel = 0
+    Botao.Text = "" -- NÃO APARECE NADA ESCRITO
+    Botao.AutoButtonColor = false
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(1, 0)
+
+    local Bolinha = Instance.new("Frame", Botao)
+    Bolinha.Size = UDim2.new(0, 18, 0, 18)
+    Bolinha.Position = UDim2.new(0, 3, 0.5, -9) -- ESQUERDA = DESLIGADO
+    Bolinha.BackgroundColor3 = Color3.new(1,1,1)
+    Bolinha.BorderSizePixel = 0
+    Instance.new("UICorner", Bolinha).CornerRadius = UDim.new(1, 0)
+
+    local Ativado = false
+    local tween = TweenInfo.new(0.25, Enum.EasingStyle.Quad)
+
+    Botao.MouseButton1Click:Connect(function()
+        Ativado = not Ativado
+        if Ativado then
+            -- LIGADO: FUNDO BRANCO, BOLINHA DIREITA
+            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.new(1,1,1)}):Play()
+            TweenService:Create(Bolinha, tween, {Position = UDim2.new(1, -21, 0.5, -9), BackgroundColor3 = Color3.fromRGB(20,20,20)}):Play()
+        else
+            -- DESLIGADO: FUNDO ESCURO, BOLINHA ESQUERDA
+            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.fromRGB(30,30,30)}):Play()
+            TweenService:Create(Bolinha, tween, {Position = UDim2.new(0, 3, 0.5, -9), BackgroundColor3 = Color3.new(1,1,1)}):Play()
+        end
+        funcao(Ativado)
+    end)
+    return ToggleFrame
+end
+
+-- ✅ FUNÇÃO DE SLIDER (SEU CÓDIGO + CORREÇÃO DE POSIÇÃO)
+-- AGORA ARRASTA 100% NO DELTA, SEM TRAVAR
+local function CriarSlider(texto, pai, min, max, padrao, funcao)
+    local SliderFrame = Instance.new("Frame", pai)
+    SliderFrame.Size = UDim2.new(1, -8, 0, 55)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+    SliderFrame.BorderSizePixel = 0
+    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0,8)
+
+    local Texto = Instance.new("TextLabel", SliderFrame)
+    Texto.Size = UDim2.new(1, -50, 0, 20)
+    Texto.Position = UDim2.new(0, 10, 0, 5)
+    Texto.BackgroundTransparency = 1
+    Texto.Text = texto
+    Texto.TextColor3 = Color3.new(1,1,1)
+    Texto.Font = Enum.Font.Gotham
+    Texto.TextSize = 13
+    Texto.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Valor = Instance.new("TextLabel", SliderFrame)
+    Valor.Size = UDim2.new(0, 40, 0, 20)
+    Valor.Position = UDim2.new(1, -45, 0, 5)
+    Valor.BackgroundTransparency = 1
+    Valor.Text = tostring(padrao)
+    Valor.TextColor3 = Color3.new(1,1,1)
+    Valor.Font = Enum.Font.GothamBold
+    Valor.TextSize = 13
+    Valor.TextXAlignment = Enum.TextXAlignment.Right
+
+    local BarraFundo = Instance.new("Frame", SliderFrame)
+    BarraFundo.Size = UDim2.new(1, -20, 0, 8)
+    BarraFundo.Position = UDim2.new(0, 10, 1, -18)
+    BarraFundo.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    BarraFundo.BorderSizePixel = 0
+    BarraFundo.ZIndex = 2
+    Instance.new("UICorner", BarraFundo).CornerRadius = UDim.new(1,0)
+
+    local BarraCheia = Instance.new("Frame", BarraFundo)
+    BarraCheia.Size = UDim2.new((padrao-min)/(max-min), 0, 1, 0)
+    BarraCheia.BackgroundColor3 = Color3.new(1,1,1)
+    BarraCheia.BorderSizePixel = 0
+    BarraCheia.ZIndex = 3
+    Instance.new("UICorner", BarraCheia).CornerRadius = UDim.new(1,0)
+
+    -- ✅ CORREÇÃO AQUI: Botão agora fica sobre a barra cheia e segue o arrasto
+    local Botao = Instance.new("Frame", BarraCheia)
+    Botao.Size = UDim2.new(0, 16, 0, 16)
+    Botao.Position = UDim2.new(1, -8, 0.5, -8) -- SEMPRE NO FINAL DA BARRA CHEIA
+    Botao.BackgroundColor3 = Color3.new(1,1,1)
+    Botao.BorderSizePixel = 0
+    Botao.ZIndex = 4
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(1,0)
+
+    local arrastando = false
+
+    local function atualizar(input)
+        local relX = math.clamp((input.Position.X - BarraFundo.AbsolutePosition.X) / BarraFundo.AbsoluteSize.X, 0, 1)
+        local valorAtual = math.floor(min + (max - min) * relX + 0.5)
+        
+        BarraCheia.Size = UDim2.new(relX, 0, 1, 0)
+        Valor.Text = tostring(valorAtual)
+        funcao(valorAtual)
+    end
+
+    -- ✅ DETECÇÃO DE CLIQUE DIRETO NA BARRA (FUNCIONA NO DELTA)
+    BarraFundo.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            arrastando = true
+            atualizar(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            arrastando = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if arrastando and input.UserInputType == Enum.UserInputType.MouseMovement then
+            atualizar(input)
+        end
+    end)
+
+    return SliderFrame
+end
+
+-- ==========================================
+-- 🛠️ IMPLEMENTAÇÃO NO MENU (TUDO FUNCIONAL)
+-- ==========================================
+local page = pages["Local Player"] 
+
+local function getHum() 
+    return character and character:FindFirstChild("Humanoid") 
+end
+
+-- 🚀 SISTEMA DE SPEED
+local ValorSpeed = 16
+local SpeedAtivado = false
+
+CriarToggleAnimado("Ativar Speed", page, function(ligado)
+    SpeedAtivado = ligado
+    local hum = getHum()
+    if hum then
+        hum.WalkSpeed = ligado and ValorSpeed or 16 -- Volta ao normal se desligar
+    end
+end)
+
+CriarSlider("Ajustar Velocidade", page, 16, 100, 16, function(novoValor)
+    ValorSpeed = novoValor
+    local hum = getHum()
+    if SpeedAtivado and hum then
+        hum.WalkSpeed = novoValor -- Muda na hora se estiver ligado
+    end
+end)
+
+-- 🦘 SISTEMA DE JUMP
+local ValorJump = 50
+local JumpAtivado = false
+
+CriarToggleAnimado("Ativar Jump", page, function(ligado)
+    JumpAtivado = ligado
+    local hum = getHum()
+    if hum then
+        hum.JumpPower = ligado and ValorJump or 50 -- Volta ao normal se desligar
+    end
+end)
+
+CriarSlider("Ajustar Altura", page, 10, 150, 50, function(novoValor)
+    ValorJump = novoValor
+    local hum = getHum()
+    if JumpAtivado and hum then
+        hum.JumpPower = novoValor -- Muda na hora se estiver ligado
+    end
+end)
+
+-- 🪂 INFINITE JUMP (ADICIONEI AQUI TAMBÉM DO SEU JEITO)
+local InfiniteJumpLigado = false
+local ConexaoIJ
+
+CriarToggleAnimado("Infinite Jump", page, function(ligado)
+    InfiniteJumpLigado = ligado
+    if ligado then
+        ConexaoIJ = UserInputService.JumpRequest:Connect(function()
+            local hum = getHum()
+            if hum and hum.FloorMaterial == Enum.Material.Air then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end)
+    else
+        if ConexaoIJ then ConexaoIJ:Disconnect() end
+    end
+end)
+
+-- 👻 NOCLIP (SEGURANÇA TOTAL)
+local NoclipLigado = false
+local ConexaoNoclip
+
+CriarToggleAnimado("Noclip", page, function(ligado)
+    NoclipLigado = ligado
+    if ligado then
+        ConexaoNoclip = RunService.Stepped:Connect(function()
+            if character then
+                for _, parte in pairs(character:GetDescendants()) do
+                    if parte:IsA("BasePart") then
+                        parte.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        if ConexaoNoclip then ConexaoNoclip:Disconnect() end
+        if character then
+            for _, parte in pairs(character:GetDescendants()) do
+                if parte:IsA("BasePart") then
+                    parte.CanCollide = true
+                end
+            end
+        end
+    end
+end)
 
 -- =====================
 -- CONTEUDO DA ABA TELEPORTE
