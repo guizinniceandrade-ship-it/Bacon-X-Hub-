@@ -179,27 +179,37 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ==========================
-    -- MOTOR DO BOTÃO ESP CÁPSULAS (CORRIGIDO)
-    -- ==========================
+-- ==================================================
+-- MOTOR ESP CÁPSULAS (Para copiar para o seu script)
+-- ==================================================
+RunService.RenderStepped:Connect(function()
+    
     if estados["ESP Cápsulas"] then
         for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Model") and obj.Name == "Pod" then
+            -- Busca qualquer modelo que contenha "pod" ou "freeze"
+            local nome = string.lower(obj.Name)
+            if obj:IsA("Model") and (nome:find("pod") or nome:find("freeze")) then
                 
-                -- Verifica se já existe um marcador neste Pod
-                local hl = obj:FindFirstChild("ESP_MARCADOR")
-                
-                -- Se não existe, cria. Se já existe, não faz nada (evita piscar)
-                if not hl then
+                -- Verifica se já existe um marcador (para não piscar)
+                if not obj:FindFirstChild("ESP_MARCADOR") then
                     CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
                 end
             end
         end
     else
-        -- Só limpa tudo quando você desliga o botão
-        LimparESP("Capsulas")
+        -- Quando desligado, remove apenas os marcadores de cápsula
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj:FindFirstChild("ESP_MARCADOR") then
+                -- Verifica se o nome do objeto bate com a busca de cápsula antes de apagar
+                local nome = string.lower(obj.Name)
+                if nome:find("pod") or nome:find("freeze") then
+                    obj.ESP_MARCADOR:Destroy()
+                end
+            end
+        end
     end
 
+end)
 
 -- ==========================
 -- MOTOR DO BOTÃO ESP PLAYERS (SEM PISCAR)
