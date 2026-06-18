@@ -11,7 +11,7 @@ if LocalPlayer.PlayerGui:FindFirstChild("ESP_FTF_GUI") then
 end
 
 -- ==================================================
--- INTERFACE (FONTE MAIOR)
+-- INTERFACE
 -- ==================================================
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 ScreenGui.Name = "ESP_FTF_GUI"
@@ -51,17 +51,6 @@ local function CriarHighlight(alvo, corP, corB)
     hl.Parent = alvo
 end
 
-local function LimparMarcadores(nomeBusca)
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj:FindFirstChild("ESP_MARCADOR") then
-            if nomeBusca == "All" or obj.Name:lower():find(nomeBusca:lower()) then
-                obj.ESP_MARCADOR:Destroy()
-            end
-        end
-    end
-end
-
--- Criar Botões (Fonte Maior: 18)
 local function CriarBotao(nome, posY, chave)
     local btn = Instance.new("TextButton", MainFrame)
     btn.Size = UDim2.new(0.85, 0, 0, 45)
@@ -70,11 +59,17 @@ local function CriarBotao(nome, posY, chave)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 18 -- Fonte maior
+    btn.TextSize = 18
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     btn.MouseButton1Click:Connect(function()
         estados[chave] = not estados[chave]
         btn.BackgroundColor3 = estados[chave] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
+        -- Limpa marcadores se desligar
+        if not estados[chave] then
+            for _, o in pairs(Workspace:GetDescendants()) do 
+                if o:FindFirstChild("ESP_MARCADOR") and (o.Name:lower():find(chave == "ESP Cápsulas" and "pod" or "xyz")) then o.ESP_MARCADOR:Destroy() end
+            end
+        end
     end)
 end
 
@@ -84,23 +79,31 @@ CriarBotao("ESP Players", 170, "ESP Jogadores")
 CriarBotao("ESP Exit", 225, "ESP Saida")
 
 -- ==================================================
--- MOTOR OTIMIZADO (NÃO TRAVA)
+-- MOTOR ÚNICO (LOOP OTIMIZADO)
 -- ==================================================
 local lastUpdate = 0
 RunService.RenderStepped:Connect(function()
-    if tick() - lastUpdate < 0.5 then return end
+    if tick() - lastUpdate < 0.8 then return end -- Intervalo maior para não travar
     lastUpdate = tick()
 
-    -- Processamento de Objetos (PC, Cápsulas, Saída)
-    for _, obj in pairs(Workspace:GetChildren()) do
-        local n = obj.Name:lower()
-        if estados["ESP PC"] and n:find("computer") then CriarHighlight(obj, Color3.fromRGB(80, 180, 255), Color3.fromRGB(0, 80, 150))
-        elseif estados["ESP Cápsulas"] and (n:find("pod") or n:find("freeze")) then CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
-        elseif estados["ESP Saida"] and (n:find("exit") or n:find("gate")) then CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
+    -- Busca profunda apenas quando necessário
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            local n = obj.Name:lower()
+            -- CÁPSULAS
+            if estados["ESP Cápsulas"] and (n:find("pod") or n:find("freeze")) then 
+                CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
+            -- PC
+            elseif estados["ESP PC"] and n:find("computer") then 
+                CriarHighlight(obj, Color3.fromRGB(80, 180, 255), Color3.fromRGB(0, 80, 150))
+            -- SAÍDA
+            elseif estados["ESP Saida"] and (n:find("exit") or n:find("gate")) then 
+                CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
+            end
         end
     end
 
-    -- Processamento de Players
+    -- PLAYERS (Mantendo seu estilo)
     if estados["ESP Jogadores"] then
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("ESP_MARCADOR") then
@@ -108,35 +111,5 @@ RunService.RenderStepped:Connect(function()
                 CriarHighlight(p.Character, ehFera and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40), Color3.new(0,0,0))
             end
         end
-    else
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("ESP_MARCADOR") then p.Character.ESP_MARCADOR:Destroy() end
-        end
     end
 end)
-
--- ==================================================
--- MOTOR ESP CÁPSULA (ESTÁVEL E SEM TRAVAMENTO)
--- ==================================================
-if estados["ESP Cápsulas"] then
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") and (obj.Name:lower():find("pod") or obj.Name:lower():find("freeze")) then
-            
-            -- SÓ CRIA SE NÃO EXISTIR, PARA NÃO TRAVAR
-            if not obj:FindFirstChild("ESP_MARCADOR") then
-                CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
-            end
-            
-        end
-    end
-else
-    -- LIMPA TUDO QUANDO DESLIGAR
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:FindFirstChild("ESP_MARCADOR") then
-            local nome = obj.Name:lower()
-            if nome:find("pod") or nome:find("freeze") then
-                obj.ESP_MARCADOR:Destroy()
-            end
-        end
-    end
-end
