@@ -185,24 +185,47 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ==========================
-    -- MOTOR DO BOTÃO ESP PLAYERS
-    -- ==========================
-    LimparGrupo("Players")
-    if estados.ESP_PLAYERS then
-        highlights["Players"] = {}
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer and plr.Character then
-                -- COR: VERDE = SOBREVIVENTE | VERMELHO = BESTA
-                local ehBesta = (plr.Team and plr.Team.Name == "Beast") or (plr:FindFirstChild("IsBeast") and plr.IsBeast.Value == true)
-                local corP = ehBesta and Color3.fromRGB(255, 30, 30) or Color3.fromRGB(50, 255, 80)
-                local corB = ehBesta and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(0, 120, 0)
+-- ==========================
+-- MOTOR DO BOTÃO ESP PLAYERS (PERFEITO - SEU CÓDIGO AJUSTADO)
+-- ==========================
+LimparESP("Players") -- Função de limpar correta
+if estados["ESP Jogadores"] then
+    highlights["Players"] = {}
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local char = plr.Character
+            local root = char:FindFirstChild("HumanoidRootPart")
+            
+            if root then -- Só marca se tiver o corpo carregado
                 
-                local hl = CriarHighlight(plr.Character, corP, corB)
-                if hl then table.insert(highlights["Players"], hl) end
+                -- ✅ VERIFICAÇÃO COMPLETA: Mão, Corpo OU Mochila
+                -- "Hammer" é o nome principal, "Mallet" são as skins
+                local temMarreta = char:FindFirstChild("Hammer") 
+                                or char:FindFirstChild("Mallet") 
+                                or plr.Backpack:FindFirstChild("Hammer")
+                                or plr.Backpack:FindFirstChild("Mallet")
+
+                -- 🎨 CORES FRACAS / SUAVES (EXATAMENTE COMO VOCÊ QUIS)
+                -- Vermelho fraco para quem tem marreta | Verde fraco para os outros
+                local corP = temMarreta and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40)
+                local corB = temMarreta and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(20, 120, 20)
+
+                -- 🖍️ CRIAÇÃO DO HIGHLIGHT (SUAVE, NÃO FORTE)
+                local hl = Instance.new("Highlight")
+                hl.Adornee = char -- Aceita o personagem inteiro direto
+                hl.FillColor = corP
+                hl.OutlineColor = corB
+                hl.FillTransparency = 0.4 -- Mais transparente = mais fraco
+                hl.OutlineTransparency = 0.2
+                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Sempre visível
+                hl.Name = "ESP_MARCADOR" -- Nome para não ter conflito
+                hl.Parent = char
+                
+                table.insert(highlights["Players"], hl)
             end
         end
     end
+end
 
     -- ==========================
     -- MOTOR DO BOTÃO ESP EXIT
