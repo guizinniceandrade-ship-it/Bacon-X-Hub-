@@ -186,46 +186,76 @@ RunService.RenderStepped:Connect(function()
     end
 
 -- ==========================
--- MOTOR DO BOTÃO ESP PLAYERS (PERFEITO - SEU CÓDIGO AJUSTADO)
+-- MOTOR DO BOTÃO ESP PLAYERS (CORRIGIDO - DETECTA TUDO)
 -- ==========================
-LimparESP("Players") -- Função de limpar correta
+LimparESP("Players")
 if estados["ESP Jogadores"] then
     highlights["Players"] = {}
     for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            local char = plr.Character
-            local root = char:FindFirstChild("HumanoidRootPart")
-            
-            if root then -- Só marca se tiver o corpo carregado
-                
-                -- ✅ VERIFICAÇÃO COMPLETA: Mão, Corpo OU Mochila
-                -- "Hammer" é o nome principal, "Mallet" são as skins
-                local temMarreta = char:FindFirstChild("Hammer") 
-                                or char:FindFirstChild("Mallet") 
-                                or plr.Backpack:FindFirstChild("Hammer")
-                                or plr.Backpack:FindFirstChild("Mallet")
+        -- Ignora só VOCÊ MESMO
+        if plr == LocalPlayer then continue end
 
-                -- 🎨 CORES FRACAS / SUAVES (EXATAMENTE COMO VOCÊ QUIS)
-                -- Vermelho fraco para quem tem marreta | Verde fraco para os outros
-                local corP = temMarreta and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40)
-                local corB = temMarreta and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(20, 120, 20)
+        -- Espera o personagem carregar (resolve o erro de troca de servidor)
+        local char = plr.Character or plr.CharacterAdded:Wait()
+        if not char then continue end
 
-                -- 🖍️ CRIAÇÃO DO HIGHLIGHT (SUAVE, NÃO FORTE)
-                local hl = Instance.new("Highlight")
-                hl.Adornee = char -- Aceita o personagem inteiro direto
-                hl.FillColor = corP
-                hl.OutlineColor = corB
-                hl.FillTransparency = 0.4 -- Mais transparente = mais fraco
-                hl.OutlineTransparency = 0.2
-                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Sempre visível
-                hl.Name = "ESP_MARCADOR" -- Nome para não ter conflito
-                hl.Parent = char
-                
-                table.insert(highlights["Players"], hl)
-            end
+        -- Garante que tem corpo
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not root then continue end
+
+
+        -- ✅ DETECÇÃO COMPLETA: 3 JEITOS DE SABER SE É FERA / TEM MARRETA
+        local ehFera = false
+
+        -- 1️⃣ JEITO CERTO: PELA EQUIPE (SEMPRE FUNCIONA!)
+        if plr.Team and (plr.Team.Name == "Beast" or plr.Team.Name == "A Besta") then
+            ehFera = true
         end
+
+        -- 2️⃣ JEITO: SE TEM A MARRETA NA MÃO OU NO CORPO
+        if char:FindFirstChild("Hammer") 
+        or char:FindFirstChild("Mallet") 
+        or char:FindFirstChild("Weapon") then -- Algumas versões usam esse nome
+            ehFera = true
+        end
+
+        -- 3️⃣ JEITO: SE ESTÁ NA MOCHILA
+        if plr.Backpack and (
+            plr.Backpack:FindFirstChild("Hammer") 
+         or plr.Backpack:FindFirstChild("Mallet")
+         or plr.Backpack:FindFirstChild("Weapon")
+        ) then
+            ehFera = true
+        end
+
+
+        -- 🎨 CORES FRACAS (DO JEITO QUE VOCÊ QUIS)
+        -- VERMELHO FRACO = É A FERA / TEM MARRETA
+        -- VERDE FRACO = SOBREVIVENTE NORMAL
+        local corP = ehFera and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40)
+        local corB = ehFera and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(20, 120, 20)
+
+
+        -- 🖍️ CRIA O MARCADOR
+        -- Remove o antigo antes de criar novo
+        if char:FindFirstChild("ESP_MARCADOR") then
+            char.ESP_MARCADOR:Destroy()
+        end
+
+        local hl = Instance.new("Highlight")
+        hl.Name = "ESP_MARCADOR"
+        hl.Adornee = char
+        hl.FillColor = corP
+        hl.OutlineColor = corB
+        hl.FillTransparency = 0.4 -- Fraco/Suave
+        hl.OutlineTransparency = 0.2
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.Parent = char
+
+        table.insert(highlights["Players"], hl)
     end
 end
+
 
     -- ==========================
     -- MOTOR DO BOTÃO ESP EXIT
