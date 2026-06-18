@@ -114,3 +114,29 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+-- ==================================================
+-- MOTOR ESP CÁPSULA (ESTÁVEL E SEM TRAVAMENTO)
+-- ==================================================
+if estados["ESP Cápsulas"] then
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and (obj.Name:lower():find("pod") or obj.Name:lower():find("freeze")) then
+            
+            -- SÓ CRIA SE NÃO EXISTIR, PARA NÃO TRAVAR
+            if not obj:FindFirstChild("ESP_MARCADOR") then
+                CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
+            end
+            
+        end
+    end
+else
+    -- LIMPA TUDO QUANDO DESLIGAR
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:FindFirstChild("ESP_MARCADOR") then
+            local nome = obj.Name:lower()
+            if nome:find("pod") or nome:find("freeze") then
+                obj.ESP_MARCADOR:Destroy()
+            end
+        end
+    end
+end
