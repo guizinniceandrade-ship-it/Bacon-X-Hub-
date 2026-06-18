@@ -48,42 +48,39 @@ end
 CriarBotao("ESP PC", 60, "ESP PC"); CriarBotao("ESP Cápsulas", 115, "ESP Cápsulas"); CriarBotao("ESP Players", 170, "ESP Jogadores"); CriarBotao("ESP Exit", 225, "ESP Saida")
 
 -- ==================================================
--- MOTOR ÚNICO: BUSCA PRECISA E OTIMIZADA
+-- MOTOR DEFINITIVO: BUSCA RECURSIVA (PEGA TUDO)
 -- ==================================================
-local lastUpdate = 0
 RunService.RenderStepped:Connect(function()
-    if tick() - lastUpdate < 0.5 then return end
+    if tick() - lastUpdate < 0.6 then return end
     lastUpdate = tick()
 
+    -- Varredura completa no Workspace
     for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") then
+        -- Verifica se é um modelo e se tem alguma parte física
+        if obj:IsA("Model") and obj:FindFirstChildWhichIsA("BasePart") then
             local n = obj.Name:lower()
 
-            -- 1. ESP PC (Filtro por nome exato e checagem de estado)
-            if estados["ESP PC"] and (n == "computer") then
-                local hackeado = obj:FindFirstChild("Hacked") and obj.Hacked.Value == true
-                CriarHighlight(obj, hackeado and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(80, 180, 255), Color3.new(0,0,0))
-            
-            -- 2. ESP CÁPSULAS (Filtro preciso)
-            elseif estados["ESP Cápsulas"] and (n == "pod" or n == "freeze pod") then
+            -- 1. ESP PC (Marca PC e muda cor se estiver hackeado)
+            if estados["ESP PC"] and (n:find("computer") or n:find("pc")) then
+                local ehHackeado = obj:FindFirstChild("Hacked") and obj.Hacked.Value == true
+                CriarHighlight(obj, ehHackeado and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(80, 180, 255), Color3.new(0,0,0))
+
+            -- 2. ESP CÁPSULAS (Pega variações de nomes)
+            elseif estados["ESP Cápsulas"] and (n:find("pod") or n:find("freeze")) then
                 CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
-            
-            -- 3. ESP EXIT (Filtro rigoroso para evitar paredes/chão)
-            elseif estados["ESP Saida"] and (n == "exit" or n == "main gate") then
+
+            -- 3. ESP EXIT (Pega nomes relacionados a saída)
+            elseif estados["ESP Saida"] and (n:find("exit") or n:find("gate")) then
                 CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
             end
         end
     end
 
-    -- 4. ESP PLAYERS (Lógica aprimorada para detectar a Fera)
+    -- 4. ESP PLAYERS (Lógica mantida para Fera/Sobreviventes)
     if estados["ESP Jogadores"] then
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                -- Checagem de Fera (Beast): Team, Hammer, Mallet ou classe específica
-                local ehFera = (p.Team and p.Team.Name:lower():find("beast")) or 
-                               p.Character:FindFirstChild("Hammer") or 
-                               p.Character:FindFirstChild("Mallet")
-                
+                local ehFera = (p.Team and p.Team.Name:lower():find("beast")) or p.Character:FindFirstChild("Hammer") or p.Character:FindFirstChild("Mallet")
                 if not p.Character:FindFirstChild("ESP_MARCADOR") then
                     CriarHighlight(p.Character, ehFera and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0), Color3.new(0,0,0))
                 end
