@@ -1,113 +1,84 @@
 -- ==================================================
--- SERVIÇOS
+-- SERVIÇOS E INTERFACE
 -- ==================================================
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
-if LocalPlayer.PlayerGui:FindFirstChild("ESP_FTF_GUI") then
-    LocalPlayer.PlayerGui.ESP_FTF_GUI:Destroy()
-end
+if LocalPlayer.PlayerGui:FindFirstChild("ESP_FTF_GUI") then LocalPlayer.PlayerGui.ESP_FTF_GUI:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui")); ScreenGui.Name = "ESP_FTF_GUI"
+local MainFrame = Instance.new("Frame", ScreenGui); MainFrame.Name = "MainFrame"; MainFrame.Size = UDim2.new(0, 250, 0, 320); MainFrame.Position = UDim2.new(0.5, -125, 0.5, -160); MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30); MainFrame.Active = true; MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12); Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(80, 180, 255); Instance.new("UIStroke", MainFrame).Thickness = 2
+local Titulo = Instance.new("TextLabel", MainFrame); Titulo.Size = UDim2.new(1, 0, 0, 40); Titulo.Text = "🚀 FLEE THE FACILITY ESP"; Titulo.TextColor3 = Color3.new(1, 1, 1); Titulo.BackgroundTransparency = 1; Titulo.Font = Enum.Font.GothamBold; Titulo.TextSize = 18
 
 -- ==================================================
--- INTERFACE
--- ==================================================
-local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-ScreenGui.Name = "ESP_FTF_GUI"
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 250, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -125, 0.5, -160)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.Active = true
-MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
-Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(80, 180, 255); Instance.new("UIStroke", MainFrame).Thickness = 2
-
-local Titulo = Instance.new("TextLabel", MainFrame)
-Titulo.Size = UDim2.new(1, 0, 0, 40)
-Titulo.Text = "🚀 FLEE THE FACILITY ESP"
-Titulo.TextColor3 = Color3.new(1, 1, 1)
-Titulo.BackgroundTransparency = 1
-Titulo.Font = Enum.Font.GothamBold
-Titulo.TextSize = 18
-
--- ==================================================
--- VARIÁVEIS E FUNÇÕES
+-- FUNÇÕES BASE
 -- ==================================================
 local estados = {["ESP PC"] = false, ["ESP Cápsulas"] = false, ["ESP Jogadores"] = false, ["ESP Saida"] = false}
 
 local function CriarHighlight(alvo, corP, corB)
     if not alvo or alvo:FindFirstChild("ESP_MARCADOR") then return end
     local hl = Instance.new("Highlight")
-    hl.Name = "ESP_MARCADOR"
-    hl.Adornee = alvo
-    hl.FillColor = corP
-    hl.OutlineColor = corB
-    hl.FillTransparency = 0.4
-    hl.OutlineTransparency = 0.2
-    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    hl.Parent = alvo
+    hl.Name = "ESP_MARCADOR"; hl.Adornee = alvo; hl.FillColor = corP; hl.OutlineColor = corB; hl.FillTransparency = 0.4; hl.OutlineTransparency = 0.2; hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; hl.Parent = alvo
 end
 
+local function LimparPorNome(nomeParcial)
+    for _, o in pairs(Workspace:GetDescendants()) do
+        if o:IsA("Model") and o:FindFirstChild("ESP_MARCADOR") and o.Name:lower():find(nomeParcial:lower()) then
+            o.ESP_MARCADOR:Destroy()
+        end
+    end
+end
+
+-- ==================================================
+-- BOTÕES
+-- ==================================================
 local function CriarBotao(nome, posY, chave)
-    local btn = Instance.new("TextButton", MainFrame)
-    btn.Size = UDim2.new(0.85, 0, 0, 45)
-    btn.Position = UDim2.new(0.075, 0, 0, posY)
-    btn.Text = nome
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 18
+    local btn = Instance.new("TextButton", MainFrame); btn.Size = UDim2.new(0.85, 0, 0, 45); btn.Position = UDim2.new(0.075, 0, 0, posY); btn.Text = nome; btn.TextColor3 = Color3.new(1, 1, 1); btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); btn.Font = Enum.Font.GothamBold; btn.TextSize = 18
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     btn.MouseButton1Click:Connect(function()
         estados[chave] = not estados[chave]
         btn.BackgroundColor3 = estados[chave] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
-        -- Limpa marcadores se desligar
-        if not estados[chave] then
-            for _, o in pairs(Workspace:GetDescendants()) do 
-                if o:FindFirstChild("ESP_MARCADOR") and (o.Name:lower():find(chave == "ESP Cápsulas" and "pod" or "xyz")) then o.ESP_MARCADOR:Destroy() end
-            end
-        end
+        if not estados[chave] then LimparPorNome(chave == "ESP PC" and "computer" or chave == "ESP Cápsulas" and "pod" or chave == "ESP Saida" and "exit" or "nulo") end
     end)
 end
 
-CriarBotao("ESP PC", 60, "ESP PC")
-CriarBotao("ESP Cápsulas", 115, "ESP Cápsulas")
-CriarBotao("ESP Players", 170, "ESP Jogadores")
-CriarBotao("ESP Exit", 225, "ESP Saida")
+CriarBotao("ESP PC", 60, "ESP PC"); CriarBotao("ESP Cápsulas", 115, "ESP Cápsulas"); CriarBotao("ESP Players", 170, "ESP Jogadores"); CriarBotao("ESP Exit", 225, "ESP Saida")
 
 -- ==================================================
--- MOTOR ÚNICO (LOOP OTIMIZADO)
+-- MOTOR ÚNICO
 -- ==================================================
 local lastUpdate = 0
 RunService.RenderStepped:Connect(function()
-    if tick() - lastUpdate < 0.8 then return end -- Intervalo maior para não travar
+    if tick() - lastUpdate < 0.8 then return end
     lastUpdate = tick()
 
-    -- Busca profunda para PC, Saída e Cápsulas
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") then
             local n = obj.Name:lower()
-            
-            -- LÓGICA ESP PC (Verde se hackeado)
             if estados["ESP PC"] and n:find("computer") then
-                -- Verifica se existe o valor de progresso ou hackeado
                 local ehHackeado = obj:FindFirstChild("Hacked") and obj.Hacked.Value == true
-                local corP = ehHackeado and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(80, 180, 255)
-                CriarHighlight(obj, corP, Color3.new(0, 0, 0))
-            
-            -- LÓGICA ESP CÁPSULAS
+                CriarHighlight(obj, ehHackeado and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(80, 180, 255), Color3.new(0,0,0))
             elseif estados["ESP Cápsulas"] and (n:find("pod") or n:find("freeze")) then
                 CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
-            
-            -- LÓGICA ESP SAÍDA (Filtrando apenas Portões Principais)
-            elseif estados["ESP Saida"] then
-                -- Filtro rigoroso: apenas nomes exatos de saída
-                if n == "exit" or n == "maingate" or n == "exitgate" then
-                    CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
-                end
+            elseif estados["ESP Saida"] and (n:find("exit") or n:find("gate")) and not n:find("part") then
+                CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
             end
         end
     end
+
+    if estados["ESP Jogadores"] then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("ESP_MARCADOR") then
+                local ehFera = (p.Team and p.Team.Name:lower():find("beast")) or p.Character:FindFirstChild("Hammer")
+                CriarHighlight(p.Character, ehFera and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40), Color3.new(0,0,0))
+            end
+        end
+    else
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("ESP_MARCADOR") then p.Character.ESP_MARCADOR:Destroy() end
+        end
+    end
+end)
