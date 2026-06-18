@@ -193,66 +193,36 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ==========================
-    -- MOTOR DO BOTÃO ESP PLAYERS (✅ SEM PISCADA - 100% CERTO)
-    -- ==========================
-    LimparESP("Jogadores")
-    if estados["ESP Jogadores"] then
-        highlights["Jogadores"] = {}
-        for _, plr in pairs(Players:GetPlayers()) do
-            -- Ignora apenas VOCÊ
-            if plr == LocalPlayer then continue end
-
-            -- Espera o personagem carregar direito
+-- ==========================
+-- MOTOR DO BOTÃO ESP PLAYERS (SEM PISCAR)
+-- ==========================
+if estados["ESP Jogadores"] then
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
             local char = plr.Character
-            if not char then continue end
-            local root = char:FindFirstChild("HumanoidRootPart")
-            if not root then continue end
+            
+            -- Verifica se já existe um marcador, se não, cria. 
+            -- NÃO DESTRUA O MARCADOR TODO FRAME!
+            local hl = char:FindFirstChild("ESP_MARCADOR")
+            
+            if not hl then
+                -- Lógica de detectar se é fera (Beast)
+                local ehFera = (plr.Team and string.lower(plr.Team.Name):find("beast")) or 
+                               char:FindFirstChild("Hammer") or char:FindFirstChild("Mallet") or 
+                               (plr.Backpack and (plr.Backpack:FindFirstChild("Hammer") or plr.Backpack:FindFirstChild("Mallet")))
 
-
-            -- ✅ DETECÇÃO DEFINITIVA: SEM CONFUSÃO, SEM PISCAR!
-            local ehFera = false
-
-            -- 🔴1º REGRA: EQUIPE (O JEITO MAIS CERTO E DEFINITIVO)
-            -- Se está na equipe da besta, É A FERA, NÃO TEM DISCUSSÃO!
-            if plr.Team then
-                local time = string.lower(plr.Team.Name)
-                if time == "beast" or time == "fera" or time == "a besta" or time == "monstro" then
-                    ehFera = true
-                end
+                local corP = ehFera and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40)
+                local corB = ehFera and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(20, 120, 20)
+                
+                CriarHighlight(char, corP, corB)
             end
-
-            -- 🟢2º REGRA: MARRETA (SÓ VERIFICA SE NÃO FOR FERA AINDA)
-            -- Agora SÓ procura nomes EXATOS da marreta, não confunde com lanterna ou outro item
-            if not ehFera then
-                -- Verifica NA MÃO/CORPO: SÓ Hammer OU Mallet
-                if char:FindFirstChild("Hammer") or char:FindFirstChild("Mallet") then
-                    ehFera = true
-                end
-
-                -- Verifica NA MOCHILA: SÓ Hammer OU Mallet
-                if plr.Backpack then
-                    if plr.Backpack:FindFirstChild("Hammer") or plr.Backpack:FindFirstChild("Mallet") then
-                        ehFera = true
-                    end
-                end
-            end
-
-            -- 🎨 CORES FRACAS / SUAVES (COMO VOCÊ PEDIU)
-            -- 🔴 VERMELHO FRACO = É A FERA / TEM MARRETA
-            -- 🟢 VERDE FRACO = SOBREVIVENTE NORMAL
-            -- AGORA NÃO MUDA MAIS DE COR, POIS A REGRA É DEFINITIVA
-            local corP = ehFera and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40)
-            local corB = ehFera and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(20, 120, 20)
-
-            -- 🖍️ CRIA O MARCADOR
-            local hl = CriarHighlight(char, corP, corB)
-            if hl then
-                table.insert(highlights["Jogadores"], hl)
-            end
-
         end
     end
+else
+    -- Só limpa quando você desliga o botão
+    LimparESP("Jogadores")
+end
+
 
     -- ==========================
     -- MOTOR DO BOTÃO ESP EXIT
