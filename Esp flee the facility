@@ -180,28 +180,31 @@ RunService.RenderStepped:Connect(function()
     end
 
 -- ==========================
--- MOTOR DO BOTÃO ESP CÁPSULAS
+-- MOTOR DO BOTÃO ESP CÁPSULAS (CORRIGIDO)
 -- ==========================
 if estados["ESP Cápsulas"] then
+    -- 🟡 PRIMEIRO LIMPA TUDO (o segredo para funcionar sempre)
+    LimparESP("Capsulas")
+    highlights["Capsulas"] = {} -- Cria a lista vazia para guardar eles
+
     -- Procura por todos os Pods no Workspace
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") and obj.Name == "Pod" then
             
-            -- Verifica se já existe um marcador neste Pod
-            local hl = obj:FindFirstChild("ESP_MARCADOR")
+            -- 🟡 CRIA O MARCADOR E GUARDA NA LISTA
+            local hl = CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
             
-            if not hl then
-                -- Cor Amarela fixa como você pediu
-                -- CriarHighlight(alvo, corP, corB)
-                CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
+            -- 🟡 ADICIONA NA LISTA PARA SER CONTROLADO
+            if hl then
+                table.insert(highlights["Capsulas"], hl)
             end
+
         end
     end
 else
-    -- Só limpa os marcadores quando o botão for desligado
+    -- Se desligou, apaga todos
     LimparESP("Capsulas")
 end
-
 
 -- ==========================
 -- MOTOR DO BOTÃO ESP PLAYERS (SEM PISCAR)
