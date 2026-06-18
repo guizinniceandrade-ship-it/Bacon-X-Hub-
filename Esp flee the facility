@@ -86,30 +86,28 @@ RunService.RenderStepped:Connect(function()
     if tick() - lastUpdate < 0.8 then return end -- Intervalo maior para não travar
     lastUpdate = tick()
 
-    -- Busca profunda apenas quando necessário
+    -- Busca profunda para PC, Saída e Cápsulas
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") then
             local n = obj.Name:lower()
-            -- CÁPSULAS
-            if estados["ESP Cápsulas"] and (n:find("pod") or n:find("freeze")) then 
+            
+            -- LÓGICA ESP PC (Verde se hackeado)
+            if estados["ESP PC"] and n:find("computer") then
+                -- Verifica se existe o valor de progresso ou hackeado
+                local ehHackeado = obj:FindFirstChild("Hacked") and obj.Hacked.Value == true
+                local corP = ehHackeado and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(80, 180, 255)
+                CriarHighlight(obj, corP, Color3.new(0, 0, 0))
+            
+            -- LÓGICA ESP CÁPSULAS
+            elseif estados["ESP Cápsulas"] and (n:find("pod") or n:find("freeze")) then
                 CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
-            -- PC
-            elseif estados["ESP PC"] and n:find("computer") then 
-                CriarHighlight(obj, Color3.fromRGB(80, 180, 255), Color3.fromRGB(0, 80, 150))
-            -- SAÍDA
-            elseif estados["ESP Saida"] and (n:find("exit") or n:find("gate")) then 
-                CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
+            
+            -- LÓGICA ESP SAÍDA (Filtrando apenas Portões Principais)
+            elseif estados["ESP Saida"] then
+                -- Filtro rigoroso: apenas nomes exatos de saída
+                if n == "exit" or n == "maingate" or n == "exitgate" then
+                    CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
+                end
             end
         end
     end
-
-    -- PLAYERS (Mantendo seu estilo)
-    if estados["ESP Jogadores"] then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("ESP_MARCADOR") then
-                local ehFera = (p.Team and p.Team.Name:lower():find("beast")) or p.Character:FindFirstChild("Hammer")
-                CriarHighlight(p.Character, ehFera and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40), Color3.new(0,0,0))
-            end
-        end
-    end
-end)
