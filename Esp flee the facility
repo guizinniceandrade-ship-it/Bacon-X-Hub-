@@ -1,15 +1,19 @@
--- SERVIÇOS
+-- ==================================================
+-- SERVIÇOS (NÃO MEXER)
+-- ==================================================
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- REMOVE ANTIGO
+-- Remove antigo para não dar conflito
 if LocalPlayer.PlayerGui:FindFirstChild("ESP_FTF_GUI") then
     LocalPlayer.PlayerGui.ESP_FTF_GUI:Destroy()
 end
 
--- UI PRINCIPAL
+-- ==================================================
+-- CRIAÇÃO DA INTERFACE
+-- ==================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ESP_FTF_GUI"
 ScreenGui.ResetOnSpawn = false
@@ -25,14 +29,14 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
--- BORDA ARREDONDADA
+-- Borda arredondada
 local MainCorner = Instance.new("UICorner", MainFrame)
 MainCorner.CornerRadius = UDim.new(0, 12)
 local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Color = Color3.fromRGB(80, 180, 255)
 MainStroke.Thickness = 2
 
--- TÍTULO
+-- Título
 local Titulo = Instance.new("TextLabel", MainFrame)
 Titulo.Size = UDim2.new(1, 0, 0, 40)
 Titulo.Position = UDim2.new(0, 0, 0, 10)
@@ -42,48 +46,55 @@ Titulo.BackgroundTransparency = 1
 Titulo.Font = Enum.Font.GothamBold
 Titulo.TextSize = 16
 
--- VARIÁVEIS DE CONTROLE
+-- ==================================================
+-- VARIÁVEIS E FUNÇÕES BASE
+-- ==================================================
 local estados = {
-    ESP_PC = false,
-    ESP_CAPSULAS = false,
-    ESP_PLAYERS = false,
-    ESP_EXIT = false
+    ["ESP PC"] = false,
+    ["ESP Cápsulas"] = false,
+    ["ESP Jogadores"] = false,
+    ["ESP Saida"] = false
 }
 local highlights = {}
 
--- FUNÇÃO BASE PARA DESTAQUE
-local function CriarHighlight(alvo, corPreenchimento, corBorda)
+-- Função para criar destaque
+local function CriarHighlight(alvo, corP, corB)
     if not alvo then return nil end
-    if not alvo:IsA("BasePart") and not alvo:FindFirstChildWhichIsA("BasePart") then return nil end
+    -- Verifica se tem alguma parte para destacar
+    if not alvo:IsA("BasePart") and not alvo:FindFirstChildWhichIsA("BasePart", true) then return nil end
     
-    if alvo:FindFirstChild("ESP_HL") then alvo.ESP_HL:Destroy() end
+    -- Remove antigo
+    if alvo:FindFirstChild("ESP_MARCADOR") then alvo.ESP_MARCADOR:Destroy() end
     
     local hl = Instance.new("Highlight")
-    hl.Name = "ESP_HL"
+    hl.Name = "ESP_MARCADOR"
     hl.Adornee = alvo
-    hl.FillColor = corPreenchimento
-    hl.OutlineColor = corBorda
-    hl.FillTransparency = 0.3
-    hl.OutlineTransparency = 0
+    hl.FillColor = corP
+    hl.OutlineColor = corB
+    hl.FillTransparency = 0.4 -- Mais fraco/transparente
+    hl.OutlineTransparency = 0.2
     hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     hl.Parent = alvo
     return hl
 end
 
-local function LimparGrupo(nome)
+-- Função para limpar grupo
+local function LimparESP(nome)
     if highlights[nome] then
-        for _,v in pairs(highlights[nome]) do if v then v:Destroy() end end
+        for _, hl in pairs(highlights[nome]) do
+            if hl and hl.Parent then hl:Destroy() end
+        end
         highlights[nome] = nil
     end
 end
 
--- ==============================================
+-- ==================================================
 -- BOTÕES
--- ==============================================
+-- ==================================================
 
--- BOTÃO ESP PC
+-- Botão ESP PC
 local Botao_PC = Instance.new("TextButton", MainFrame)
-Botao_PC.Name = "ESP_PC"
+Botao_PC.Name = "ESP PC"
 Botao_PC.Size = UDim2.new(0.85, 0, 0, 45)
 Botao_PC.Position = UDim2.new(0.075, 0, 0, 60)
 Botao_PC.Text = "ESP PC"
@@ -93,29 +104,29 @@ Botao_PC.Font = Enum.Font.GothamBold
 Botao_PC.TextSize = 14
 Instance.new("UICorner", Botao_PC).CornerRadius = UDim.new(0, 8)
 Botao_PC.MouseButton1Click:Connect(function()
-    estados.ESP_PC = not estados.ESP_PC
-    Botao_PC.BackgroundColor3 = estados.ESP_PC and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
+    estados["ESP PC"] = not estados["ESP PC"]
+    Botao_PC.BackgroundColor3 = estados["ESP PC"] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
 end)
 
--- BOTÃO ESP CÁPSULAS
-local Botao_Capsulas = Instance.new("TextButton", MainFrame)
-Botao_Capsulas.Name = "ESP_CAPSULAS"
-Botao_Capsulas.Size = UDim2.new(0.85, 0, 0, 45)
-Botao_Capsulas.Position = UDim2.new(0.075, 0, 0, 115)
-Botao_Capsulas.Text = "ESP Cápsulas"
-Botao_Capsulas.TextColor3 = Color3.new(1, 1, 1)
-Botao_Capsulas.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Botao_Capsulas.Font = Enum.Font.GothamBold
-Botao_Capsulas.TextSize = 14
-Instance.new("UICorner", Botao_Capsulas).CornerRadius = UDim.new(0, 8)
-Botao_Capsulas.MouseButton1Click:Connect(function()
-    estados.ESP_CAPSULAS = not estados.ESP_CAPSULAS
-    Botao_Capsulas.BackgroundColor3 = estados.ESP_CAPSULAS and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
+-- Botão ESP Cápsulas
+local Botao_Caps = Instance.new("TextButton", MainFrame)
+Botao_Caps.Name = "ESP Cápsulas"
+Botao_Caps.Size = UDim2.new(0.85, 0, 0, 45)
+Botao_Caps.Position = UDim2.new(0.075, 0, 0, 115)
+Botao_Caps.Text = "ESP Cápsulas"
+Botao_Caps.TextColor3 = Color3.new(1, 1, 1)
+Botao_Caps.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Botao_Caps.Font = Enum.Font.GothamBold
+Botao_Caps.TextSize = 14
+Instance.new("UICorner", Botao_Caps).CornerRadius = UDim.new(0, 8)
+Botao_Caps.MouseButton1Click:Connect(function()
+    estados["ESP Cápsulas"] = not estados["ESP Cápsulas"]
+    Botao_Caps.BackgroundColor3 = estados["ESP Cápsulas"] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
 end)
 
--- BOTÃO ESP PLAYERS
+-- Botão ESP Players
 local Botao_Players = Instance.new("TextButton", MainFrame)
-Botao_Players.Name = "ESP_PLAYERS"
+Botao_Players.Name = "ESP Jogadores"
 Botao_Players.Size = UDim2.new(0.85, 0, 0, 45)
 Botao_Players.Position = UDim2.new(0.075, 0, 0, 170)
 Botao_Players.Text = "ESP Players"
@@ -125,41 +136,39 @@ Botao_Players.Font = Enum.Font.GothamBold
 Botao_Players.TextSize = 14
 Instance.new("UICorner", Botao_Players).CornerRadius = UDim.new(0, 8)
 Botao_Players.MouseButton1Click:Connect(function()
-    estados.ESP_PLAYERS = not estados.ESP_PLAYERS
-    Botao_Players.BackgroundColor3 = estados.ESP_PLAYERS and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
+    estados["ESP Jogadores"] = not estados["ESP Jogadores"]
+    Botao_Players.BackgroundColor3 = estados["ESP Jogadores"] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
 end)
 
--- BOTÃO ESP EXIT
-local Botao_Exit = Instance.new("TextButton", MainFrame)
-Botao_Exit.Name = "ESP_EXIT"
-Botao_Exit.Size = UDim2.new(0.85, 0, 0, 45)
-Botao_Exit.Position = UDim2.new(0.075, 0, 0, 225)
-Botao_Exit.Text = "ESP Exit"
-Botao_Exit.TextColor3 = Color3.new(1, 1, 1)
-Botao_Exit.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Botao_Exit.Font = Enum.Font.GothamBold
-Botao_Exit.TextSize = 14
-Instance.new("UICorner", Botao_Exit).CornerRadius = UDim.new(0, 8)
-Botao_Exit.MouseButton1Click:Connect(function()
-    estados.ESP_EXIT = not estados.ESP_EXIT
-    Botao_Exit.BackgroundColor3 = estados.ESP_EXIT and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
+-- Botão ESP Saída
+local Botao_Saida = Instance.new("TextButton", MainFrame)
+Botao_Saida.Name = "ESP Saida"
+Botao_Saida.Size = UDim2.new(0.85, 0, 0, 45)
+Botao_Saida.Position = UDim2.new(0.075, 0, 0, 225)
+Botao_Saida.Text = "ESP Exit"
+Botao_Saida.TextColor3 = Color3.new(1, 1, 1)
+Botao_Saida.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Botao_Saida.Font = Enum.Font.GothamBold
+Botao_Saida.TextSize = 14
+Instance.new("UICorner", Botao_Saida).CornerRadius = UDim.new(0, 8)
+Botao_Saida.MouseButton1Click:Connect(function()
+    estados["ESP Saida"] = not estados["ESP Saida"]
+    Botao_Saida.BackgroundColor3 = estados["ESP Saida"] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
 end)
 
--- ==============================================
--- MOTORES PARA FAZER OS BOTÕES FUNCIONAREM
--- ==============================================
-
+-- ==================================================
+-- MOTORES DAS FUNÇÕES (TODOS ARRUMADOS)
+-- ==================================================
 RunService.RenderStepped:Connect(function()
 
     -- ==========================
     -- MOTOR DO BOTÃO ESP PC
     -- ==========================
-    LimparGrupo("PC")
-    if estados.ESP_PC then
+    LimparESP("PC")
+    if estados["ESP PC"] then
         highlights["PC"] = {}
         for _, obj in pairs(Workspace:GetDescendants()) do
             if obj:IsA("Model") and obj.Name == "Computer" then
-                -- COR: AZUL = NÃO HACKEADO | VERDE = HACKEADO
                 local hackeado = obj:FindFirstChild("Hacked") and obj.Hacked.Value == true
                 local corP = hackeado and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(80, 180, 255)
                 local corB = hackeado and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(0, 80, 150)
@@ -173,101 +182,88 @@ RunService.RenderStepped:Connect(function()
     -- ==========================
     -- MOTOR DO BOTÃO ESP CÁPSULAS
     -- ==========================
-    LimparGrupo("Capsulas")
-    if estados.ESP_CAPSULAS then
+    LimparESP("Capsulas")
+    if estados["ESP Cápsulas"] then
         highlights["Capsulas"] = {}
         for _, obj in pairs(Workspace:GetDescendants()) do
             if obj:IsA("Model") and obj.Name == "Pod" then
-                -- COR: AMARELO
                 local hl = CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
                 if hl then table.insert(highlights["Capsulas"], hl) end
             end
         end
     end
 
--- ==========================
--- MOTOR DO BOTÃO ESP PLAYERS (CORRIGIDO - DETECTA TUDO)
--- ==========================
-LimparESP("Players")
-if estados["ESP Jogadores"] then
-    highlights["Players"] = {}
-    for _, plr in pairs(Players:GetPlayers()) do
-        -- Ignora só VOCÊ MESMO
-        if plr == LocalPlayer then continue end
+    -- ==========================
+    -- MOTOR DO BOTÃO ESP PLAYERS (✅ SEM PISCADA - 100% CERTO)
+    -- ==========================
+    LimparESP("Jogadores")
+    if estados["ESP Jogadores"] then
+        highlights["Jogadores"] = {}
+        for _, plr in pairs(Players:GetPlayers()) do
+            -- Ignora apenas VOCÊ
+            if plr == LocalPlayer then continue end
 
-        -- Espera o personagem carregar (resolve o erro de troca de servidor)
-        local char = plr.Character or plr.CharacterAdded:Wait()
-        if not char then continue end
-
-        -- Garante que tem corpo
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if not root then continue end
+            -- Espera o personagem carregar direito
+            local char = plr.Character
+            if not char then continue end
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if not root then continue end
 
 
-        -- ✅ DETECÇÃO COMPLETA: 3 JEITOS DE SABER SE É FERA / TEM MARRETA
-        local ehFera = false
+            -- ✅ DETECÇÃO DEFINITIVA: SEM CONFUSÃO, SEM PISCAR!
+            local ehFera = false
 
-        -- 1️⃣ JEITO CERTO: PELA EQUIPE (SEMPRE FUNCIONA!)
-        if plr.Team and (plr.Team.Name == "Beast" or plr.Team.Name == "A Besta") then
-            ehFera = true
+            -- 🔴1º REGRA: EQUIPE (O JEITO MAIS CERTO E DEFINITIVO)
+            -- Se está na equipe da besta, É A FERA, NÃO TEM DISCUSSÃO!
+            if plr.Team then
+                local time = string.lower(plr.Team.Name)
+                if time == "beast" or time == "fera" or time == "a besta" or time == "monstro" then
+                    ehFera = true
+                end
+            end
+
+            -- 🟢2º REGRA: MARRETA (SÓ VERIFICA SE NÃO FOR FERA AINDA)
+            -- Agora SÓ procura nomes EXATOS da marreta, não confunde com lanterna ou outro item
+            if not ehFera then
+                -- Verifica NA MÃO/CORPO: SÓ Hammer OU Mallet
+                if char:FindFirstChild("Hammer") or char:FindFirstChild("Mallet") then
+                    ehFera = true
+                end
+
+                -- Verifica NA MOCHILA: SÓ Hammer OU Mallet
+                if plr.Backpack then
+                    if plr.Backpack:FindFirstChild("Hammer") or plr.Backpack:FindFirstChild("Mallet") then
+                        ehFera = true
+                    end
+                end
+            end
+
+            -- 🎨 CORES FRACAS / SUAVES (COMO VOCÊ PEDIU)
+            -- 🔴 VERMELHO FRACO = É A FERA / TEM MARRETA
+            -- 🟢 VERDE FRACO = SOBREVIVENTE NORMAL
+            -- AGORA NÃO MUDA MAIS DE COR, POIS A REGRA É DEFINITIVA
+            local corP = ehFera and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40)
+            local corB = ehFera and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(20, 120, 20)
+
+            -- 🖍️ CRIA O MARCADOR
+            local hl = CriarHighlight(char, corP, corB)
+            if hl then
+                table.insert(highlights["Jogadores"], hl)
+            end
+
         end
-
-        -- 2️⃣ JEITO: SE TEM A MARRETA NA MÃO OU NO CORPO
-        if char:FindFirstChild("Hammer") 
-        or char:FindFirstChild("Mallet") 
-        or char:FindFirstChild("Weapon") then -- Algumas versões usam esse nome
-            ehFera = true
-        end
-
-        -- 3️⃣ JEITO: SE ESTÁ NA MOCHILA
-        if plr.Backpack and (
-            plr.Backpack:FindFirstChild("Hammer") 
-         or plr.Backpack:FindFirstChild("Mallet")
-         or plr.Backpack:FindFirstChild("Weapon")
-        ) then
-            ehFera = true
-        end
-
-
-        -- 🎨 CORES FRACAS (DO JEITO QUE VOCÊ QUIS)
-        -- VERMELHO FRACO = É A FERA / TEM MARRETA
-        -- VERDE FRACO = SOBREVIVENTE NORMAL
-        local corP = ehFera and Color3.fromRGB(180, 40, 40) or Color3.fromRGB(40, 180, 40)
-        local corB = ehFera and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(20, 120, 20)
-
-
-        -- 🖍️ CRIA O MARCADOR
-        -- Remove o antigo antes de criar novo
-        if char:FindFirstChild("ESP_MARCADOR") then
-            char.ESP_MARCADOR:Destroy()
-        end
-
-        local hl = Instance.new("Highlight")
-        hl.Name = "ESP_MARCADOR"
-        hl.Adornee = char
-        hl.FillColor = corP
-        hl.OutlineColor = corB
-        hl.FillTransparency = 0.4 -- Fraco/Suave
-        hl.OutlineTransparency = 0.2
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.Parent = char
-
-        table.insert(highlights["Players"], hl)
     end
-end
-
 
     -- ==========================
     -- MOTOR DO BOTÃO ESP EXIT
     -- ==========================
-    LimparGrupo("Exit")
-    if estados.ESP_EXIT then
-        highlights["Exit"] = {}
+    LimparESP("Saida")
+    if estados["ESP Saida"] then
+        highlights["Saida"] = {}
         for _, obj in pairs(Workspace:GetDescendants()) do
             if obj:IsA("Model") and (obj.Name == "Exit" or obj.Name == "MainGate") then
-                -- COR: LARANJA
                 local hl = CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
-                if hl then table.insert(highlights["Exit"], hl) end
+                if hl then table.insert(highlights["Saida"], hl) end
             end
         end
     end
