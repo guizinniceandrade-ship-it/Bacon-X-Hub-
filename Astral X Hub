@@ -476,34 +476,38 @@ local HitboxAtivada = false
 local TamanhoHitbox = 6
 local ConexaoHitbox
 
-local function AplicarHitbox()
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.Size = Vector3.new(TamanhoHitbox, TamanhoHitbox, TamanhoHitbox)
+local function AplicarHitboxNosOutros()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local root = p.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.Size = Vector3.new(TamanhoHitbox, TamanhoHitbox, TamanhoHitbox)
+            end
+        end
     end
 end
 
-local function RestaurarHitbox()
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.Size = Vector3.new(2, 2, 1)
+local function RestaurarHitboxNosOutros()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local root = p.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.Size = Vector3.new(2, 2, 1)
+            end
+        end
     end
 end
 
 CriarToggleAnimado("Hitbox", pageMain, function(ligado)
     HitboxAtivada = ligado
     if ligado then
-        AplicarHitbox()
+        AplicarHitboxNosOutros()
         ConexaoHitbox = RunService.Heartbeat:Connect(function()
-            AplicarHitbox()
+            AplicarHitboxNosOutros()
         end)
     else
         if ConexaoHitbox then ConexaoHitbox:Disconnect() end
-        RestaurarHitbox()
+        RestaurarHitboxNosOutros()
     end
 end)
 
@@ -511,14 +515,23 @@ CriarSlider("Tamanho Hitbox", pageMain, 2, 15, 6, function(novoValor)
     TamanhoHitbox = novoValor
 end)
 
--- Reaplica a hitbox quando o personagem respawnar (caso esteja ativada)
-player.CharacterAdded:Connect(function(novoChar)
-    task.wait(0.5)
-    if HitboxAtivada then
-        AplicarHitbox()
-    end
+-- Reaplica quando novo jogador entra
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if HitboxAtivada then
+            AplicarHitboxNosOutros()
+        end
+    end)
 end)
 
+-- Reaplica quando seu personagem respawnar
+player.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    if HitboxAtivada then
+        AplicarHitboxNosOutros()
+    end
+end)
 -- ===========================
 -- ABA ESP
 -- ===========================
