@@ -463,6 +463,62 @@ end
 -- ===========================
 local pageMain = pages["Main"]
 
+local TituloMain = Instance.new("TextLabel", pageMain)
+TituloMain.Size = UDim2.new(1, -8, 0, 30)
+TituloMain.BackgroundTransparency = 1
+TituloMain.Text = "«««««««« Fera »»»»»»»»»»"
+TituloMain.TextColor3 = Color3.new(1,1,1)
+TituloMain.Font = Enum.Font.GothamBold
+TituloMain.TextSize = 15
+TituloMain.TextXAlignment = Enum.TextXAlignment.Center
+
+local HitboxAtivada = false
+local TamanhoHitbox = 6
+local ConexaoHitbox
+
+local function AplicarHitbox()
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.Size = Vector3.new(TamanhoHitbox, TamanhoHitbox, TamanhoHitbox)
+    end
+end
+
+local function RestaurarHitbox()
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.Size = Vector3.new(2, 2, 1)
+    end
+end
+
+CriarToggleAnimado("Hitbox", pageMain, function(ligado)
+    HitboxAtivada = ligado
+    if ligado then
+        AplicarHitbox()
+        ConexaoHitbox = RunService.Heartbeat:Connect(function()
+            AplicarHitbox()
+        end)
+    else
+        if ConexaoHitbox then ConexaoHitbox:Disconnect() end
+        RestaurarHitbox()
+    end
+end)
+
+CriarSlider("Tamanho Hitbox", pageMain, 2, 15, 6, function(novoValor)
+    TamanhoHitbox = novoValor
+end)
+
+-- Reaplica a hitbox quando o personagem respawnar (caso esteja ativada)
+player.CharacterAdded:Connect(function(novoChar)
+    task.wait(0.5)
+    if HitboxAtivada then
+        AplicarHitbox()
+    end
+end)
+
 -- ===========================
 -- ABA ESP
 -- ===========================
