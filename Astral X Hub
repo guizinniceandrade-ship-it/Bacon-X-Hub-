@@ -725,6 +725,157 @@ end)
 -- ===========================
 local pageTeleporte = pages["Teleporte"]
 
+local TituloTeleporte = Instance.new("TextLabel", pageTeleporte)
+TituloTeleporte.Size = UDim2.new(1, -8, 0, 30)
+TituloTeleporte.BackgroundTransparency = 1
+TituloTeleporte.Text = "«««««««« Teleporte Tween »»»»»»»»»»"
+TituloTeleporte.TextColor3 = Color3.new(1,1,1)
+TituloTeleporte.Font = Enum.Font.GothamBold
+TituloTeleporte.TextSize = 15
+TituloTeleporte.TextXAlignment = Enum.TextXAlignment.Center
+
+local VELOCIDADE_TWEEN = 50
+
+local function TweenParaAlvo(alvo)
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root or not alvo then return end
+
+    local distancia = (root.Position - alvo.Position).Magnitude
+    local tempo = distancia / VELOCIDADE_TWEEN
+
+    local tweenInfo = TweenInfo.new(tempo, Enum.EasingStyle.Linear)
+    TweenService:Create(root, tweenInfo, {CFrame = alvo.CFrame + Vector3.new(0, 3, 0)}):Play()
+end
+
+local function CriarBotaoTeleporte(texto, pai, funcao)
+    local Frame = Instance.new("Frame", pai)
+    Frame.Size = UDim2.new(1, -8, 0, 36)
+    Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Frame.BorderSizePixel = 0
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
+
+    local Texto = Instance.new("TextLabel", Frame)
+    Texto.Size = UDim2.new(1, -50, 1, 0)
+    Texto.Position = UDim2.new(0, 12, 0, 0)
+    Texto.BackgroundTransparency = 1
+    Texto.Text = texto
+    Texto.TextColor3 = Color3.new(1, 1, 1)
+    Texto.Font = Enum.Font.Gotham
+    Texto.TextSize = 14
+    Texto.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Botao = Instance.new("TextButton", Frame)
+    Botao.Size = UDim2.new(0, 30, 0, 30)
+    Botao.Position = UDim2.new(1, -38, 0.5, -15)
+    Botao.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Botao.BorderSizePixel = 0
+    Botao.Text = "›"
+    Botao.TextColor3 = Color3.new(1, 1, 1)
+    Botao.Font = Enum.Font.GothamBold
+    Botao.TextSize = 22
+    Botao.AutoButtonColor = false
+    Botao.ZIndex = 5
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(0, 6)
+
+    local tween = TweenInfo.new(0.15, Enum.EasingStyle.Quad)
+    Botao.MouseButton1Click:Connect(function()
+        TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.new(1,1,1)}):Play()
+        TweenService:Create(Botao, tween, {TextColor3 = Color3.fromRGB(20,20,20)}):Play()
+        task.delay(0.2, function()
+            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.fromRGB(30,30,30)}):Play()
+            TweenService:Create(Botao, tween, {TextColor3 = Color3.new(1,1,1)}):Play()
+        end)
+        funcao()
+    end)
+
+    return Frame
+end
+
+-- Tween PC (só PCs não completados)
+CriarBotaoTeleporte("Tween PC", pageTeleporte, function()
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local maisProximo, menorDist = nil, math.huge
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and NOMES_PC[obj.Name:lower()] then
+            -- Só teleporta para PCs não completados
+            local completado = false
+            for _, child in pairs(obj:GetDescendants()) do
+                if child:IsA("BasePart") and child.Name == "Screen" then
+                    if child.BrickColor == BrickColor.new("Bright green") or
+                       child.BrickColor == BrickColor.new("Lime green") or
+                       child.BrickColor == BrickColor.new("Bright red") or
+                       (child.Color.G > 0.4 and child.Color.R < 0.4 and child.Color.B < 0.4) then
+                        completado = true
+                    end
+                end
+            end
+            if not completado then
+                local parte = obj:FindFirstChildWhichIsA("BasePart")
+                if parte then
+                    local dist = (root.Position - parte.Position).Magnitude
+                    if dist < menorDist then
+                        menorDist = dist
+                        maisProximo = parte
+                    end
+                end
+            end
+        end
+    end
+    TweenParaAlvo(maisProximo)
+end)
+
+-- Tween Cápsula
+CriarBotaoTeleporte("Tween Cápsula", pageTeleporte, function()
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local maisProximo, menorDist = nil, math.huge
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and NOMES_CAPSULA[obj.Name:lower()] then
+            local parte = obj:FindFirstChildWhichIsA("BasePart")
+            if parte then
+                local dist = (root.Position - parte.Position).Magnitude
+                if dist < menorDist then
+                    menorDist = dist
+                    maisProximo = parte
+                end
+            end
+        end
+    end
+    TweenParaAlvo(maisProximo)
+end)
+
+-- Tween Exit
+CriarBotaoTeleporte("Tween Exit", pageTeleporte, function()
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local maisProximo, menorDist = nil, math.huge
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and NOMES_SAIDA[obj.Name:lower()] then
+            local parte = obj:FindFirstChildWhichIsA("BasePart")
+            if parte then
+                local dist = (root.Position - parte.Position).Magnitude
+                if dist < menorDist then
+                    menorDist = dist
+                    maisProximo = parte
+                end
+            end
+        end
+    end
+    TweenParaAlvo(maisProximo)
+end)
+
 -- =========================
 -- SISTEMA DE NAVEGAÇÃO
 -- =========================
