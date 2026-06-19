@@ -8,6 +8,7 @@ local SoundService = game:GetService("SoundService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
@@ -31,7 +32,7 @@ end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AstralXHub"
-ScreenGui.ResetOnSpawn = false 
+ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = playerGui
 ScreenGui.IgnoreGuiInset = true
@@ -327,70 +328,9 @@ for _, aba in ipairs(Abas) do
 	pages[aba.Nome] = page
 end
 
--- ===========================
--- ABA MAIN
--- ===========================
-local pageMain = pages["Main"]
--- COLOQUE AQUI O CONTEÚDO DA ABA MAIN
-
-
--- ===========================
--- ABA ESP
--- ===========================
-local pageESP = pages["ESP"]
--- COLOQUE AQUI O CONTEÚDO DA ABA ESP
-
-
--- ===========================
--- ABA LOCAL PLAYER
--- ===========================
-local pagePlayer = pages["Local Player"]
-
--- TÍTULO
-local TituloTexto = Instance.new("TextLabel", pagePlayer)
-TituloTexto.Size = UDim2.new(1, -8, 0, 30)
-TituloTexto.BackgroundTransparency = 1
-TituloTexto.Text = "«««««««« Movimento »»»»»»»»»»"
-TituloTexto.TextColor3 = Color3.new(1,1,1)
-TituloTexto.Font = Enum.Font.GothamBold
-TituloTexto.TextSize = 15
-TituloTexto.TextXAlignment = Enum.TextXAlignment.Center
-
--- VARIÁVEIS
-local character, humanoid, rootPart
-local SpeedAtivado = false
-local ValorSpeed = 70
-local JumpAtivado = false
-local ValorJump = 105
-local InfiniteJumpLigado = false
-local NoclipLigado = false
-
--- FUNÇÕES BÁSICAS
-RunService.Heartbeat:Connect(function()
-    if SpeedAtivado and humanoid then
-        humanoid.WalkSpeed = ValorSpeed
-    end
-    if JumpAtivado and humanoid then
-        humanoid.JumpPower = ValorJump
-    end
-end)
-
-local function atualizarReferencia()
-    character = player.Character
-    if not character then return end
-    humanoid = character:WaitForChild("Humanoid")
-    rootPart = character:WaitForChild("HumanoidRootPart")
-    
-    if NoclipLigado then
-        for _, parte in pairs(character:GetDescendants()) do
-            if parte:IsA("BasePart") then parte.CanCollide = false end
-        end
-    end
-end
-player.CharacterAdded:Connect(atualizarReferencia)
-atualizarReferencia()
-
--- FUNÇÕES DE CRIAÇÃO
+-- =========================
+-- FUNÇÕES DE CRIAÇÃO UI
+-- =========================
 local function CriarToggleAnimado(texto, pai, funcao)
     local ToggleFrame = Instance.new("Frame", pai)
     ToggleFrame.Size = UDim2.new(1, -8, 0, 36)
@@ -518,7 +458,215 @@ local function CriarSlider(texto, pai, min, max, padrao, funcao)
     return SliderFrame
 end
 
--- CONTEÚDO DA ABA
+-- ===========================
+-- ABA MAIN
+-- ===========================
+local pageMain = pages["Main"]
+
+-- ===========================
+-- ABA ESP
+-- ===========================
+local pageESP = pages["ESP"]
+
+-- Estados do ESP
+local estadosESP = {
+    ["ESP PC"] = false,
+    ["ESP Cápsulas"] = false,
+    ["ESP Jogadores"] = false,
+    ["ESP Saida"] = false
+}
+
+local NOMES_PC = {["computertable"] = true, ["prefabcomputertable"] = true}
+local NOMES_CAPSULA = {["freezepod"] = true, ["prefabfreezepod"] = true}
+local NOMES_SAIDA = {["exitdoor"] = true}
+
+local function ehPC(n) return NOMES_PC[n] ~= nil end
+local function ehCapsula(n) return NOMES_CAPSULA[n] ~= nil end
+local function ehSaida(n) return NOMES_SAIDA[n] ~= nil end
+
+local function pcCompletado(obj)
+    for _, child in pairs(obj:GetDescendants()) do
+        if child:IsA("BasePart") and child.Name == "Screen" then
+            if child.BrickColor == BrickColor.new("Bright green") or
+               child.BrickColor == BrickColor.new("Lime green") or
+               child.BrickColor == BrickColor.new("Bright red") or
+               child.Color.G > 0.4 and child.Color.R < 0.4 and child.Color.B < 0.4 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function CriarOuAtualizarHighlight(alvo, corP, corB)
+    if not alvo then return end
+    local hl = alvo:FindFirstChild("ESP_MARCADOR")
+    if not hl then
+        hl = Instance.new("Highlight")
+        hl.Name = "ESP_MARCADOR"
+        hl.Adornee = alvo
+        hl.FillTransparency = 0.4
+        hl.OutlineTransparency = 0.2
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.Parent = alvo
+    end
+    hl.FillColor = corP
+    hl.OutlineColor = corB
+end
+
+local function CriarHighlight(alvo, corP, corB)
+    if not alvo or alvo:FindFirstChild("ESP_MARCADOR") then return end
+    local hl = Instance.new("Highlight")
+    hl.Name = "ESP_MARCADOR"; hl.Adornee = alvo; hl.FillColor = corP; hl.OutlineColor = corB
+    hl.FillTransparency = 0.4; hl.OutlineTransparency = 0.2
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; hl.Parent = alvo
+end
+
+local function LimparPorFiltro(filtro)
+    for _, o in pairs(Workspace:GetDescendants()) do
+        if o:IsA("Model") and o:FindFirstChild("ESP_MARCADOR") then
+            if filtro(o.Name:lower()) then
+                o.ESP_MARCADOR:Destroy()
+            end
+        end
+    end
+end
+
+-- Título da aba ESP
+local TituloESP = Instance.new("TextLabel", pageESP)
+TituloESP.Size = UDim2.new(1, -8, 0, 30)
+TituloESP.BackgroundTransparency = 1
+TituloESP.Text = "«««««««« ESP »»»»»»»»»»"
+TituloESP.TextColor3 = Color3.new(1,1,1)
+TituloESP.Font = Enum.Font.GothamBold
+TituloESP.TextSize = 15
+TituloESP.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Toggles do ESP
+CriarToggleAnimado("ESP PC", pageESP, function(ligado)
+    estadosESP["ESP PC"] = ligado
+    if not ligado then LimparPorFiltro(ehPC) end
+end)
+
+CriarToggleAnimado("ESP Cápsulas", pageESP, function(ligado)
+    estadosESP["ESP Cápsulas"] = ligado
+    if not ligado then LimparPorFiltro(ehCapsula) end
+end)
+
+CriarToggleAnimado("ESP Players", pageESP, function(ligado)
+    estadosESP["ESP Jogadores"] = ligado
+    if not ligado then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("ESP_MARCADOR") then
+                p.Character.ESP_MARCADOR:Destroy()
+            end
+        end
+    end
+end)
+
+CriarToggleAnimado("ESP Exit", pageESP, function(ligado)
+    estadosESP["ESP Saida"] = ligado
+    if not ligado then LimparPorFiltro(ehSaida) end
+end)
+
+-- Motor do ESP
+local lastUpdate = 0
+RunService.RenderStepped:Connect(function()
+    if tick() - lastUpdate < 0.6 then return end
+    lastUpdate = tick()
+
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChildWhichIsA("BasePart") then
+            local n = obj.Name:lower()
+
+            if estadosESP["ESP PC"] and ehPC(n) then
+                local completado = pcCompletado(obj)
+                CriarOuAtualizarHighlight(
+                    obj,
+                    completado and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(80, 180, 255),
+                    Color3.new(0, 0, 0)
+                )
+            elseif estadosESP["ESP Cápsulas"] and ehCapsula(n) then
+                CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
+            elseif estadosESP["ESP Saida"] and ehSaida(n) then
+                CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
+            end
+        end
+    end
+
+    if estadosESP["ESP Jogadores"] then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character then
+                local ehFera = false
+                if p.Team then
+                    local teamName = p.Team.Name:lower()
+                    ehFera = teamName:find("beast") ~= nil or teamName:find("fera") ~= nil or teamName:find("hunter") ~= nil
+                end
+                if not ehFera then
+                    ehFera = p.Character:FindFirstChild("Hammer") ~= nil
+                        or p.Character:FindFirstChild("Mallet") ~= nil
+                        or p.Character:FindFirstChild("Claw") ~= nil
+                end
+                if not ehFera then
+                    local hum = p.Character:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.DisplayName ~= p.DisplayName then ehFera = true end
+                end
+                CriarOuAtualizarHighlight(p.Character,
+                    ehFera and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0),
+                    Color3.new(0, 0, 0)
+                )
+            end
+        end
+    else
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("ESP_MARCADOR") then
+                p.Character.ESP_MARCADOR:Destroy()
+            end
+        end
+    end
+end)
+
+-- ===========================
+-- ABA LOCAL PLAYER
+-- ===========================
+local pagePlayer = pages["Local Player"]
+
+local TituloTexto = Instance.new("TextLabel", pagePlayer)
+TituloTexto.Size = UDim2.new(1, -8, 0, 30)
+TituloTexto.BackgroundTransparency = 1
+TituloTexto.Text = "«««««««« Movimento »»»»»»»»»»"
+TituloTexto.TextColor3 = Color3.new(1,1,1)
+TituloTexto.Font = Enum.Font.GothamBold
+TituloTexto.TextSize = 15
+TituloTexto.TextXAlignment = Enum.TextXAlignment.Center
+
+local character, humanoid, rootPart
+local SpeedAtivado = false
+local ValorSpeed = 70
+local JumpAtivado = false
+local ValorJump = 105
+local InfiniteJumpLigado = false
+local NoclipLigado = false
+
+RunService.Heartbeat:Connect(function()
+    if SpeedAtivado and humanoid then humanoid.WalkSpeed = ValorSpeed end
+    if JumpAtivado and humanoid then humanoid.JumpPower = ValorJump end
+end)
+
+local function atualizarReferencia()
+    character = player.Character
+    if not character then return end
+    humanoid = character:WaitForChild("Humanoid")
+    rootPart = character:WaitForChild("HumanoidRootPart")
+    if NoclipLigado then
+        for _, parte in pairs(character:GetDescendants()) do
+            if parte:IsA("BasePart") then parte.CanCollide = false end
+        end
+    end
+end
+player.CharacterAdded:Connect(atualizarReferencia)
+atualizarReferencia()
+
 CriarToggleAnimado("speed", pagePlayer, function(ligado)
     SpeedAtivado = ligado
     if not ligado and humanoid then humanoid.WalkSpeed = 16 end
@@ -572,13 +720,10 @@ CriarToggleAnimado("noclip", pagePlayer, function(ligado)
     end
 end)
 
-
 -- ===========================
 -- ABA TELEPORTE
 -- ===========================
 local pageTeleporte = pages["Teleporte"]
--- COLOQUE AQUI O CONTEÚDO DA ABA TELEPORTE
-
 
 -- =========================
 -- SISTEMA DE NAVEGAÇÃO
@@ -634,8 +779,8 @@ ToggleButton.MouseButton1Click:Connect(function()
 	else
 		local tweenFechar = TweenService:Create(MainFrame, animTweenInfo, {Position = UDim2.new(0.5, -275, 1.5, -175)})
 		tweenFechar:Play()
-		tweenFechar.Completed:Connect(function() 
-            MainFrame.Visible = false 
+		tweenFechar.Completed:Connect(function()
+            MainFrame.Visible = false
         end)
 	end
 end)
