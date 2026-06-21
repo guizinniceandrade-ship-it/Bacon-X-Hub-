@@ -791,50 +791,15 @@ SeparadorLighting.ZIndex = 4
 -- =========================
 -- NO FOG + FULLBRIGHT
 -- =========================
-local Lighting = game:GetService("Lighting")
-
--- Salva configs originais
-local FogOriginal = {
-    FogEnd = Lighting.FogEnd,
-    FogStart = Lighting.FogStart,
-    FogColor = Lighting.FogColor
-}
-
-local AtmosphereOriginal = Lighting:FindFirstChildOfClass("Atmosphere")
-local AtmosphereBackup = nil
-if AtmosphereOriginal then
-    AtmosphereBackup = {
-        Density = AtmosphereOriginal.Density,
-        Offset = AtmosphereOriginal.Offset,
-        Color = AtmosphereOriginal.Color,
-        Decay = AtmosphereOriginal.Decay,
-        Glare = AtmosphereOriginal.Glare,
-        Haze = AtmosphereOriginal.Haze
-    }
-end
-
-local BrightOriginal = {
-    Brightness = Lighting.Brightness,
-    ClockTime = Lighting.ClockTime,
-    Ambient = Lighting.Ambient,
-    OutdoorAmbient = Lighting.OutdoorAmbient,
-    GlobalShadows = Lighting.GlobalShadows
-}
-
-estadosESP["No Fog"] = false
-estadosESP["Fullbright"] = false
-
 -- NO FOG - FUNCIONA EM FTF
 local ConexaoFog
 CriarToggleAnimado("No Fog", pageESP, function(ligado)
     estadosESP["No Fog"] = ligado
     if ligado then
-        -- Remove Fog normal
         Lighting.FogEnd = 100000
         Lighting.FogStart = 0
         Lighting.FogColor = Color3.fromRGB(255,255,255)
-        
-        -- Remove Atmosphere que é o que FTF usa
+
         local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
         if atmosphere then
             atmosphere.Density = 0
@@ -842,8 +807,7 @@ CriarToggleAnimado("No Fog", pageESP, function(ligado)
             atmosphere.Haze = 0
             atmosphere.Glare = 0
         end
-        
-        -- Trava contra reset do mapa
+
         if ConexaoFog then ConexaoFog:Disconnect() end
         ConexaoFog = Lighting.ChildAdded:Connect(function(child)
             if child:IsA("Atmosphere") and estadosESP["No Fog"] then
@@ -858,7 +822,7 @@ CriarToggleAnimado("No Fog", pageESP, function(ligado)
         Lighting.FogEnd = FogOriginal.FogEnd
         Lighting.FogStart = FogOriginal.FogStart
         Lighting.FogColor = FogOriginal.FogColor
-        
+
         local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
         if atmosphere and AtmosphereBackup then
             atmosphere.Density = AtmosphereBackup.Density
@@ -886,6 +850,79 @@ CriarToggleAnimado("Fullbright", pageESP, function(ligado)
         Lighting.Ambient = BrightOriginal.Ambient
         Lighting.OutdoorAmbient = BrightOriginal.OutdoorAmbient
         Lighting.GlobalShadows = BrightOriginal.GlobalShadows
+    end
+end)
+
+-- HD TEXTURES
+local MaterialOriginal = {}
+estadosESP["HD Textures"] = false
+
+local function SalvarMateriais()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and not MaterialOriginal[obj] then
+            MaterialOriginal[obj] = {
+                Material = obj.Material,
+                Reflectance = obj.Reflectance,
+                Transparency = obj.Transparency,
+                Color = obj.Color
+            }
+        end
+    end
+end
+
+local function AplicarTexturaHD(obj)
+    if not obj:IsA("BasePart") then return end
+    local nome = obj.Name:lower()
+
+    if nome:find("floor") or nome:find("plank") or obj.Material == Enum.Material.Wood then
+        obj.Material = Enum.Material.WoodPlanks
+        obj.Color = Color3.fromRGB(139, 90, 43)
+        obj.Reflectance = 0.05
+    elseif nome:find("wall") or obj.Material == Enum.Material.Brick then
+        obj.Material = Enum.Material.Concrete
+        obj.Color = Color3.fromRGB(180, 180, 180)
+        obj.Reflectance = 0
+    elseif nome:find("metal") or obj.Material == Enum.Material.Metal then
+        obj.Material = Enum.Material.Metal
+        obj.Color = Color3.fromRGB(170, 170, 170)
+        obj.Reflectance = 0.3
+    elseif nome:find("grass") or obj.Material == Enum.Material.Grass then
+        obj.Material = Enum.Material.Grass
+        obj.Color = Color3.fromRGB(60, 120, 40)
+        obj.Reflectance = 0
+    elseif nome:find("glass") or obj.Material == Enum.Material.Glass then
+        obj.Material = Enum.Material.Glass
+        obj.Transparency = 0.5
+        obj.Reflectance = 0.2
+    end
+end
+
+local function RestaurarMateriais()
+    for obj, props in pairs(MaterialOriginal) do
+        if obj and obj.Parent then
+            obj.Material = props.Material
+            obj.Reflectance = props.Reflectance
+            obj.Transparency = props.Transparency
+            obj.Color = props.Color
+        end
+    end
+end
+
+CriarToggleAnimado("HD Textures", pageESP, function(ligado)
+    estadosESP["HD Textures"] = ligado
+    if ligado then
+        SalvarMateriais()
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            AplicarTexturaHD(obj)
+        end
+        Workspace.DescendantAdded:Connect(function(obj)
+            if estadosESP["HD Textures"] then
+                task.wait(0.1)
+                AplicarTexturaHD(obj)
+            end
+        end)
+    else
+        RestaurarMateriais()
     end
 end)
 
