@@ -461,27 +461,42 @@ end
 -- ===========================
 -- ABA MAIN
 -- ===========================
-local pageMain = pages["Main"]
-
-local TituloMain = Instance.new("TextLabel", pageMain)
-TituloMain.Size = UDim2.new(1, -8, 0, 30)
-TituloMain.BackgroundTransparency = 1
-TituloMain.Text = "«««««««« Fera »»»»»»»»»»"
-TituloMain.TextColor3 = Color3.new(1,1,1)
-TituloMain.Font = Enum.Font.GothamBold
-TituloMain.TextSize = 15
-TituloMain.TextXAlignment = Enum.TextXAlignment.Center
-
+-- ===========================
+-- HITBOX FANTASMA - SÓ NOS OUTROS
+-- ===========================
 local HitboxAtivada = false
 local TamanhoHitbox = 6
 local ConexaoHitbox
 
 local function AplicarHitboxNosOutros()
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character then
-            local root = p.Character:FindFirstChild("HumanoidRootPart")
-            if root then
-                root.Size = Vector3.new(TamanhoHitbox, TamanhoHitbox, TamanhoHitbox)
+        -- Filtro: não é você + tem character + tem HumanoidRootPart
+        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local root = p.Character.HumanoidRootPart
+            local hitbox = root:FindFirstChild("HitboxFantasma")
+            
+            -- Se não existe, cria a hitbox invisível
+            if not hitbox then
+                hitbox = Instance.new("Part")
+                hitbox.Name = "HitboxFantasma"
+                hitbox.Size = Vector3.new(TamanhoHitbox, TamanhoHitbox, TamanhoHitbox)
+                hitbox.Transparency = 1
+                hitbox.CanCollide = false -- não empurra ninguém
+                hitbox.CanQuery = true    -- armas/raycast ainda acertam
+                hitbox.CanTouch = true    -- .Touched funciona
+                hitbox.Massless = true
+                hitbox.Material = Enum.Material.ForceField -- opcional: debug visual
+                hitbox.CFrame = root.CFrame
+                
+                -- Solda pra seguir o player
+                local weld = Instance.new("WeldConstraint")
+                weld.Part0 = root
+                weld.Part1 = hitbox
+                weld.Parent = hitbox
+                hitbox.Parent = root
+            else
+                -- Se já existe, só atualiza o tamanho do slider
+                hitbox.Size = Vector3.new(TamanhoHitbox, TamanhoHitbox, TamanhoHitbox)
             end
         end
     end
@@ -489,49 +504,56 @@ end
 
 local function RestaurarHitboxNosOutros()
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character then
-            local root = p.Character:FindFirstChild("HumanoidRootPart")
-            if root then
-                root.Size = Vector3.new(2, 2, 1)
-            end
+        if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local hb = p.Character.HumanoidRootPart:FindFirstChild("HitboxFantasma")
+            if hb then hb:Destroy() end
         end
     end
 end
 
+-- Toggle já existente, só garante que tá usando as funções novas
 CriarToggleAnimado("Hitbox", pageMain, function(ligado)
     HitboxAtivada = ligado
     if ligado then
         AplicarHitboxNosOutros()
-        ConexaoHitbox = RunService.Heartbeat:Connect(function()
-            AplicarHitboxNosOutros()
+        -- Atualiza 1x por segundo, não precisa de Heartbeat
+        ConexaoHitbox = task.spawn(function()
+            while HitboxAtivada do
+                AplicarHitboxNosOutros()
+                task.wait(1)
+            end
         end)
     else
-        if ConexaoHitbox then ConexaoHitbox:Disconnect() end
+        if ConexaoHitbox then task.cancel(ConexaoHitbox) end
         RestaurarHitboxNosOutros()
     end
 end)
 
-CriarSlider("Tamanho Hitbox", pageMain, 2, 15, 6, function(novoValor)
+CriarSlider("Tamanho Hitbox", pageMain, 2, 20, 6, function(novoValor)
     TamanhoHitbox = novoValor
+    if HitboxAtivada then -- atualiza na hora se já tiver ligado
+        AplicarHitboxNosOutros()
+    end
 end)
 
--- Reaplica quando novo jogador entra
+-- Reaplica quando entra player novo
 Players.PlayerAdded:Connect(function(p)
     p.CharacterAdded:Connect(function()
-        task.wait(0.5)
+        task.wait(1)
         if HitboxAtivada then
             AplicarHitboxNosOutros()
         end
     end)
 end)
 
--- Reaplica quando seu personagem respawnar
-player.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    if HitboxAtivada then
-        AplicarHitboxNosOutros()
-    end
+-- Proteção: se teu char resetar, garante que não criou hitbox em você
+player.CharacterAdded:Connect(function(char)
+    task.wait(1)
+    local meuRoot = char:WaitForChild("HumanoidRootPart")
+    local minhaHb = meuRoot:FindFirstChild("HitboxFantasma")
+    if minhaHb then minhaHb:Destroy() end
 end)
+
 -- ===========================
 -- ABA ESP
 -- ===========================
