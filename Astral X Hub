@@ -776,26 +776,102 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =========================
+-- SEPARADOR LIGHTING
+-- =========================
+local SeparadorLighting = Instance.new("TextLabel", pageESP)
+SeparadorLighting.Size = UDim2.new(1, -8, 0, 25)
+SeparadorLighting.BackgroundTransparency = 1
+SeparadorLighting.Text = "«««««««« Lighting »»»»»»»"
+SeparadorLighting.TextColor3 = Color3.fromRGB(200,200,200)
+SeparadorLighting.Font = Enum.Font.Gotham
+SeparadorLighting.TextSize = 13
+SeparadorLighting.TextXAlignment = Enum.TextXAlignment.Center
+SeparadorLighting.ZIndex = 4
+
+-- =========================
 -- NO FOG + FULLBRIGHT
 -- =========================
 local Lighting = game:GetService("Lighting")
-local FogOriginal = {FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart}
-local BrightOriginal = {Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime, Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient, GlobalShadows = Lighting.GlobalShadows}
+
+-- Salva configs originais
+local FogOriginal = {
+    FogEnd = Lighting.FogEnd,
+    FogStart = Lighting.FogStart,
+    FogColor = Lighting.FogColor
+}
+
+local AtmosphereOriginal = Lighting:FindFirstChildOfClass("Atmosphere")
+local AtmosphereBackup = nil
+if AtmosphereOriginal then
+    AtmosphereBackup = {
+        Density = AtmosphereOriginal.Density,
+        Offset = AtmosphereOriginal.Offset,
+        Color = AtmosphereOriginal.Color,
+        Decay = AtmosphereOriginal.Decay,
+        Glare = AtmosphereOriginal.Glare,
+        Haze = AtmosphereOriginal.Haze
+    }
+end
+
+local BrightOriginal = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    GlobalShadows = Lighting.GlobalShadows
+}
 
 estadosESP["No Fog"] = false
 estadosESP["Fullbright"] = false
 
+-- NO FOG - FUNCIONA EM FTF
+local ConexaoFog
 CriarToggleAnimado("No Fog", pageESP, function(ligado)
     estadosESP["No Fog"] = ligado
     if ligado then
+        -- Remove Fog normal
         Lighting.FogEnd = 100000
         Lighting.FogStart = 0
+        Lighting.FogColor = Color3.fromRGB(255,255,255)
+        
+        -- Remove Atmosphere que é o que FTF usa
+        local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+        if atmosphere then
+            atmosphere.Density = 0
+            atmosphere.Offset = 0
+            atmosphere.Haze = 0
+            atmosphere.Glare = 0
+        end
+        
+        -- Trava contra reset do mapa
+        if ConexaoFog then ConexaoFog:Disconnect() end
+        ConexaoFog = Lighting.ChildAdded:Connect(function(child)
+            if child:IsA("Atmosphere") and estadosESP["No Fog"] then
+                task.wait()
+                child.Density = 0
+                child.Haze = 0
+                child.Glare = 0
+            end
+        end)
     else
+        if ConexaoFog then ConexaoFog:Disconnect() end
         Lighting.FogEnd = FogOriginal.FogEnd
         Lighting.FogStart = FogOriginal.FogStart
+        Lighting.FogColor = FogOriginal.FogColor
+        
+        local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+        if atmosphere and AtmosphereBackup then
+            atmosphere.Density = AtmosphereBackup.Density
+            atmosphere.Offset = AtmosphereBackup.Offset
+            atmosphere.Color = AtmosphereBackup.Color
+            atmosphere.Decay = AtmosphereBackup.Decay
+            atmosphere.Glare = AtmosphereBackup.Glare
+            atmosphere.Haze = AtmosphereBackup.Haze
+        end
     end
 end)
 
+-- FULLBRIGHT
 CriarToggleAnimado("Fullbright", pageESP, function(ligado)
     estadosESP["Fullbright"] = ligado
     if ligado then
