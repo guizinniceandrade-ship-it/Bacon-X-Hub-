@@ -776,14 +776,14 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =========================
--- SEPARADOR LIGHTING
+-- SEPARADOR LIGHTING - MESMO ESTILO DO TÍTULO
 -- =========================
 local SeparadorLighting = Instance.new("TextLabel", pageESP)
-SeparadorLighting.Size = UDim2.new(1, -8, 0, 25)
+SeparadorLighting.Size = UDim2.new(1, -8, 0, 30)
 SeparadorLighting.BackgroundTransparency = 1
-SeparadorLighting.Text = "«««««««« Lighting »»»»»»»"
-SeparadorLighting.TextColor3 = Color3.fromRGB(200,200,200)
-SeparadorLighting.Font = Enum.Font.Gotham
+SeparadorLighting.Text = "«««««««« LIGHTING »»»»»»»»»»"
+SeparadorLighting.TextColor3 = Color3.new(1,1,1)
+SeparadorLighting.Font = Enum.Font.GothamBold
 SeparadorLighting.TextSize = 15
 SeparadorLighting.TextXAlignment = Enum.TextXAlignment.Center
 SeparadorLighting.ZIndex = 4
