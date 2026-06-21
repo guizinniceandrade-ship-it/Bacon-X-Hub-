@@ -784,7 +784,7 @@ SeparadorLighting.BackgroundTransparency = 1
 SeparadorLighting.Text = "«««««««« Lighting »»»»»»»"
 SeparadorLighting.TextColor3 = Color3.fromRGB(200,200,200)
 SeparadorLighting.Font = Enum.Font.Gotham
-SeparadorLighting.TextSize = 13
+SeparadorLighting.TextSize = 15
 SeparadorLighting.TextXAlignment = Enum.TextXAlignment.Center
 SeparadorLighting.ZIndex = 4
 
