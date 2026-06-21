@@ -775,6 +775,44 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- =========================
+-- NO FOG + FULLBRIGHT
+-- =========================
+local Lighting = game:GetService("Lighting")
+local FogOriginal = {FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart}
+local BrightOriginal = {Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime, Ambient = Lighting.Ambient, OutdoorAmbient = Lighting.OutdoorAmbient, GlobalShadows = Lighting.GlobalShadows}
+
+estadosESP["No Fog"] = false
+estadosESP["Fullbright"] = false
+
+CriarToggleAnimado("No Fog", pageESP, function(ligado)
+    estadosESP["No Fog"] = ligado
+    if ligado then
+        Lighting.FogEnd = 100000
+        Lighting.FogStart = 0
+    else
+        Lighting.FogEnd = FogOriginal.FogEnd
+        Lighting.FogStart = FogOriginal.FogStart
+    end
+end)
+
+CriarToggleAnimado("Fullbright", pageESP, function(ligado)
+    estadosESP["Fullbright"] = ligado
+    if ligado then
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.Ambient = Color3.fromRGB(255,255,255)
+        Lighting.OutdoorAmbient = Color3.fromRGB(255,255,255)
+        Lighting.GlobalShadows = false
+    else
+        Lighting.Brightness = BrightOriginal.Brightness
+        Lighting.ClockTime = BrightOriginal.ClockTime
+        Lighting.Ambient = BrightOriginal.Ambient
+        Lighting.OutdoorAmbient = BrightOriginal.OutdoorAmbient
+        Lighting.GlobalShadows = BrightOriginal.GlobalShadows
+    end
+end)
+
 -- ===========================
 -- ABA LOCAL PLAYER
 -- ===========================
