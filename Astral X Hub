@@ -461,7 +461,215 @@ end
 -- ===========================
 -- ABA MAIN
 -- ===========================
+local pageMain = pages["Main"]
 
+-- =========================
+-- SEPARADOR STATUS
+-- =========================
+local SeparadorStatus = Instance.new("TextLabel", pageMain)
+SeparadorStatus.Size = UDim2.new(1, -8, 0, 30)
+SeparadorStatus.BackgroundTransparency = 1
+SeparadorStatus.Text = "«««««««« STATUS »»»»»»"
+SeparadorStatus.TextColor3 = Color3.new(1,1,1)
+SeparadorStatus.Font = Enum.Font.GothamBold
+SeparadorStatus.TextSize = 15
+SeparadorStatus.TextXAlignment = Enum.TextXAlignment.Center
+SeparadorStatus.ZIndex = 4
+
+-- =========================
+-- FRAME STATUS
+-- =========================
+local FrameStatus = Instance.new("Frame", pageMain)
+FrameStatus.Size = UDim2.new(1, -8, 0, 180)
+FrameStatus.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+FrameStatus.BorderSizePixel = 0
+Instance.new("UICorner", FrameStatus).CornerRadius = UDim.new(0, 6)
+
+local Layout = Instance.new("UIListLayout", FrameStatus)
+Layout.Padding = UDim.new(0, 5)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local Padding = Instance.new("UIPadding", FrameStatus)
+Padding.PaddingTop = UDim.new(0, 8)
+Padding.PaddingLeft = UDim.new(0, 10)
+Padding.PaddingRight = UDim.new(0, 10)
+
+-- =========================
+-- LABELS
+-- =========================
+local function CriarLabel(texto, ordem)
+    local label = Instance.new("TextLabel", FrameStatus)
+    label.Size = UDim2.new(1, 0, 0, 22)
+    label.BackgroundTransparency = 1
+    label.Text = texto
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.LayoutOrder = ordem
+    return label
+end
+
+local FPSLabel = CriarLabel("FPS: 0", 1)
+local PINGLabel = CriarLabel("PING: 0", 2)
+local HoraRealLabel = CriarLabel("HORAS: 00:00", 3)
+local PHorasLabel = CriarLabel("P. HORAS: 0h 0m 0s", 4)
+local PlayersLabel = CriarLabel("PLAYERS: 0", 5)
+local BeastLabel = CriarLabel("BEAST: Ninguém", 6)
+local PCsLabel = CriarLabel("PCs RESTANTES: 0", 7)
+
+-- =========================
+-- LÓGICA
+-- =========================
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local TempoPlayer = tick()
+local Frames = 0
+local UltimoFPS = tick()
+
+-- FPS
+RunService.RenderStepped:Connect(function()
+    Frames = Frames + 1
+    if tick() - UltimoFPS >= 1 then
+        FPSLabel.Text = "FPS: "..tostring(Frames)
+        Frames = 0
+        UltimoFPS = tick()
+    end
+end)
+
+-- Função pra achar Beast
+local function AcharBeast()
+    for _, plr in pairs(Players:GetPlayers()) do
+        local ehFera = false
+        if plr.Team then
+            local teamName = plr.Team.Name:lower()
+            ehFera = teamName:find("beast") or teamName:find("fera") or teamName:find("hunter")
+        end
+        if not ehFera and plr.Character then
+            ehFera = plr.Character:FindFirstChild("Hammer") ~= nil
+                or plr.Character:FindFirstChild("Mallet") ~= nil
+                or plr.Character:FindFirstChild("Claw") ~= nil
+        end
+        if not ehFera and plr.Character then
+            local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.DisplayName ~= plr.DisplayName then ehFera = true end
+        end
+        if ehFera then return plr.Name end
+    end
+    return "Ninguém"
+end
+
+-- Função pra contar PCs
+local function ContarPCs()
+    local total = 0
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and ehPC(obj.Name:lower()) then
+            if obj:FindFirstChild("ProximityPrompt") or obj:FindFirstChild("ClickDetector") then
+                total = total + 1
+            end
+        end
+    end
+    return total
+end
+
+-- Loop principal
+task.spawn(function()
+    while task.wait(1) do
+        -- PING
+        local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+        PINGLabel.Text = "PING: "..math.floor(ping).."ms"
+        
+        -- HORAS REAIS
+        local data = os.date("*t")
+        local hora = string.format("%02d", data.hour)
+        local minuto = string.format("%02d", data.min)
+        HoraRealLabel.Text = "HORAS: "..hora..":"..minuto
+        
+        -- P. HORAS
+        local tempoP = tick() - TempoPlayer
+        local hP = math.floor(tempoP / 3600)
+        local mP = math.floor((tempoP % 3600) / 60)
+        local sP = math.floor(tempoP % 60)
+        PHorasLabel.Text = string.format("P. HORAS: %dh %dm %ds", hP, mP, sP)
+        
+        -- PLAYERS
+        PlayersLabel.Text = "PLAYERS: "..tostring(#Players:GetPlayers())
+        
+        -- BEAST
+        BeastLabel.Text = "BEAST: "..AcharBeast()
+        
+        -- PCs
+        PCsLabel.Text = "PCs RESTANTES: "..tostring(ContarPCs())
+    end
+end)
+
+-- =========================
+-- TOGGLE HITBOX
+-- =========================
+CriarToggleAnimado("Hitbox Expandida", pageMain, function(ligado)
+    HitboxAtivada = ligado
+    if ligado then
+        AplicarHitboxNosOutros()
+        ConexaoHitbox = task.spawn(function()
+            while HitboxAtivada do
+                AplicarHitboxNosOutros()
+                task.wait(1)
+            end
+        end)
+    else
+        if ConexaoHitbox then task.cancel(ConexaoHitbox) end
+        RestaurarHitboxNosOutros()
+    end
+end)
+
+-- =========================
+-- SLIDER TAMANHO HITBOX
+-- =========================
+CriarSlider("Tamanho Hitbox", pageMain, 2, 25, 6, function(novoValor)
+    TamanhoHitbox = novoValor
+    if HitboxAtivada then
+        AplicarHitboxNosOutros()
+    end
+end)
+
+-- =========================
+-- TOGGLE MOSTRAR HITBOX
+-- =========================
+local MostrarHitbox = false
+CriarToggleAnimado("Ver Hitbox", pageMain, function(ligado)
+    MostrarHitbox = ligado
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local hb = p.Character.HumanoidRootPart:FindFirstChild("HitboxFantasma")
+            if hb then
+                hb.Transparency = ligado and 0.7 or 1
+                hb.Material = Enum.Material.ForceField
+            end
+        end
+    end
+end)
+
+-- =========================
+-- EVENTOS
+-- =========================
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function()
+        task.wait(1.5)
+        if HitboxAtivada then
+            AplicarHitboxNosOutros()
+        end
+    end)
+end)
+
+player.CharacterAdded:Connect(function(char)
+    task.wait(1)
+    local meuRoot = char:WaitForChild("HumanoidRootPart")
+    local minhaHb = meuRoot:FindFirstChild("HitboxFantasma")
+    if minhaHb then minhaHb:Destroy() end
+end)
 
 -- ===========================
 -- ABA ESP
