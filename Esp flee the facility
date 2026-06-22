@@ -1,634 +1,494 @@
--- ===========================================
--- Astral X Hub
--- ===========================================
+print("[BOT] Iniciando carregamento...")
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SoundService = game:GetService("SoundService")
+local DataStoreService = game:GetService("DataStoreService")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
 
--- =========================
--- VERIFICAÇÃO DE JOGO
--- =========================
-local MM2_PLACE_ID = 142823291
+-- Espera o PlayerGui carregar
+local playerGui = player:WaitForChild("PlayerGui", 10)
+if not playerGui then
+    warn("[BOT] ERRO: PlayerGui não carregou!")
+    return
+end
+print("[BOT] PlayerGui encontrado!")
 
-if game.PlaceId ~= MM2_PLACE_ID then
-	game:GetService("StarterGui"):SetCore("SendNotification", {
-		Title = "Astral X Hub",
-		Text = "Entre no Murder Mystery 2 para executar",
-		Duration = 6,
-	})
-	return
+-- Remove versão antiga
+if playerGui:FindFirstChild("ChatBotL4") then
+    playerGui.ChatBotL4:Destroy()
+    print("[BOT] Versão antiga removida")
 end
 
-if playerGui:FindFirstChild("AstralXHub") then
-	playerGui.AstralXHub:Destroy()
+-- =========================
+-- CÉREBRO MELHORADO
+-- =========================
+local Cerebro = {
+    nome = nil,
+    conversas = 0,
+    historicoCompleto = {},
+    vocabularioAprendido = {},
+    humor = "neutro",
+    assuntosEmAndamento = {}, -- Novo: lembra do que está falando
+    nivelInteligencia = 2 -- 1 = básico, 2 = médio, 3 = avançado
+}
+
+-- Tenta carregar DataStore, funciona sem também
+local BotMemoryStore = nil
+pcall(function()
+    BotMemoryStore = DataStoreService:GetDataStore("BotL4_".. player.UserId)
+end)
+
+-- Substituí o spawn por task.spawn (compatível com Delta)
+task.spawn(function()
+    if BotMemoryStore then
+        local success, data = pcall(function()
+            return BotMemoryStore:GetAsync("dados")
+        end)
+        if success and data then
+            Cerebro.nome = data.nome
+            Cerebro.vocabularioAprendido = data.vocabulario or {}
+            print("[BOT] Memória carregada: ".. (Cerebro.nome or "sem nome"))
+        end
+    end
+end)
+
+local NaoEntendi = {
+    "Não saquei kkkk. Me ensina com: ensina que X significa Y",
+    "Buguei um pouco 😅 Que isso significa?",
+    "Hmm? Ainda não sei, quer me ensinar?",
+    "Não conheço ainda. Me ajuda a aprender?",
+    "Traduz pra mim? Usa: quando eu digo X responda Y",
+    "Tô evoluindo, me ensina mais uma coisa?"
+}
+
+-- Respostas inteligentes prontas
+local RespostasInteligentes = {
+    ["como voce esta"] = {"Tô bem! E você?", "De boas, pronto pra conversar 🧠", "Tudo ótimo, sempre aprendendo!"},
+    ["qual seu nome"] = {"Eu sou o Bot L4! 🤖", "Pode me chamar de Bot, ou me dar um nome novo!"},
+    ["obrigado"] = {"De nada! 😎", "Que isso, tô aqui pra ajudar", "Disponha sempre!"},
+ ["oi tudo bem"] = {"E aí? Tudo certo contigo?", "Opa! Tudo ótimo por aqui e você?"},
+    ["ajuda"] = {"Claro! Você pode: \n• Me ensinar algo: ensina que X significa Y\n• Ver o que aprendi: quantas palavras\n• Resetar: apaga memoria"}
+}
+
+-- =========================
+-- FUNÇÕES PRINCIPAIS
+-- =========================
+local function SalvarNaMemoria(quem, texto)
+    table.insert(Cerebro.historicoCompleto, {
+        quem = quem,
+        texto = texto,
+        hora = os.date("%H:%M")
+    })
+    -- Mantém só últimas 200 mensagens
+    if #Cerebro.historicoCompleto > 200 then
+        table.remove(Cerebro.historicoCompleto, 1)
+    end
+
+    -- Salva na DataStore de forma segura
+    if BotMemoryStore then
+        task.spawn(function()
+            pcall(function()
+                BotMemoryStore:SetAsync("dados", {
+                    nome = Cerebro.nome,
+                    vocabulario = Cerebro.vocabularioAprendido
+                })
+            end)
+        end)
+    end
 end
+
+-- Busca palavras-chave (não só igualdade exata)
+local function BuscarNoVocabulario(msg)
+    msg = string.lower(msg)
+    -- 1. Busca exata
+    for pergunta, resposta in pairs(Cerebro.vocabularioAprendido) do
+        if string.find(msg, pergunta, 1, true) then
+            return resposta
+        end
+    end
+    -- 2. Busca parcial (mais esperto)
+    for pergunta, resposta in pairs(Cerebro.vocabularioAprendido) do
+        local palavras = string.split(pergunta, " ")
+        local acertos = 0
+        for _, p in ipairs(palavras) do
+            if #p > 2 and string.find(msg, p, 1, true) then
+                acertos += 1
+            end
+        end
+        if acertos >= math.ceil(#palavras * 0.7) then -- 70% de semelhança
+            return resposta
+        end
+    end
+    return nil
+end
+
+-- Calculadora segura (substituí loadstring que é bloqueado)
+local function CalcularExpressao(expr)
+    expr = string.gsub(expr, "%s", "")
+    -- Permite só números e operadores básicos
+    if not string.match(expr, "^[%d%+%-%*/%.%(%)]+$") then return nil end
+
+    -- Implementação simples sem loadstring
+    local funcoes = {
+        ["+"] = function(a,b) return a+b end,
+        ["-"] = function(a,b) return a-b end,
+        ["*"] = function(a,b) return a*b end,
+        ["/"] = function(a,b) if b==0 then return "Erro: divisão por zero" end return a/b end
+    }
+
+    -- Resolve parênteses primeiro
+    while string.find(expr, "%(") do
+        local dentro = string.match(expr, "%(([^%(%)]+)%)")
+        if not dentro then break end
+        local res = CalcularExpressao(dentro)
+        expr = string.gsub(expr, "%("..dentro.."%)", tostring(res), 1)
+    end
+
+    -- Resolve multiplicação e divisão
+    while string.find(expr, "[%*/]") do
+        local a, op, b = string.match(expr, "(%d+%.?%d*)([%*/])(%d+%.?%d*)")
+        if not a then break end
+        local resultado = funcoes[op](tonumber(a), tonumber(b))
+        expr = string.gsub(expr, a..op..b, tostring(resultado), 1)
+    end
+
+    -- Resolve soma e subtração
+    while string.find(expr, "[%+%-]", 2) do -- ignora o primeiro sinal se for negativo
+        local a, op, b = string.match(expr, "(%d+%.?%d*)([%+%-])(%d+%.?%d*)")
+        if not a then break end
+        local resultado = funcoes[op](tonumber(a), tonumber(b))
+        expr = string.gsub(expr, a..op..b, tostring(resultado), 1)
+    end
+
+    return tonumber(expr) or expr
+end
+
+-- =========================
+-- GERA RESPOSTA INTELIGENTE
+-- =========================
+local function GerarResposta(msg)
+    local msgOriginal = msg
+    msg = string.lower(msg)
+    Cerebro.conversas += 1
+
+    -- ========== 1. SISTEMA DE ENSINO (MELHORADO) ==========
+    if string.find(msg, "ensina que") or string.find(msg, "quando eu digo") or string.find(msg, "aprende") then
+        local pergunta = string.match(msgOriginal, "[Ee]nsina que (.+) significa")
+                      or string.match(msgOriginal, "[Qq]uando eu digo (.+) responda")
+                      or string.match(msgOriginal, "[Qq]uando eu digo (.+) resposta")
+                      or string.match(msgOriginal, "[Aa]prende que (.+) =")
+
+        local resposta = string.match(msgOriginal, "significa (.+)")
+                      or string.match(msgOriginal, "responda (.+)")
+                      or string.match(msgOriginal, "resposta (.+)")
+                      or string.match(msgOriginal, "= (.+)")
+
+        if pergunta and resposta then
+            pergunta = string.lower(string.gsub(pergunta, "^%s+", ""))
+            pergunta = string.gsub(pergunta, "%s+$", "")
+            Cerebro.vocabularioAprendido[pergunta] = resposta
+            SalvarNaMemoria("sistema", "aprendeu: "..pergunta)
+            return "✅ Aprendi direitinho! Quando tu disser '".. pergunta.. "' eu respondo '".. resposta.. "' 🧠"
+        else
+            return "❌ Formato errado. Usa: **ensina que sol significa calor**"
+        end
+    end
+
+    -- ========== 2. LEMBRAR HISTÓRICO (MAIS COMPLETO) ==========
+    if string.find(msg, "que eu falei") or string.find(msg, "lembra") or string.find(msg, "o que eu disse") then
+        -- Última mensagem
+        if string.find(msg, "ultima") or string.find(msg, "última") then
+            for i = #Cerebro.historicoCompleto, 1, -1 do
+                if Cerebro.historicoCompleto[i].quem == "player" then
+                    return "📝 Última coisa que tu falou: '".. Cerebro.historicoCompleto[i].texto.. "' às ".. Cerebro.historicoCompleto[i].hora
+                end
+            end
+        end
+        -- Todas as mensagens
+        local ultimas = ""
+        local cont = 0
+        for i = #Cerebro.historicoCompleto, 1, -1 do
+            if Cerebro.historicoCompleto[i].quem == "player" then
+                cont += 1
+                ultimas = ultimas .. "\n• ".. Cerebro.historicoCompleto[i].texto
+                if cont >= 3 then break end
+            end
+        end
+        if ultimas ~= "" then
+            return "🧠 Lembro dessas que tu falou: ".. ultimas
+        else
+            return "A gente ainda não conversou muito kkkk"
+        end
+    end
+
+    -- ========== 3. RESPOSTAS PRONTAS E INTELIGENTES ==========
+    for padrao, respostas in pairs(RespostasInteligentes) do
+        if string.find(msg, padrao, 1, true) then
+            return respostas[math.random(1, #respostas)]
+        end
+    end
+
+    -- ========== 4. BUSCA NO VOCABULÁRIO ==========
+    local respostaAprendida = BuscarNoVocabulario(msg)
+    if respostaAprendida then
+        return respostaAprendida
+    end
+
+    -- ========== 5. CALCULADORA CORRIGIDA ==========
+    local calculo = string.match(msg, "^[%d%+%-%*/%.%s%(%)]+$")
+    if calculo then
+        local resultado = CalcularExpressao(calculo)
+        if resultado then
+            return "🧮 Resultado: ".. resultado
+        end
+    end
+
+    -- ========== 6. SISTEMA DE NOME ==========
+    if string.find(msg, "meu nome e") or string.find(msg, "meu nome é") or string.find(msg, "me chama de") then
+        local nome = string.match(msgOriginal, "[Mm]eu nome [eé] ([%w_À-ú]+)")
+                  or string.match(msgOriginal, "[Mm]e chama de ([%w_À-ú]+)")
+        if nome then
+            Cerebro.nome = nome
+            SalvarNaMemoria("sistema", "nome: "..nome)
+            return "✅ Salvei, ".. nome.. "! Agora sempre vou te chamar assim 🧠"
+        end
+    end
+
+    if string.find(msg, "qual meu nome") or string.find(msg, "quem sou eu") then
+        if Cerebro.nome then
+            return "Tu é o ".. Cerebro.nome.. " 🫡"
+        else
+            return "Não sei ainda. Fala: **meu nome é [seu nome]**"
+        end
+    end
+
+    -- ========== 7. COMANDOS AVANÇADOS ==========
+    if string.find(msg, "apaga memoria") or string.find(msg, "esquece tudo") then
+        Cerebro.vocabularioAprendido = {}
+        Cerebro.historicoCompleto = {}
+        Cerebro.nome = nil
+        return "🗑️ Memória resetada! Sou novo em folha, não lembro de nada kkkk"
+    end
+
+    if string.find(msg, "quant") and string.find(msg, "palavra") then
+        local qtd = 0
+        for _ in pairs(Cerebro.vocabularioAprendido) do qtd += 1 end
+        return "📊 Estatísticas:\n• Aprendi: ".. qtd.. " coisas\n• Lembro de: ".. #Cerebro.historicoCompleto.. " mensagens\n• Conversamos: ".. Cerebro.conversas.. " vezes"
+    end
+
+    if string.find(msg, "piada") then
+        local piadas = {
+            "Por que o dev foi no médico? Com dor de back-end 😂",
+            "O que o HTML disse pro CSS? Que estilo é esse meu amigo? 😂",
+            "Por que o robô não tem amigos? Porque ele é muito 'rígido' kkk"
+        }
+        return piadas[math.random(1, #piadas)]
+    end
+
+    if string.find(msg, "dado") then
+        return "🎲 Número sorteado: ".. math.random(1, 6)
+    end
+
+    if string.find(msg, "hora") or string.find(msg, "horas") then
+        return "🕒 Agora são: ".. os.date("%H:%M:%S")
+    end
+
+    if string.find(msg, "data") or string.find(msg, "dia") then
+        return "📅 Hoje é: ".. os.date("%d/%m/%Y")
+    end
+
+    -- ========== 8. INTERAÇÕES SOCIAIS ==========
+    if string.match(msg, "k+") or string.match(msg, "h+a+h+") or string.match(msg, "rs+") or string.match(msg, "😂") then
+        local qtdK = #string.match(msg, "k+") or 3
+        return string.rep("k", math.clamp(qtdK + math.random(1,3), 4, 15)).. " 😂🤣"
+    end
+
+    if string.match(msg, "^oi") or string.match(msg, "^ola") or string.match(msg, "^salve") or string.match(msg, "^e ai") or string.match(msg, "^opa") then
+        local resp = {"E aí", "Opa", "Salve", "Fala aí", "Beleza?"}[math.random(1,5)]
+        if Cerebro.nome then resp = resp.. " ".. Cerebro.nome.. "! Tudo bem?" end
+        return resp
+    end
+
+    -- ========== 9. NÃO ENTENDEU (MELHORADO) ==========
+    return NaoEntendi[math.random(1, #NaoEntendi)]
+end
+
+-- =========================
+-- INTERFACE (IGUAL, MAS CORRIGIDA)
+-- =========================
+print("[BOT] Criando interface...")
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AstralXHub"
+ScreenGui.Name = "ChatBotL4"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = playerGui
-ScreenGui.IgnoreGuiInset = true
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 320, 0, 400)
+Frame.Position = UDim2.new(1, -340, 1, -420)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = Frame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(138, 43, 226)
+UIStroke.Thickness = 2
+UIStroke.Parent = Frame
+
+local Titulo = Instance.new("TextLabel")
+Titulo.Size = UDim2.new(1, 0, 0, 40)
+Titulo.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+Titulo.Text = "Bot L4 - Super Inteligente 🧠"
+Titulo.TextColor3 = Color3.new(1,1,1)
+Titulo.Font = Enum.Font.GothamBold
+Titulo.TextSize = 14
+Titulo.Parent = Frame
+
+local TituloCorner = Instance.new("UICorner")
+TituloCorner.CornerRadius = UDim.new(0, 12)
+TituloCorner.Parent = Titulo
+
+local MemoriaLabel = Instance.new("TextLabel")
+MemoriaLabel.Size = UDim2.new(1, -40, 0, 20)
+MemoriaLabel.Position = UDim2.new(0, 8, 0, 42)
+MemoriaLabel.BackgroundTransparency = 1
+MemoriaLabel.Text = "Memória: carregando..."
+MemoriaLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+MemoriaLabel.Font = Enum.Font.Gotham
+MemoriaLabel.TextSize = 10
+MemoriaLabel.TextXAlignment = Enum.TextXAlignment.Left
+MemoriaLabel.Parent = Frame
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -30, 0, 7)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.Parent = Titulo
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+
+local ChatScroll = Instance.new("ScrollingFrame")
+ChatScroll.Size = UDim2.new(1, -16, 1, -115)
+ChatScroll.Position = UDim2.new(0, 8, 0, 65)
+ChatScroll.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+ChatScroll.BorderSizePixel = 0
+ChatScroll.ScrollBarThickness = 4
+ChatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+ChatScroll.Parent = Frame
+
+local ChatCorner = Instance.new("UICorner")
+ChatCorner.CornerRadius = UDim.new(0, 8)
+ChatCorner.Parent = ChatScroll
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 6)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = ChatScroll
+
+local InputBox = Instance.new("TextBox")
+InputBox.Size = UDim2.new(1, -50, 0, 35)
+InputBox.Position = UDim2.new(0, 8, 1, -43)
+InputBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+InputBox.PlaceholderText = "Ensina algo ou conversa..."
+InputBox.Text = ""
+InputBox.TextColor3 = Color3.new(1,1,1)
+InputBox.Font = Enum.Font.Gotham
+InputBox.TextSize = 12
+InputBox.ClearTextOnFocus = false
+InputBox.Parent = Frame
+
+local InputCorner = Instance.new("UICorner")
+InputCorner.CornerRadius = UDim.new(0, 6)
+InputCorner.Parent = InputBox
+
+local SendBtn = Instance.new("TextButton")
+SendBtn.Size = UDim2.new(0, 35, 0, 35)
+SendBtn.Position = UDim2.new(1, -43, 1, -43)
+SendBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+SendBtn.Text = ">"
+SendBtn.TextColor3 = Color3.new(1,1,1)
+SendBtn.Font = Enum.Font.GothamBold
+SendBtn.TextSize = 16
+SendBtn.Parent = Frame
+
+local SendCorner = Instance.new("UICorner")
+SendCorner.CornerRadius = UDim.new(0, 6)
+SendCorner.Parent = SendBtn
 
 -- =========================
--- BOTÃO DE ABRIR/FECHAR
+-- SISTEMA DE CHAT
 -- =========================
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Size = UDim2.new(0, 45, 0, 45)
-ToggleButton.Position = UDim2.new(0, 20, 0, 20)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-ToggleButton.BorderSizePixel = 0
-ToggleButton.AutoButtonColor = false
-ToggleButton.Text = ""
-ToggleButton.Parent = ScreenGui
-
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 12)
-btnCorner.Parent = ToggleButton
-
-local btnStroke = Instance.new("UIStroke")
-btnStroke.Color = Color3.new(1,1,1)
-btnStroke.Thickness = 2
-btnStroke.Parent = ToggleButton
-
-local btnIcon = Instance.new("ImageLabel")
-btnIcon.Size = UDim2.new(0, 34, 0, 34)
-btnIcon.Position = UDim2.new(0.5, -17, 0.5, -17)
-btnIcon.BackgroundTransparency = 1
-btnIcon.Image = "rbxassetid://133983783420812"
-btnIcon.ZIndex = 2
-btnIcon.Parent = ToggleButton
-
-ToggleButton.Active = true
-ToggleButton.Draggable = true
-
--- =========================
--- PAINEL PRINCIPAL
--- =========================
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 550, 0, 350)
-MainFrame.Position = UDim2.new(0.5, -275, 1.5, -175)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = true
-MainFrame.Visible = true
-MainFrame.Parent = ScreenGui
-
-local frameCorner = Instance.new("UICorner")
-frameCorner.CornerRadius = UDim.new(0, 14)
-frameCorner.Parent = MainFrame
-
-local frameStroke = Instance.new("UIStroke")
-frameStroke.Color = Color3.new(1,1,1)
-frameStroke.Thickness = 2
-frameStroke.Parent = MainFrame
-
-MainFrame.Active = true
-MainFrame.Draggable = true
-
--- =========================
--- FUNDO DE ESTRELAS
--- =========================
-local StarsContainer = Instance.new("Frame")
-StarsContainer.Name = "StarsContainer"
-StarsContainer.Size = UDim2.new(1, 0, 1, 0)
-StarsContainer.BackgroundTransparency = 1
-StarsContainer.ZIndex = 1
-StarsContainer.Parent = MainFrame
-
-local stars = {}
-for i = 1, 50 do
-	local star = Instance.new("Frame")
-	star.Size = UDim2.new(0, math.random(1, 2), 0, math.random(1, 2))
-	star.Position = UDim2.new(math.random(), 0, math.random(), 0)
-	star.BackgroundColor3 = Color3.new(1,1,1)
-	star.BorderSizePixel = 0
-	star.BackgroundTransparency = math.random(0, 7) / 10
-	star.ZIndex = 1
-	star.Parent = StarsContainer
-
-	table.insert(stars, {
-		obj = star,
-		speedX = (math.random(2, 6)) / 1000,
-		speedY = (math.random(2, 6)) / 1000,
-	})
+local function AtualizarMemoriaLabel()
+    local qtd = 0
+    for _ in pairs(Cerebro.vocabularioAprendido) do qtd += 1 end
+    MemoriaLabel.Text = "Memória: ".. qtd.. " | ".. #Cerebro.historicoCompleto.. " msgs | Lv.".. Cerebro.nivelInteligencia
 end
 
-task.spawn(function()
-	while MainFrame.Parent do
-		for _, s in ipairs(stars) do
-			local pos = s.obj.Position
-			local newX = pos.X.Scale + s.speedX
-			local newY = pos.Y.Scale + s.speedY
-			if newX > 1 then newX = 0 end
-			if newY > 1 then newY = 0 end
-			s.obj.Position = UDim2.new(newX, 0, newY, 0)
-		end
-		task.wait(0.03)
-	end
+local function AddMensagem(texto, isUser)
+    local msg = Instance.new("TextLabel")
+    msg.Size = UDim2.new(1, -8, 0, 0)
+    msg.BackgroundColor3 = isUser and Color3.fromRGB(138, 43, 226) or Color3.fromRGB(40, 40, 40)
+    msg.Text = texto
+    msg.TextColor3 = Color3.new(1,1,1)
+    msg.Font = Enum.Font.Gotham
+    msg.TextSize = 12
+    msg.TextWrapped = true
+    msg.TextXAlignment = isUser and Enum.TextXAlignment.Right or Enum.TextXAlignment.Left
+    msg.AutomaticSize = Enum.AutomaticSize.Y
+    msg.Parent = ChatScroll
+
+    local MsgCorner = Instance.new("UICorner")
+    MsgCorner.CornerRadius = UDim.new(0, 6)
+    MsgCorner.Parent = msg
+
+    local Padding = Instance.new("UIPadding")
+    Padding.PaddingTop = UDim.new(0, 6)
+    Padding.PaddingBottom = UDim.new(0, 6)
+    Padding.PaddingLeft = UDim.new(0, 8)
+    Padding.PaddingRight = UDim.new(0, 8)
+    Padding.Parent = msg
+
+    task.wait()
+    ChatScroll.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 10)
+    ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.CanvasSize.Y.Offset)
+end
+
+local function EnviarMensagem()
+    if InputBox.Text == "" then return end
+    local msgUser = InputBox.Text
+    AddMensagem("Você: ".. msgUser, true)
+    SalvarNaMemoria("player", msgUser)
+    InputBox.Text = ""
+    task.wait(0.1)
+    local resposta = GerarResposta(msgUser)
+    SalvarNaMemoria("bot", resposta)
+    AddMensagem("Bot: ".. resposta, false)
+    AtualizarMemoriaLabel()
+end
+
+SendBtn.MouseButton1Click:Connect(EnviarMensagem)
+InputBox.FocusLost:Connect(function(enter)
+    if enter then EnviarMensagem() end
+end)
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    print("[BOT] Interface fechada")
 end)
 
--- =========================
--- TÍTULO
--- =========================
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0, 250, 0, 30)
-Title.Position = UDim2.new(0, 15, 0, 10)
-Title.BackgroundTransparency = 1
-Title.Text = "Astral X Hub"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 20
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 3
-Title.Parent = MainFrame
+AddMensagem("🤖 **Bot L4 Super Inteligente** ONLINE 🧠\n\n✅ Agora busco palavras parecidas\n✅ Calculo sem travar\n✅ Lembro de mais detalhes\n✅ Tenho mais piadas e respostas\n\nMe ensina algo novo!", false)
+AtualizarMemoriaLabel()
 
--- =========================
--- ABAS
--- =========================
-local TabContainer = Instance.new("Frame")
-TabContainer.Size = UDim2.new(0, 130, 0, 170)
-TabContainer.Position = UDim2.new(0, 10, 0, 50)
-TabContainer.BackgroundTransparency = 1
-TabContainer.ZIndex = 3
-TabContainer.Parent = MainFrame
-
-local TabListLayout = Instance.new("UIListLayout")
-TabListLayout.Padding = UDim.new(0, 8)
-TabListLayout.Parent = TabContainer
-
-local Abas = {
-    {Nome = "Main", Texto = "Main"},
-    {Nome = "ESP", Texto = "ESP"},
-    {Nome = "LocalPlayer", Texto = "Local Player"},
-    {Nome = "Notificacoes", Texto = "Notificações"},
-}
-
-local tabButtons = {}
-
-for _, aba in ipairs(Abas) do
-	local tabBtn = Instance.new("TextButton")
-	tabBtn.Size = UDim2.new(1, 0, 0, 42)
-	tabBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-	tabBtn.BorderSizePixel = 0
-	tabBtn.Text = aba.Texto
-	tabBtn.TextColor3 = Color3.new(1,1,1)
-	tabBtn.Font = Enum.Font.Gotham
-	tabBtn.TextSize = 14
-	tabBtn.AutoButtonColor = false
-	tabBtn.ZIndex = 3
-	tabBtn.Parent = TabContainer
-
-	local tabCorner = Instance.new("UICorner")
-	tabCorner.CornerRadius = UDim.new(0, 8)
-	tabCorner.Parent = tabBtn
-
-	local tabStroke = Instance.new("UIStroke")
-	tabStroke.Color = Color3.new(1,1,1)
-	tabStroke.Thickness = 1.8
-	tabStroke.Transparency = 1
-	tabStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	tabStroke.Parent = tabBtn
-
-	tabButtons[aba.Nome] = {Botao = tabBtn, Stroke = tabStroke}
-end
-
--- =========================
--- PERFIL
--- =========================
-local ProfileFrame = Instance.new("Frame")
-ProfileFrame.Size = UDim2.new(0, 130, 0, 50)
-ProfileFrame.Position = UDim2.new(0, 10, 1, -60)
-ProfileFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ProfileFrame.BorderSizePixel = 0
-ProfileFrame.ZIndex = 3
-ProfileFrame.Parent = MainFrame
-
-local profileCorner = Instance.new("UICorner")
-profileCorner.CornerRadius = UDim.new(0, 8)
-profileCorner.Parent = ProfileFrame
-
-local profileStroke = Instance.new("UIStroke")
-profileStroke.Color = Color3.new(1,1,1)
-profileStroke.Thickness = 1.5
-profileStroke.Parent = ProfileFrame
-
-local AvatarImage = Instance.new("ImageLabel")
-AvatarImage.Size = UDim2.new(0, 36, 0, 36)
-AvatarImage.Position = UDim2.new(0, 7, 0, 7)
-AvatarImage.BackgroundTransparency = 1
-AvatarImage.ZIndex = 4
-AvatarImage.Parent = ProfileFrame
-
-local avatarCorner = Instance.new("UICorner")
-avatarCorner.CornerRadius = UDim.new(1, 0)
-avatarCorner.Parent = AvatarImage
-
-local ok, content = pcall(function()
-	return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
-end)
-if ok then
-	AvatarImage.Image = content
-end
-
-local NameLabel = Instance.new("TextLabel")
-NameLabel.Size = UDim2.new(0, 80, 0, 36)
-NameLabel.Position = UDim2.new(0, 50, 0, 7)
-NameLabel.BackgroundTransparency = 1
-NameLabel.Text = player.Name
-NameLabel.TextColor3 = Color3.new(1,1,1)
-NameLabel.Font = Enum.Font.Gotham
-NameLabel.TextSize = 13
-NameLabel.TextXAlignment = Enum.TextXAlignment.Left
-NameLabel.ZIndex = 4
-NameLabel.Parent = ProfileFrame
-
--- =========================
--- ÁREA DE CONTEÚDO
--- =========================
-local ContentFrame = Instance.new("Frame")
-ContentFrame.Size = UDim2.new(0, 380, 0, 280)
-ContentFrame.Position = UDim2.new(0, 150, 0, 50)
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.ZIndex = 3
-ContentFrame.Parent = MainFrame
-
-local pages = {}
-for _, aba in ipairs(Abas) do
-	local page = Instance.new("ScrollingFrame")
-	page.Size = UDim2.new(1, 0, 1, 0)
-	page.BackgroundTransparency = 1
-	page.Visible = false
-	page.ZIndex = 3
-	page.ScrollBarThickness = 4
-    page.ScrollBarImageColor3 = Color3.new(1,1,1)
-	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	page.CanvasSize = UDim2.new(0, 0, 0, 0)
-	page.Parent = ContentFrame
-
-	local pageLayout = Instance.new("UIListLayout")
-	pageLayout.Padding = UDim.new(0, 8)
-	pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	pageLayout.Parent = page
-
-	local pagePadding = Instance.new("UIPadding")
-	pagePadding.PaddingTop = UDim.new(0, 4)
-	pagePadding.PaddingLeft = UDim.new(0, 4)
-	pagePadding.PaddingRight = UDim.new(0, 4)
-	pagePadding.Parent = page
-
-	pages[aba.Nome] = page
-end
-
--- =========================
--- FUNÇÕES DE CRIAÇÃO UI
--- =========================
-local function CriarToggleAnimado(texto, pai, funcao)
-    local ToggleFrame = Instance.new("Frame", pai)
-    ToggleFrame.Size = UDim2.new(1, -8, 0, 36)
-    ToggleFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
-    ToggleFrame.BorderSizePixel = 0
-    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0,8)
-
-    local Texto = Instance.new("TextLabel", ToggleFrame)
-    Texto.Size = UDim2.new(1, -60, 1, 0)
-    Texto.Position = UDim2.new(0, 12, 0, 0)
-    Texto.BackgroundTransparency = 1
-    Texto.Text = texto
-    Texto.TextColor3 = Color3.new(1,1,1)
-    Texto.Font = Enum.Font.Gotham
-    Texto.TextSize = 14
-    Texto.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Botao = Instance.new("TextButton", ToggleFrame)
-    Botao.Size = UDim2.new(0, 46, 0, 24)
-    Botao.Position = UDim2.new(1, -54, 0.5, -12)
-    Botao.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    Botao.BorderSizePixel = 0
-    Botao.Text = ""
-    Botao.AutoButtonColor = false
-    Botao.ZIndex = 5
-    Instance.new("UICorner", Botao).CornerRadius = UDim.new(1, 0)
-
-    local Bolinha = Instance.new("Frame", Botao)
-    Bolinha.Size = UDim2.new(0, 18, 0, 18)
-    Bolinha.Position = UDim2.new(0, 3, 0.5, -9)
-    Bolinha.BackgroundColor3 = Color3.new(1,1,1)
-    Bolinha.BorderSizePixel = 0
-    Bolinha.ZIndex = 6
-    Instance.new("UICorner", Bolinha).CornerRadius = UDim.new(1, 0)
-
-    local Ativado = false
-    local tween = TweenInfo.new(0.25, Enum.EasingStyle.Quad)
-
-    Botao.MouseButton1Click:Connect(function()
-        Ativado = not Ativado
-        if Ativado then
-            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.new(1,1,1)}):Play()
-            TweenService:Create(Bolinha, tween, {Position = UDim2.new(1, -21, 0.5, -9), BackgroundColor3 = Color3.fromRGB(20,20,20)}):Play()
-        else
-            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.fromRGB(30,30,30)}):Play()
-            TweenService:Create(Bolinha, tween, {Position = UDim2.new(0, 3, 0.5, -9), BackgroundColor3 = Color3.new(1,1,1)}):Play()
-        end
-        funcao(Ativado)
-    end)
-    return ToggleFrame
-end
-
-local function CriarSlider(texto, pai, min, max, padrao, funcao)
-    local SliderFrame = Instance.new("Frame", pai)
-    SliderFrame.Size = UDim2.new(1, -8, 0, 60)
-    SliderFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
-    SliderFrame.BorderSizePixel = 0
-    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0,8)
-
-    local Texto = Instance.new("TextLabel", SliderFrame)
-    Texto.Size = UDim2.new(1, -50, 0, 20)
-    Texto.Position = UDim2.new(0, 10, 0, 5)
-    Texto.BackgroundTransparency = 1
-    Texto.Text = texto
-    Texto.TextColor3 = Color3.new(1,1,1)
-    Texto.Font = Enum.Font.Gotham
-    Texto.TextSize = 13
-    Texto.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Valor = Instance.new("TextLabel", SliderFrame)
-    Valor.Size = UDim2.new(0, 40, 0, 20)
-    Valor.Position = UDim2.new(1, -45, 0, 5)
-    Valor.BackgroundTransparency = 1
-    Valor.Text = tostring(padrao)
-    Valor.TextColor3 = Color3.new(1,1,1)
-    Valor.Font = Enum.Font.GothamBold
-    Valor.TextSize = 13
-    Valor.TextXAlignment = Enum.TextXAlignment.Right
-
-    local BarraFundo = Instance.new("Frame", SliderFrame)
-    BarraFundo.Size = UDim2.new(1, -20, 0, 10)
-    BarraFundo.Position = UDim2.new(0, 10, 1, -20)
-    BarraFundo.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    BarraFundo.BorderSizePixel = 0
-    BarraFundo.ZIndex = 2
-    Instance.new("UICorner", BarraFundo).CornerRadius = UDim.new(1,0)
-
-    local porcentagemInicial = (padrao - min) / (max - min)
-    local BarraCheia = Instance.new("Frame", BarraFundo)
-    BarraCheia.Size = UDim2.new(porcentagemInicial, 0, 1, 0)
-    BarraCheia.BackgroundColor3 = Color3.new(1,1,1)
-    BarraCheia.BorderSizePixel = 0
-    BarraCheia.ZIndex = 3
-    Instance.new("UICorner", BarraCheia).CornerRadius = UDim.new(1,0)
-
-    local arrastando = false
-    local function AtualizarSlider(posicaoTela)
-        local posX = posicaoTela.X - BarraFundo.AbsolutePosition.X
-        local tamanho = BarraFundo.AbsoluteSize.X
-        local porcentagem = math.clamp(posX / tamanho, 0, 1)
-        local valor = math.floor(min + (max - min) * porcentagem + 0.5)
-        BarraCheia.Size = UDim2.new(porcentagem, 0, 1, 0)
-        Valor.Text = tostring(valor)
-        funcao(valor)
-    end
-
-    BarraFundo.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            arrastando = true
-            AtualizarSlider(input.Position)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            arrastando = false
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if arrastando and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            AtualizarSlider(input.Position)
-        end
-    end)
-
-    return SliderFrame
-end
-
--- ===========================
--- ABA MAIN
--- ===========================
-local pageMain = pages["Main"]
-
--- =========================
--- SEPARADOR AUTO FARM
--- =========================
-local SeparadorFarm = Instance.new("TextLabel", pageMain)
-SeparadorFarm.Size = UDim2.new(1, -8, 0, 30)
-SeparadorFarm.BackgroundTransparency = 1
-SeparadorFarm.Text = "««««« Auto Farm Coin Tween »»»»»»"
-SeparadorFarm.TextColor3 = Color3.new(1,1,1)
-SeparadorFarm.Font = Enum.Font.GothamBold
-SeparadorFarm.TextSize = 15
-SeparadorFarm.TextXAlignment = Enum.TextXAlignment.Center
-SeparadorFarm.ZIndex = 4
-
--- =========================
--- VARIÁVEIS DO AUTO FARM
--- =========================
-local AutoFarmAtivo = false
-local VelocidadeFarm = 20
-local ConexaoFarm = nil
-local ConexaoNoclip = nil
-
--- Função pra pegar coin mais próxima
-local function PegarCoinMaisProxima()
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
-    
-    local root = char.HumanoidRootPart
-    local coinMaisProxima = nil
-    local menorDist = math.huge
-    
-    for _, coin in pairs(Workspace:GetDescendants()) do
-        if coin.Name == "Coin_Server" or coin.Name == "Coin" then
-            if coin:IsA("BasePart") and coin.Parent then
-                local dist = (root.Position - coin.Position).Magnitude
-                if dist < menorDist then
-                    menorDist = dist
-                    coinMaisProxima = coin
-                end
-            end
-        end
-    end
-    
-    return coinMaisProxima
-end
-
--- =========================
--- AUTO FARM COIN (BOTÃO)
--- =========================
-CriarToggleAnimado("Auto Farm Coin", pageMain, function(ligado)
-    AutoFarmAtivo = ligado
-    
-    if ligado then
-        -- Liga Noclip
-        ConexaoNoclip = RunService.Stepped:Connect(function()
-            if player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-        
-        -- Liga Farm
-        ConexaoFarm = task.spawn(function()
-            while AutoFarmAtivo do
-                local char = player.Character
-                local humanoid = char and char:FindFirstChild("Humanoid")
-                local root = char and char:FindFirstChild("HumanoidRootPart")
-                
-                if root and humanoid and humanoid.Health > 0 then
-                    humanoid.WalkSpeed = VelocidadeFarm
-                    local coin = PegarCoinMaisProxima()
-                    
-                    if coin then
-                        humanoid:MoveTo(coin.Position)
-                        -- Vai direto sem parar, sem timeout
-                        repeat
-                            task.wait()
-                        until not AutoFarmAtivo or not coin.Parent or (root.Position - coin.Position).Magnitude < 4
-                    end
-                end
-                task.wait()
-            end
-        end)
-    else
-        -- Desliga Noclip
-        if ConexaoNoclip then
-            ConexaoNoclip:Disconnect()
-            ConexaoNoclip = nil
-        end
-        
-        -- Desliga Farm
-        if ConexaoFarm then
-            task.cancel(ConexaoFarm)
-            ConexaoFarm = nil
-        end
-        
-        -- Para e volta velocidade normal
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
-            local humanoid = player.Character.Humanoid
-            humanoid:MoveTo(player.Character.HumanoidRootPart.Position)
-            humanoid.WalkSpeed = 16
-        end
-    end
-end)
-
--- =========================
--- VELOCIDADE DO FARM (SLIDER)
--- =========================
-CriarSlider("Velocidade do Farm", pageMain, 16, 30, 20, function(valor)
-    VelocidadeFarm = valor
-    -- Atualiza na hora se tiver ligado
-    if AutoFarmAtivo and player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.WalkSpeed = valor
-    end
-end)
-
--- Atualiza velocidade quando respawna
-player.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid")
-    task.wait(0.5)
-    if AutoFarmAtivo then
-        char.Humanoid.WalkSpeed = VelocidadeFarm
-    end
-end)
-
-
--- ===========================
--- ABA ESP
--- ===========================
-
-
-
--- ============================
--- ABA LOCAL PLAYER
--- ============================
-
-
--- ============================
--- ABA NOTIFICAÇÕES 
--- ============================
-
-
--- ===============================================================
--- ===============================================================
-
-
-
-
--- =========================
--- SISTEMA DE NAVEGAÇÃO
--- =========================
-local function selectTab(name)
-	for tabName, dados in pairs(tabButtons) do
-		local isSelected = (tabName == name)
-		dados.Botao.BackgroundColor3 = isSelected and Color3.fromRGB(35, 35, 35) or Color3.fromRGB(20, 20, 20)
-		if dados.Stroke then dados.Stroke.Transparency = isSelected and 0 or 1 end
-	end
-	for pageName, page in pairs(pages) do
-		page.Visible = (pageName == name)
-	end
-end
-
-local TabSound = Instance.new("Sound")
-TabSound.SoundId = "rbxassetid://101301588142598"
-TabSound.Volume = 0.5
-TabSound.Parent = ScreenGui
-
-for name, dados in pairs(tabButtons) do
-	dados.Botao.MouseButton1Click:Connect(function()
-		selectTab(name)
-		TabSound:Play()
-	end)
-end
-
-selectTab("Main")
-
--- =========================
--- ANIMAÇÃO DE ABRIR/FECHAR
--- =========================
-local ToggleSound = Instance.new("Sound")
-ToggleSound.SoundId = "rbxassetid://140207837688369"
-ToggleSound.Volume = 0.5
-ToggleSound.Parent = ScreenGui
-
-local isOpen = false
-local animTweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-
-task.delay(0.1, function()
-    TweenService:Create(MainFrame, animTweenInfo, {Position = UDim2.new(0.5, -275, 0.5, -175)}):Play()
-    isOpen = true
-end)
-
-ToggleButton.MouseButton1Click:Connect(function()
-	ToggleSound:Play()
-	isOpen = not isOpen
-	if isOpen then
-		MainFrame.Visible = true
-		MainFrame.Position = UDim2.new(0.5, -275, 1.5, -175)
-		TweenService:Create(MainFrame, animTweenInfo, {Position = UDim2.new(0.5, -275, 0.5, -175)}):Play()
-	else
-		local tweenFechar = TweenService:Create(MainFrame, animTweenInfo, {Position = UDim2.new(0.5, -275, 1.5, -175)})
-		tweenFechar:Play()
-		tweenFechar.Completed:Connect(function()
-            MainFrame.Visible = false
-        end)
-	end
-end)
+print("[BOT] ✅ Carregado com sucesso! Olha no canto inferior direito")
