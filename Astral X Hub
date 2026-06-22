@@ -461,6 +461,84 @@ end
 -- ===========================
 -- ABA MAIN
 -- ===========================
+local pageMain = pages["Main"]
+
+-- =========================
+-- SEPARADOR STATUS
+-- =========================
+local SeparadorStatus = Instance.new("TextLabel", pageMain)
+SeparadorStatus.Size = UDim2.new(1, -8, 0, 30)
+SeparadorStatus.BackgroundTransparency = 1
+SeparadorStatus.Text = "«««««««« STATUS »»»»»»"
+SeparadorStatus.TextColor3 = Color3.new(1,1,1)
+SeparadorStatus.Font = Enum.Font.GothamBold
+SeparadorStatus.TextSize = 15
+SeparadorStatus.TextXAlignment = Enum.TextXAlignment.Center
+SeparadorStatus.ZIndex = 4
+
+-- =========================
+-- FRAME STATUS
+-- =========================
+local FrameStatus = Instance.new("Frame", pageMain)
+FrameStatus.Size = UDim2.new(1, -8, 0, 60)
+FrameStatus.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+FrameStatus.BorderSizePixel = 0
+Instance.new("UICorner", FrameStatus).CornerRadius = UDim.new(0, 6)
+
+local Layout = Instance.new("UIListLayout", FrameStatus)
+Layout.Padding = UDim.new(0, 5)
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local Padding = Instance.new("UIPadding", FrameStatus)
+Padding.PaddingTop = UDim.new(0, 8)
+Padding.PaddingLeft = UDim.new(0, 10)
+Padding.PaddingRight = UDim.new(0, 10)
+
+-- =========================
+-- LABELS
+-- =========================
+local function CriarLabel(texto, ordem)
+    local label = Instance.new("TextLabel", FrameStatus)
+    label.Size = UDim2.new(1, 0, 0, 22)
+    label.BackgroundTransparency = 1
+    label.Text = texto
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.LayoutOrder = ordem
+    return label
+end
+
+local FPSLabel = CriarLabel("FPS: 0", 1)
+local PINGLabel = CriarLabel("PING: 0ms", 2)
+
+-- =========================
+-- LÓGICA FPS / PING REAL
+-- =========================
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+
+local Frames = 0
+local UltimoFPS = tick()
+
+-- FPS REAL - conta frames renderizados
+RunService.RenderStepped:Connect(function()
+    Frames = Frames + 1
+    if tick() - UltimoFPS >= 1 then
+        FPSLabel.Text = "FPS: "..tostring(Frames)
+        Frames = 0
+        UltimoFPS = tick()
+    end
+end)
+
+-- PING REAL - pega direto do servidor
+task.spawn(function()
+    while task.wait(0.5) do
+        local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+        PINGLabel.Text = "PING: "..math.floor(ping).."ms"
+    end
+end)
 
 -- ===========================
 -- ABA ESP
