@@ -1020,6 +1020,7 @@ CriarToggleAnimado("Name Players", pageESP, function(ligado)
         NameTags.Players = {}
     end
 end)
+
 -- =========================
 -- NAME EXIT - { SAIDA } - CORRIGIDO PRA BASEPART
 -- =========================
@@ -1057,7 +1058,7 @@ CriarToggleAnimado("Name Exit", pageESP, function(ligado)
             texto.Size = UDim2.new(1, 0, 1, 0)
             texto.BackgroundTransparency = 1
             texto.Text = "{ SAIDA }"
-            texto.TextColor3 = Color3.fromRGB(255, 140, 0)
+            texto.TextColor3 = Color3.fromRGB(255, 0, 0)
             texto.TextStrokeTransparency = 0
             texto.TextStrokeColor3 = Color3.new(0, 0, 0)
             texto.Font = Enum.Font.GothamBold
