@@ -1,94 +1,507 @@
--- ==================================================
--- SERVIÇOS E INTERFACE
--- ==================================================
+-- ===========================================
+-- Astral X Hub
+-- ===========================================
+
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
 local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-if LocalPlayer.PlayerGui:FindFirstChild("ESP_FTF_GUI") then LocalPlayer.PlayerGui.ESP_FTF_GUI:Destroy() end
+-- =========================
+-- VERIFICAÇÃO DE JOGO
+-- =========================
+local MM2_PLACE_ID = 142823291
 
-local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui")); ScreenGui.Name = "ESP_FTF_GUI"
-local MainFrame = Instance.new("Frame", ScreenGui); MainFrame.Name = "MainFrame"; MainFrame.Size = UDim2.new(0, 250, 0, 320); MainFrame.Position = UDim2.new(0.5, -125, 0.5, -160); MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30); MainFrame.Active = true; MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12); Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(80, 180, 255); Instance.new("UIStroke", MainFrame).Thickness = 2
-local Titulo = Instance.new("TextLabel", MainFrame); Titulo.Size = UDim2.new(1, 0, 0, 40); Titulo.Text = "🚀 FLEE THE FACILITY ESP"; Titulo.TextColor3 = Color3.new(1, 1, 1); Titulo.BackgroundTransparency = 1; Titulo.Font = Enum.Font.GothamBold; Titulo.TextSize = 18
-
--- ==================================================
--- FUNÇÕES BASE
--- ==================================================
-local estados = {["ESP PC"] = false, ["ESP Cápsulas"] = false, ["ESP Jogadores"] = false, ["ESP Saida"] = false}
-
-local function CriarHighlight(alvo, corP, corB)
-    if not alvo or alvo:FindFirstChild("ESP_MARCADOR") then return end
-    local hl = Instance.new("Highlight")
-    hl.Name = "ESP_MARCADOR"; hl.Adornee = alvo; hl.FillColor = corP; hl.OutlineColor = corB; hl.FillTransparency = 0.4; hl.OutlineTransparency = 0.2; hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; hl.Parent = alvo
+if game.PlaceId ~= MM2_PLACE_ID then
+	game:GetService("StarterGui"):SetCore("SendNotification", {
+		Title = "Astral X Hub",
+		Text = "Entre no Murder Mystery 2 para executar",
+		Duration = 6,
+	})
+	return
 end
 
-local function LimparPorNome(nomeParcial)
-    for _, o in pairs(Workspace:GetDescendants()) do
-        if o:IsA("Model") and o:FindFirstChild("ESP_MARCADOR") and o.Name:lower():find(nomeParcial:lower()) then
-            o.ESP_MARCADOR:Destroy()
+if playerGui:FindFirstChild("AstralXHub") then
+	playerGui.AstralXHub:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AstralXHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = playerGui
+ScreenGui.IgnoreGuiInset = true
+
+-- =========================
+-- BOTÃO DE ABRIR/FECHAR
+-- =========================
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 45, 0, 45)
+ToggleButton.Position = UDim2.new(0, 20, 0, 20)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.AutoButtonColor = false
+ToggleButton.Text = ""
+ToggleButton.Parent = ScreenGui
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 12)
+btnCorner.Parent = ToggleButton
+
+local btnStroke = Instance.new("UIStroke")
+btnStroke.Color = Color3.new(1,1,1)
+btnStroke.Thickness = 2
+btnStroke.Parent = ToggleButton
+
+local btnIcon = Instance.new("ImageLabel")
+btnIcon.Size = UDim2.new(0, 34, 0, 34)
+btnIcon.Position = UDim2.new(0.5, -17, 0.5, -17)
+btnIcon.BackgroundTransparency = 1
+btnIcon.Image = "rbxassetid://133983783420812"
+btnIcon.ZIndex = 2
+btnIcon.Parent = ToggleButton
+
+ToggleButton.Active = true
+ToggleButton.Draggable = true
+
+-- =========================
+-- PAINEL PRINCIPAL
+-- =========================
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 550, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -275, 1.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Visible = true
+MainFrame.Parent = ScreenGui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 14)
+frameCorner.Parent = MainFrame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = Color3.new(1,1,1)
+frameStroke.Thickness = 2
+frameStroke.Parent = MainFrame
+
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+-- =========================
+-- FUNDO DE ESTRELAS
+-- =========================
+local StarsContainer = Instance.new("Frame")
+StarsContainer.Name = "StarsContainer"
+StarsContainer.Size = UDim2.new(1, 0, 1, 0)
+StarsContainer.BackgroundTransparency = 1
+StarsContainer.ZIndex = 1
+StarsContainer.Parent = MainFrame
+
+local stars = {}
+for i = 1, 50 do
+	local star = Instance.new("Frame")
+	star.Size = UDim2.new(0, math.random(1, 2), 0, math.random(1, 2))
+	star.Position = UDim2.new(math.random(), 0, math.random(), 0)
+	star.BackgroundColor3 = Color3.new(1,1,1)
+	star.BorderSizePixel = 0
+	star.BackgroundTransparency = math.random(0, 7) / 10
+	star.ZIndex = 1
+	star.Parent = StarsContainer
+
+	table.insert(stars, {
+		obj = star,
+		speedX = (math.random(2, 6)) / 1000,
+		speedY = (math.random(2, 6)) / 1000,
+	})
+end
+
+task.spawn(function()
+	while MainFrame.Parent do
+		for _, s in ipairs(stars) do
+			local pos = s.obj.Position
+			local newX = pos.X.Scale + s.speedX
+			local newY = pos.Y.Scale + s.speedY
+			if newX > 1 then newX = 0 end
+			if newY > 1 then newY = 0 end
+			s.obj.Position = UDim2.new(newX, 0, newY, 0)
+		end
+		task.wait(0.03)
+	end
+end)
+
+-- =========================
+-- TÍTULO
+-- =========================
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0, 250, 0, 30)
+Title.Position = UDim2.new(0, 15, 0, 10)
+Title.BackgroundTransparency = 1
+Title.Text = "Astral X Hub"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 3
+Title.Parent = MainFrame
+
+-- =========================
+-- ABAS
+-- =========================
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(0, 130, 0, 170)
+TabContainer.Position = UDim2.new(0, 10, 0, 50)
+TabContainer.BackgroundTransparency = 1
+TabContainer.ZIndex = 3
+TabContainer.Parent = MainFrame
+
+local TabListLayout = Instance.new("UIListLayout")
+TabListLayout.Padding = UDim.new(0, 8)
+TabListLayout.Parent = TabContainer
+
+local Abas = {
+    {Nome = "Main", Texto = "Main"},
+    {Nome = "ESP", Texto = "ESP"},
+    {Nome = "LocalPlayer", Texto = "Local Player"},
+    {Nome = "Notificacoes", Texto = "Notificações"},
+}
+
+local tabButtons = {}
+
+for _, aba in ipairs(Abas) do
+	local tabBtn = Instance.new("TextButton")
+	tabBtn.Size = UDim2.new(1, 0, 0, 42)
+	tabBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	tabBtn.BorderSizePixel = 0
+	tabBtn.Text = aba.Texto
+	tabBtn.TextColor3 = Color3.new(1,1,1)
+	tabBtn.Font = Enum.Font.Gotham
+	tabBtn.TextSize = 14
+	tabBtn.AutoButtonColor = false
+	tabBtn.ZIndex = 3
+	tabBtn.Parent = TabContainer
+
+	local tabCorner = Instance.new("UICorner")
+	tabCorner.CornerRadius = UDim.new(0, 8)
+	tabCorner.Parent = tabBtn
+
+	local tabStroke = Instance.new("UIStroke")
+	tabStroke.Color = Color3.new(1,1,1)
+	tabStroke.Thickness = 1.8
+	tabStroke.Transparency = 1
+	tabStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	tabStroke.Parent = tabBtn
+
+	tabButtons[aba.Nome] = {Botao = tabBtn, Stroke = tabStroke}
+end
+
+-- =========================
+-- PERFIL
+-- =========================
+local ProfileFrame = Instance.new("Frame")
+ProfileFrame.Size = UDim2.new(0, 130, 0, 50)
+ProfileFrame.Position = UDim2.new(0, 10, 1, -60)
+ProfileFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+ProfileFrame.BorderSizePixel = 0
+ProfileFrame.ZIndex = 3
+ProfileFrame.Parent = MainFrame
+
+local profileCorner = Instance.new("UICorner")
+profileCorner.CornerRadius = UDim.new(0, 8)
+profileCorner.Parent = ProfileFrame
+
+local profileStroke = Instance.new("UIStroke")
+profileStroke.Color = Color3.new(1,1,1)
+profileStroke.Thickness = 1.5
+profileStroke.Parent = ProfileFrame
+
+local AvatarImage = Instance.new("ImageLabel")
+AvatarImage.Size = UDim2.new(0, 36, 0, 36)
+AvatarImage.Position = UDim2.new(0, 7, 0, 7)
+AvatarImage.BackgroundTransparency = 1
+AvatarImage.ZIndex = 4
+AvatarImage.Parent = ProfileFrame
+
+local avatarCorner = Instance.new("UICorner")
+avatarCorner.CornerRadius = UDim.new(1, 0)
+avatarCorner.Parent = AvatarImage
+
+local ok, content = pcall(function()
+	return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+end)
+if ok then
+	AvatarImage.Image = content
+end
+
+local NameLabel = Instance.new("TextLabel")
+NameLabel.Size = UDim2.new(0, 80, 0, 36)
+NameLabel.Position = UDim2.new(0, 50, 0, 7)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Text = player.Name
+NameLabel.TextColor3 = Color3.new(1,1,1)
+NameLabel.Font = Enum.Font.Gotham
+NameLabel.TextSize = 13
+NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+NameLabel.ZIndex = 4
+NameLabel.Parent = ProfileFrame
+
+-- =========================
+-- ÁREA DE CONTEÚDO
+-- =========================
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(0, 380, 0, 280)
+ContentFrame.Position = UDim2.new(0, 150, 0, 50)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.ZIndex = 3
+ContentFrame.Parent = MainFrame
+
+local pages = {}
+for _, aba in ipairs(Abas) do
+	local page = Instance.new("ScrollingFrame")
+	page.Size = UDim2.new(1, 0, 1, 0)
+	page.BackgroundTransparency = 1
+	page.Visible = false
+	page.ZIndex = 3
+	page.ScrollBarThickness = 4
+    page.ScrollBarImageColor3 = Color3.new(1,1,1)
+	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	page.CanvasSize = UDim2.new(0, 0, 0, 0)
+	page.Parent = ContentFrame
+
+	local pageLayout = Instance.new("UIListLayout")
+	pageLayout.Padding = UDim.new(0, 8)
+	pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	pageLayout.Parent = page
+
+	local pagePadding = Instance.new("UIPadding")
+	pagePadding.PaddingTop = UDim.new(0, 4)
+	pagePadding.PaddingLeft = UDim.new(0, 4)
+	pagePadding.PaddingRight = UDim.new(0, 4)
+	pagePadding.Parent = page
+
+	pages[aba.Nome] = page
+end
+
+-- =========================
+-- FUNÇÕES DE CRIAÇÃO UI
+-- =========================
+local function CriarToggleAnimado(texto, pai, funcao)
+    local ToggleFrame = Instance.new("Frame", pai)
+    ToggleFrame.Size = UDim2.new(1, -8, 0, 36)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+    ToggleFrame.BorderSizePixel = 0
+    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0,8)
+
+    local Texto = Instance.new("TextLabel", ToggleFrame)
+    Texto.Size = UDim2.new(1, -60, 1, 0)
+    Texto.Position = UDim2.new(0, 12, 0, 0)
+    Texto.BackgroundTransparency = 1
+    Texto.Text = texto
+    Texto.TextColor3 = Color3.new(1,1,1)
+    Texto.Font = Enum.Font.Gotham
+    Texto.TextSize = 14
+    Texto.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Botao = Instance.new("TextButton", ToggleFrame)
+    Botao.Size = UDim2.new(0, 46, 0, 24)
+    Botao.Position = UDim2.new(1, -54, 0.5, -12)
+    Botao.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Botao.BorderSizePixel = 0
+    Botao.Text = ""
+    Botao.AutoButtonColor = false
+    Botao.ZIndex = 5
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(1, 0)
+
+    local Bolinha = Instance.new("Frame", Botao)
+    Bolinha.Size = UDim2.new(0, 18, 0, 18)
+    Bolinha.Position = UDim2.new(0, 3, 0.5, -9)
+    Bolinha.BackgroundColor3 = Color3.new(1,1,1)
+    Bolinha.BorderSizePixel = 0
+    Bolinha.ZIndex = 6
+    Instance.new("UICorner", Bolinha).CornerRadius = UDim.new(1, 0)
+
+    local Ativado = false
+    local tween = TweenInfo.new(0.25, Enum.EasingStyle.Quad)
+
+    Botao.MouseButton1Click:Connect(function()
+        Ativado = not Ativado
+        if Ativado then
+            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.new(1,1,1)}):Play()
+            TweenService:Create(Bolinha, tween, {Position = UDim2.new(1, -21, 0.5, -9), BackgroundColor3 = Color3.fromRGB(20,20,20)}):Play()
+        else
+            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.fromRGB(30,30,30)}):Play()
+            TweenService:Create(Bolinha, tween, {Position = UDim2.new(0, 3, 0.5, -9), BackgroundColor3 = Color3.new(1,1,1)}):Play()
         end
-    end
-end
-
--- ==================================================
--- BOTÕES
--- ==================================================
-local function CriarBotao(nome, posY, chave)
-    local btn = Instance.new("TextButton", MainFrame); btn.Size = UDim2.new(0.85, 0, 0, 45); btn.Position = UDim2.new(0.075, 0, 0, posY); btn.Text = nome; btn.TextColor3 = Color3.new(1, 1, 1); btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); btn.Font = Enum.Font.GothamBold; btn.TextSize = 18
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    btn.MouseButton1Click:Connect(function()
-        estados[chave] = not estados[chave]
-        btn.BackgroundColor3 = estados[chave] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(50, 50, 50)
-        if not estados[chave] then LimparPorNome(chave == "ESP PC" and "computer" or chave == "ESP Cápsulas" and "pod" or chave == "ESP Saida" and "exit" or "nulo") end
+        funcao(Ativado)
     end)
+    return ToggleFrame
 end
 
-CriarBotao("ESP PC", 60, "ESP PC"); CriarBotao("ESP Cápsulas", 115, "ESP Cápsulas"); CriarBotao("ESP Players", 170, "ESP Jogadores"); CriarBotao("ESP Exit", 225, "ESP Saida")
+local function CriarSlider(texto, pai, min, max, padrao, funcao)
+    local SliderFrame = Instance.new("Frame", pai)
+    SliderFrame.Size = UDim2.new(1, -8, 0, 60)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+    SliderFrame.BorderSizePixel = 0
+    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0,8)
 
--- ==================================================
--- MOTOR DEFINITIVO: BUSCA RECURSIVA (PEGA TUDO)
--- ==================================================
-RunService.RenderStepped:Connect(function()
-    if tick() - lastUpdate < 0.6 then return end
-    lastUpdate = tick()
+    local Texto = Instance.new("TextLabel", SliderFrame)
+    Texto.Size = UDim2.new(1, -50, 0, 20)
+    Texto.Position = UDim2.new(0, 10, 0, 5)
+    Texto.BackgroundTransparency = 1
+    Texto.Text = texto
+    Texto.TextColor3 = Color3.new(1,1,1)
+    Texto.Font = Enum.Font.Gotham
+    Texto.TextSize = 13
+    Texto.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- Varredura completa no Workspace
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        -- Verifica se é um modelo e se tem alguma parte física
-        if obj:IsA("Model") and obj:FindFirstChildWhichIsA("BasePart") then
-            local n = obj.Name:lower()
+    local Valor = Instance.new("TextLabel", SliderFrame)
+    Valor.Size = UDim2.new(0, 40, 0, 20)
+    Valor.Position = UDim2.new(1, -45, 0, 5)
+    Valor.BackgroundTransparency = 1
+    Valor.Text = tostring(padrao)
+    Valor.TextColor3 = Color3.new(1,1,1)
+    Valor.Font = Enum.Font.GothamBold
+    Valor.TextSize = 13
+    Valor.TextXAlignment = Enum.TextXAlignment.Right
 
-            -- 1. ESP PC (Marca PC e muda cor se estiver hackeado)
-            if estados["ESP PC"] and (n:find("computer") or n:find("pc")) then
-                local ehHackeado = obj:FindFirstChild("Hacked") and obj.Hacked.Value == true
-                CriarHighlight(obj, ehHackeado and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(80, 180, 255), Color3.new(0,0,0))
+    local BarraFundo = Instance.new("Frame", SliderFrame)
+    BarraFundo.Size = UDim2.new(1, -20, 0, 10)
+    BarraFundo.Position = UDim2.new(0, 10, 1, -20)
+    BarraFundo.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    BarraFundo.BorderSizePixel = 0
+    BarraFundo.ZIndex = 2
+    Instance.new("UICorner", BarraFundo).CornerRadius = UDim.new(1,0)
 
-            -- 2. ESP CÁPSULAS (Pega variações de nomes)
-            elseif estados["ESP Cápsulas"] and (n:find("pod") or n:find("freeze")) then
-                CriarHighlight(obj, Color3.fromRGB(255, 200, 0), Color3.fromRGB(180, 120, 0))
+    local porcentagemInicial = (padrao - min) / (max - min)
+    local BarraCheia = Instance.new("Frame", BarraFundo)
+    BarraCheia.Size = UDim2.new(porcentagemInicial, 0, 1, 0)
+    BarraCheia.BackgroundColor3 = Color3.new(1,1,1)
+    BarraCheia.BorderSizePixel = 0
+    BarraCheia.ZIndex = 3
+    Instance.new("UICorner", BarraCheia).CornerRadius = UDim.new(1,0)
 
-            -- 3. ESP EXIT (Pega nomes relacionados a saída)
-            elseif estados["ESP Saida"] and (n:find("exit") or n:find("gate")) then
-                CriarHighlight(obj, Color3.fromRGB(255, 80, 0), Color3.fromRGB(150, 40, 0))
-            end
-        end
+    local arrastando = false
+    local function AtualizarSlider(posicaoTela)
+        local posX = posicaoTela.X - BarraFundo.AbsolutePosition.X
+        local tamanho = BarraFundo.AbsoluteSize.X
+        local porcentagem = math.clamp(posX / tamanho, 0, 1)
+        local valor = math.floor(min + (max - min) * porcentagem + 0.5)
+        BarraCheia.Size = UDim2.new(porcentagem, 0, 1, 0)
+        Valor.Text = tostring(valor)
+        funcao(valor)
     end
 
-    -- 4. ESP PLAYERS (Lógica mantida para Fera/Sobreviventes)
-    if estados["ESP Jogadores"] then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                local ehFera = (p.Team and p.Team.Name:lower():find("beast")) or p.Character:FindFirstChild("Hammer") or p.Character:FindFirstChild("Mallet")
-                if not p.Character:FindFirstChild("ESP_MARCADOR") then
-                    CriarHighlight(p.Character, ehFera and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0), Color3.new(0,0,0))
-                end
-            end
+    BarraFundo.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            arrastando = true
+            AtualizarSlider(input.Position)
         end
-    else
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("ESP_MARCADOR") then p.Character.ESP_MARCADOR:Destroy() end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            arrastando = false
         end
-    end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if arrastando and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            AtualizarSlider(input.Position)
+        end
+    end)
+
+    return SliderFrame
+end
+
+-- ===========================
+-- ABA MAIN
+-- ===========================
+
+
+
+-- ===========================
+-- ABA ESP
+-- ===========================
+
+
+
+-- ============================
+-- ABA LOCAL PLAYER
+-- ============================
+
+
+-- ============================
+-- ABA NOTIFICAÇÕES 
+-- ============================
+
+
+-- ===============================================================
+-- ===============================================================
+
+
+
+
+-- =========================
+-- SISTEMA DE NAVEGAÇÃO
+-- =========================
+local function selectTab(name)
+	for tabName, dados in pairs(tabButtons) do
+		local isSelected = (tabName == name)
+		dados.Botao.BackgroundColor3 = isSelected and Color3.fromRGB(35, 35, 35) or Color3.fromRGB(20, 20, 20)
+		if dados.Stroke then dados.Stroke.Transparency = isSelected and 0 or 1 end
+	end
+	for pageName, page in pairs(pages) do
+		page.Visible = (pageName == name)
+	end
+end
+
+local TabSound = Instance.new("Sound")
+TabSound.SoundId = "rbxassetid://101301588142598"
+TabSound.Volume = 0.5
+TabSound.Parent = ScreenGui
+
+for name, dados in pairs(tabButtons) do
+	dados.Botao.MouseButton1Click:Connect(function()
+		selectTab(name)
+		TabSound:Play()
+	end)
+end
+
+selectTab("Main")
+
+-- =========================
+-- ANIMAÇÃO DE ABRIR/FECHAR
+-- =========================
+local ToggleSound = Instance.new("Sound")
+ToggleSound.SoundId = "rbxassetid://140207837688369"
+ToggleSound.Volume = 0.5
+ToggleSound.Parent = ScreenGui
+
+local isOpen = false
+local animTweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+
+task.delay(0.1, function()
+    TweenService:Create(MainFrame, animTweenInfo, {Position = UDim2.new(0.5, -275, 0.5, -175)}):Play()
+    isOpen = true
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+	ToggleSound:Play()
+	isOpen = not isOpen
+	if isOpen then
+		MainFrame.Visible = true
+		MainFrame.Position = UDim2.new(0.5, -275, 1.5, -175)
+		TweenService:Create(MainFrame, animTweenInfo, {Position = UDim2.new(0.5, -275, 0.5, -175)}):Play()
+	else
+		local tweenFechar = TweenService:Create(MainFrame, animTweenInfo, {Position = UDim2.new(0.5, -275, 1.5, -175)})
+		tweenFechar:Play()
+		tweenFechar.Completed:Connect(function()
+            MainFrame.Visible = false
+        end)
+	end
 end)
