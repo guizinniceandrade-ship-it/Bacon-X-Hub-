@@ -1020,25 +1020,38 @@ CriarToggleAnimado("Name Players", pageESP, function(ligado)
         NameTags.Players = {}
     end
 end)
-
 -- =========================
--- NAME EXIT - { SAIDA } - CORRIGIDO
+-- NAME EXIT - { SAIDA } - CORRIGIDO PRA BASEPART
 -- =========================
 CriarToggleAnimado("Name Exit", pageESP, function(ligado)
     estadosESP["Name Exit"] = ligado
     
     if ligado then
         local function CriarNameExit(obj)
-            if not obj:IsA("Model") or NameTags.Exits[obj] then return end
-            if not obj.PrimaryPart then return end
+            -- Aceita Model OU BasePart
+            if NameTags.Exits[obj] then return end
+            
+            local adornee = nil
+            if obj:IsA("Model") and obj.PrimaryPart then
+                adornee = obj.PrimaryPart
+            elseif obj:IsA("BasePart") then
+                adornee = obj
+            else
+                -- Se for Model sem PrimaryPart, pega primeira Part
+                if obj:IsA("Model") then
+                    adornee = obj:FindFirstChildWhichIsA("BasePart")
+                end
+            end
+            
+            if not adornee then return end
             
             local billboard = Instance.new("BillboardGui")
             billboard.Name = "ESP_Name_Exit"
             billboard.Size = UDim2.new(0, 200, 0, 30)
             billboard.StudsOffset = Vector3.new(0, 3, 0)
             billboard.AlwaysOnTop = true
-            billboard.Adornee = obj.PrimaryPart
-            billboard.Parent = obj.PrimaryPart
+            billboard.Adornee = adornee
+            billboard.Parent = adornee
             
             local texto = Instance.new("TextLabel")
             texto.Size = UDim2.new(1, 0, 1, 0)
@@ -1054,18 +1067,22 @@ CriarToggleAnimado("Name Exit", pageESP, function(ligado)
             NameTags.Exits[obj] = billboard
         end
         
-        -- Pega exits existentes
+        -- Pega exits existentes - Model OU BasePart
         for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Model") and ehSaida(obj.Name:lower()) then
-                CriarNameExit(obj)
+            if ehSaida(obj.Name:lower()) then
+                if obj:IsA("Model") or obj:IsA("BasePart") then
+                    CriarNameExit(obj)
+                end
             end
         end
         
         -- Pega exits que spawnam depois
         Conexoes.Exit = Workspace.DescendantAdded:Connect(function(obj)
-            if estadosESP["Name Exit"] and obj:IsA("Model") and ehSaida(obj.Name:lower()) then
-                task.wait(0.5)
-                CriarNameExit(obj)
+            if estadosESP["Name Exit"] and ehSaida(obj.Name:lower()) then
+                if obj:IsA("Model") or obj:IsA("BasePart") then
+                    task.wait(0.5)
+                    CriarNameExit(obj)
+                end
             end
         end)
     else
