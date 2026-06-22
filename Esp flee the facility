@@ -524,3 +524,108 @@ Layout.Parent=Chat
 
 local Input=Instance.new("TextBox")
 Input.Size=UDim2.new(1,-42
+Input.Size=UDim2.new(1,-42,0,30)
+Input.Position=UDim2.new(0,5,1,-35)
+Input.BackgroundColor3=Color3.fromRGB(40,40,40)
+Input.TextColor3=Color3.new(1,1,1)
+Input.Font=Enum.Font.Gotham
+Input.TextSize=12
+Input.PlaceholderText="Digite sua mensagem aqui..."
+Input.ClearTextOnFocus=true
+Input.Parent=Janela
+Instance.new("UICorner",Input).CornerRadius=UDim.new(0,6)
+
+-- FUNÇÃO PARA ADICIONAR MENSAGENS NO CHAT
+local function AdicionarMensagem(texto,éUsuario)
+    local Msg=Instance.new("TextLabel")
+    Msg.Size=UDim2.new(1,-8,0,0)
+    Msg.AutomaticSize=Enum.AutomaticSize.Y
+    Msg.BackgroundColor3=éUsuario and Color3.fromRGB(60,40,120) or Color3.fromRGB(30,30,30)
+    Msg.TextColor3=Color3.new(1,1,1)
+    Msg.Font=Enum.Font.Gotham
+    Msg.TextSize=12
+    Msg.TextWrapped=true
+    Msg.Text=éUsuario and "Você: "..texto or "🤖 Dola: "..texto
+    Msg.TextXAlignment=Enum.TextXAlignment.Left
+    Msg.Padding=Instance.new("UIPadding",Msg)
+    Msg.Padding.PaddingLeft=UDim.new(0,6)
+    Msg.Padding.PaddingRight=UDim.new(0,6)
+    Msg.Padding.PaddingTop=UDim.new(0,4)
+    Msg.Padding.PaddingBottom=UDim.new(0,4)
+    Msg.Parent=Chat
+    Instance.new("UICorner",Msg).CornerRadius=UDim.new(0,4)
+
+    -- ROLAR PARA BAIXO AUTOMATICAMENTE
+    Chat.CanvasSize=UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y)
+    Chat.CanvasPosition=Vector2.new(0,Chat.CanvasSize.Y.Offset)
+end
+
+-- FUNÇÃO PARA PROCURAR RESPOSTA
+local function PegarResposta(mensagem)
+    mensagem=string.lower(mensagem)
+    mensagem=string.gsub(mensagem,"[áàâãä]","a")
+    mensagem=string.gsub(mensagem,"[éèêë]","e")
+    mensagem=string.gsub(mensagem,"[íìîï]","i")
+    mensagem=string.gsub(mensagem,"[óòôõö]","o")
+    mensagem=string.gsub(mensagem,"[úùûü]","u")
+    mensagem=string.gsub(mensagem,"[ç]","c")
+    mensagem=string.gsub(mensagem,"%p","") -- REMOVER PONTUAÇÃO
+
+    -- PERCORRER TODAS AS PALAVRAS CHAVE
+    for chave,sinonimos in pairs(Respostas) do
+        -- VERIFICAR SE A MENSAGEM TEM A PALAVRA CHAVE
+        if string.find(mensagem,chave) then
+            -- PEGAR UMA RESPOSTA ALEATÓRIA
+            local lista=Respostas[chave]
+            return lista[math.random(1,#lista)]
+        end
+        -- VERIFICAR SINÔNIMOS
+        for sin in pairs(sinonimos) do
+            if string.find(mensagem,sin) then
+                local lista=Respostas[chave]
+                return lista[math.random(1,#lista)]
+            end
+        end
+    end
+
+    -- RESPOSTA PADRÃO SE NÃO ENTENDER
+    local respostasPadrao={
+        "hummm... não entendi muito bem 😅 pode falar de outro jeito?",
+        "não sei te responder isso ainda 🤔 me ensina o que significa?",
+        "não entendi direito 🧐 pode explicar melhor?",
+        "não conheço essa palavra/assunto 😅 pode falar mais simples?",
+        "não entendi muito bem o que você quis dizer 🤔"
+    }
+    return respostasPadrao[math.random(1,#respostasPadrao)]
+end
+
+-- AÇÃO AO DIGITAR E ENVIAR
+Input.FocusLost:Connect(function(enter)
+    if enter and Input.Text~="" then
+        local texto=Input.Text
+        AdicionarMensagem(texto,true) -- MOSTRAR MENSAGEM DO USUÁRIO
+        Input.Text="" -- LIMPAR CAIXA
+
+        -- ESPERAR UM POUCO PARA SIMULAR DIGITAÇÃO
+        task.wait(math.random(0.4,0.9))
+
+        -- PEGAR E MOSTRAR RESPOSTA
+        local resposta=PegarResposta(texto)
+        AdicionarMensagem(resposta,false)
+    end
+end)
+
+-- ABRIR E FECHAR JANELA
+BtnAbrir.MouseButton1Click:Connect(function()
+    Janela.Visible=not Janela.Visible
+end)
+
+Fechar.MouseButton1Click:Connect(function()
+    Janela.Visible=false
+end)
+
+-- MENSAGEM INICIAL
+task.wait(0.3)
+AdicionarMensagem("Olá! 🤖 Eu sou o Dola, versão 600+ linhas! Tudo bem com você? 😄",false)
+
+print("[BOT] ✅ BOT 600+ LINHAS CARREGADO COM SUCESSO!")
