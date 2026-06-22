@@ -421,8 +421,69 @@ end
 -- ===========================
 -- ABA MAIN
 -- ===========================
+local pageMain = pages["Main"]
+
+-- =========================
+-- SEPARADOR AUTO FARM
+-- =========================
+local SeparadorFarm = Instance.new("TextLabel", pageMain)
+SeparadorFarm.Size = UDim2.new(1, -8, 0, 30)
+SeparadorFarm.BackgroundTransparency = 1
+SeparadorFarm.Text = "««««« Auto Farm Coin Tween »»»»»»"
+SeparadorFarm.TextColor3 = Color3.new(1,1,1)
+SeparadorFarm.Font = Enum.Font.GothamBold
+SeparadorFarm.TextSize = 15
+SeparadorFarm.TextXAlignment = Enum.TextXAlignment.Center
+SeparadorFarm.ZIndex = 4
+
+-- =========================
+-- VARIÁVEIS DO AUTO FARM
+-- =========================
+local AutoFarmAtivo = false
+local VelocidadeFarm = 20
 
 
+-- AUTO FARM COIN (BOTÃO)
+CriarToggleAnimado("Auto Farm Coin", pageMain, function(ligado)
+    AutoFarmAtivo = ligado
+    
+    if ligado then
+        task.spawn(function()
+            while AutoFarmAtivo and task.wait() do
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+                    local root = char.HumanoidRootPart
+                    local humanoid = char.Humanoid
+                    
+                    for _, coin in pairs(Workspace:GetDescendants()) do
+                        if not AutoFarmAtivo then break end
+                        
+                        if coin.Name == "Coin_Server" or coin.Name == "Coin" then
+                            if coin:IsA("BasePart") and coin.Parent then
+                                -- Tween até a coin
+                                local dist = (root.Position - coin.Position).Magnitude
+                                local tempo = dist / VelocidadeFarm
+                                
+                                local tween = TweenService:Create(root, TweenInfo.new(tempo, Enum.EasingStyle.Linear), {
+                                    CFrame = coin.CFrame
+                                })
+                                tween:Play()
+                                tween.Completed:Wait()
+                                task.wait(0.1)
+                            end
+                        end
+                    end
+                end
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+-- VELOCIDADE DO FARM (SLIDER)
+CriarSlider("Velocidade do Farm", pageMain, 16, 30, 20, function(valor)
+    VelocidadeFarm = valor
+end)
 
 -- ===========================
 -- ABA ESP
