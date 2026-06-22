@@ -441,48 +441,90 @@ SeparadorFarm.ZIndex = 4
 -- =========================
 local AutoFarmAtivo = false
 local VelocidadeFarm = 20
+local ConexaoFarm = nil
 
+-- Função pra pegar coin mais próxima
+local function PegarCoinMaisProxima()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
+    
+    local root = char.HumanoidRootPart
+    local coinMaisProxima = nil
+    local menorDist = math.huge
+    
+    for _, coin in pairs(Workspace:GetDescendants()) do
+        if coin.Name == "Coin_Server" or coin.Name == "Coin" then
+            if coin:IsA("BasePart") and coin.Parent then
+                local dist = (root.Position - coin.Position).Magnitude
+                if dist < menorDist then
+                    menorDist = dist
+                    coinMaisProxima = coin
+                end
+            end
+        end
+    end
+    
+    return coinMaisProxima
+end
 
+-- =========================
 -- AUTO FARM COIN (BOTÃO)
+-- =========================
 CriarToggleAnimado("Auto Farm Coin", pageMain, function(ligado)
     AutoFarmAtivo = ligado
     
     if ligado then
-        task.spawn(function()
+        ConexaoFarm = task.spawn(function()
             while AutoFarmAtivo and task.wait() do
                 local char = player.Character
-                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
-                    local root = char.HumanoidRootPart
-                    local humanoid = char.Humanoid
+                local humanoid = char and char:FindFirstChild("Humanoid")
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                
+                if root and humanoid and humanoid.Health > 0 then
+                    local coin = PegarCoinMaisProxima()
                     
-                    for _, coin in pairs(Workspace:GetDescendants()) do
-                        if not AutoFarmAtivo then break end
+                    if coin then
+                        -- Usa MoveTo ao invés de Tween pra não bugar
+                        humanoid:MoveTo(coin.Position)
                         
-                        if coin.Name == "Coin_Server" or coin.Name == "Coin" then
-                            if coin:IsA("BasePart") and coin.Parent then
-                                -- Tween até a coin
-                                local dist = (root.Position - coin.Position).Magnitude
-                                local tempo = dist / VelocidadeFarm
-                                
-                                local tween = TweenService:Create(root, TweenInfo.new(tempo, Enum.EasingStyle.Linear), {
-                                    CFrame = coin.CFrame
-                                })
-                                tween:Play()
-                                tween.Completed:Wait()
-                                task.wait(0.1)
-                            end
-                        end
+                        -- Espera chegar perto ou timeout
+                        local inicio = tick()
+                        repeat
+                            task.wait()
+                            if not AutoFarmAtivo or not coin.Parent then break end
+                            if tick() - inicio > 5 then break end -- timeout 5s
+                        until (root.Position - coin.Position).Magnitude < 5
                     end
                 end
-                task.wait(1)
+                task.wait(0.5)
             end
         end)
+    else
+        if ConexaoFarm then
+            task.cancel(ConexaoFarm)
+            ConexaoFarm = nil
+        end
+        -- Para o movimento quando desliga
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid:MoveTo(player.Character.HumanoidRootPart.Position)
+        end
     end
 end)
 
+-- =========================
 -- VELOCIDADE DO FARM (SLIDER)
+-- =========================
 CriarSlider("Velocidade do Farm", pageMain, 16, 30, 20, function(valor)
     VelocidadeFarm = valor
+    -- Aplica a velocidade no humanoid
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = valor
+    end
+end)
+
+-- Atualiza velocidade quando respawna
+player.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid").WalkSpeed = VelocidadeFarm
 end)
 
 -- ===========================
