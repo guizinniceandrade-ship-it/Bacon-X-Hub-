@@ -543,7 +543,155 @@ end)
 -- ===========================
 -- ABA MAIN ( SOBREVIVENTE )
 -- ===========================
+local pageMain = pages["Main"]
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local VIM = game:GetService("VirtualInputManager")
 
+-- =========================
+-- SEPARADOR HACK
+-- =========================
+local SeparadorHack = Instance.new("TextLabel", pageMain)
+SeparadorHack.Size = UDim2.new(1, -8, 0, 30)
+SeparadorHack.BackgroundTransparency = 1
+SeparadorHack.Text = "«««««««« HACK PC »»»»»»"
+SeparadorHack.TextColor3 = Color3.new(1,1,1)
+SeparadorHack.Font = Enum.Font.GothamBold
+SeparadorHack.TextSize = 15
+SeparadorHack.TextXAlignment = Enum.TextXAlignment.Center
+SeparadorHack.ZIndex = 4
+
+-- =========================
+-- AUTO SKILL CHECK PC
+-- =========================
+local AutoSkillAtivado = false
+CriarToggleAnimado("Auto Skill Check PC", pageMain, function(ligado)
+    AutoSkillAtivado = ligado
+    
+    if ligado then
+        task.spawn(function()
+            while AutoSkillAtivado do
+                -- Procura a GUI do skill check
+                local skillGui = nil
+                for _, gui in pairs(player.PlayerGui:GetDescendants()) do
+                    if gui.Name == "ComputerUI" or gui.Name == "Hack" then
+                        skillGui = gui
+                        break
+                    end
+                end
+                
+                if skillGui and skillGui.Enabled then
+                    -- Procura a barra circular e a zona branca
+                    local needle = nil -- linha vermelha
+                    local zone = nil   -- parte branca
+                    
+                    for _, obj in pairs(skillGui:GetDescendants()) do
+                        if obj:IsA("ImageLabel") or obj:IsA("Frame") then
+                            if obj.Name:lower():find("needle") or obj.Name:lower():find("pointer") or obj.Name:lower():find("arrow") then
+                                needle = obj
+                            elseif obj.Name:lower():find("zone") or obj.Name:lower():find("target") or obj.Name:lower():find("white") or obj.Name:lower():find("good") then
+                                zone = obj
+                            end
+                        end
+                    end
+                    
+                    -- Se achou os dois, checa se tá na zona
+                    if needle and zone then
+                        local needleRot = needle.Rotation % 360
+                        local zoneRot = zone.Rotation % 360
+                        
+                        -- Calcula se a agulha tá dentro da zona branca
+                        local diff = math.abs(needleRot - zoneRot)
+                        if diff > 180 then diff = 360 - diff end
+                        
+                        if diff < 12 then -- tolerância de 12 graus
+                            -- APERTA E AUTOMATICO
+                            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                            task.wait()
+                            VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                            task.wait(0.4) -- delay pro próximo skill check
+                        end
+                    end
+                end
+                
+                -- Auto inicia PC perto
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local root = char.HumanoidRootPart
+                    for _, prompt in pairs(Workspace:GetDescendants()) do
+                        if prompt:IsA("ProximityPrompt") and prompt.Enabled then
+                            local obj = prompt.Parent
+                            local nome = obj.Name:lower() .. obj.Parent.Name:lower()
+                            if nome:find("computer") or nome:find("pc") then
+                                local part = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
+                                if part and (root.Position - part.Position).Magnitude <= 12 then
+                                    fireproximityprompt(prompt)
+                                    task.wait(0.3)
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                task.wait()
+            end
+        end)
+    end
+end)
+
+-- =========================
+-- HACKEAR Y - SOBE 75 STUDS
+-- =========================
+local HackearYAtivado = false
+local PosicaoOriginal = nil
+local HackeandoPC = false
+
+CriarToggleAnimado("Hackear Y", pageMain, function(ligado)
+    HackearYAtivado = ligado
+    if ligado then
+        task.spawn(function()
+            while HackearYAtivado do
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local root = char.HumanoidRootPart
+                    local hackGui = nil
+                    for _, gui in pairs(player.PlayerGui:GetChildren()) do
+                        if gui.Name == "ComputerUI" or gui.Name == "Hack" then
+                            if gui.Enabled then hackGui = gui break end
+                        end
+                    end
+                    
+                    if hackGui then
+                        if not HackeandoPC then
+                            HackeandoPC = true
+                            PosicaoOriginal = root.CFrame
+                            root.CFrame = root.CFrame + Vector3.new(0, 75, 0)
+                            root.Anchored = true
+                        end
+                    else
+                        if HackeandoPC then
+                            HackeandoPC = false
+                            root.Anchored = false
+                            task.wait(0.1)
+                            if PosicaoOriginal then
+                                root.CFrame = PosicaoOriginal
+                                PosicaoOriginal = nil
+                            end
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+    else
+        if HackeandoPC and player.Character then
+            player.Character.HumanoidRootPart.Anchored = false
+        end
+        HackeandoPC = false
+        PosicaoOriginal = nil
+    end
+end)
 
 -- ===========================
 -- ABA ESP
