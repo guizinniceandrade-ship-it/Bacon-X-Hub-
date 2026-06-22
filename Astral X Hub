@@ -775,7 +775,307 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- =========================
+-- SEPARADOR NOMES ESP
+-- =========================
+local SeparadorNomes = Instance.new("TextLabel", pageESP)
+SeparadorNomes.Size = UDim2.new(1, -8, 0, 30)
+SeparadorNomes.BackgroundTransparency = 1
+SeparadorNomes.Text = "«««««««« NOMES ESP »»»»»»"
+SeparadorNomes.TextColor3 = Color3.new(1,1,1)
+SeparadorNomes.Font = Enum.Font.GothamBold
+SeparadorNomes.TextSize = 15
+SeparadorNomes.TextXAlignment = Enum.TextXAlignment.Center
+SeparadorNomes.ZIndex = 4
 
+-- =========================
+-- ESP NOMES COLORIDOS
+-- =========================
+local NameTags = {
+    PCs = {},
+    Capsulas = {},
+    Players = {},
+    Exits = {}
+}
+
+local Conexoes = {
+    PC = nil,
+    Capsula = nil,
+    Exit = nil,
+    Player = nil
+}
+
+-- =========================
+-- NAME PC - { PC } - VERDE SE COMPLETO
+-- =========================
+CriarToggleAnimado("Name PC", pageESP, function(ligado)
+    estadosESP["Name PC"] = ligado
+    
+    if ligado then
+        local function CriarNamePC(model)
+            if not model:IsA("Model") or NameTags.PCs[model] then return end
+            if not model.PrimaryPart then return end
+            
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "ESP_Name_PC"
+            billboard.Size = UDim2.new(0, 200, 0, 30)
+            billboard.StudsOffset = Vector3.new(0, 3, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Adornee = model.PrimaryPart
+            billboard.Parent = model.PrimaryPart
+            
+            local texto = Instance.new("TextLabel")
+            texto.Size = UDim2.new(1, 0, 1, 0)
+            texto.BackgroundTransparency = 1
+            texto.Text = "{ PC }"
+            texto.TextStrokeTransparency = 0
+            texto.TextStrokeColor3 = Color3.new(0, 0, 0)
+            texto.Font = Enum.Font.GothamBold
+            texto.TextSize = 16
+            texto.Parent = billboard
+            
+            NameTags.PCs[model] = {gui = billboard, label = texto, model = model}
+        end
+        
+        -- Pega PCs existentes
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("Model") and ehPC(obj.Name:lower()) then
+                CriarNamePC(obj)
+            end
+        end
+        
+        -- Pega PCs que spawnam depois
+        Conexoes.PC = Workspace.DescendantAdded:Connect(function(obj)
+            if estadosESP["Name PC"] and obj:IsA("Model") and ehPC(obj.Name:lower()) then
+                task.wait(0.5) -- Espera carregar PrimaryPart
+                CriarNamePC(obj)
+            end
+        end)
+        
+        -- Loop atualiza cor
+        task.spawn(function()
+            while estadosESP["Name PC"] do
+                for model, data in pairs(NameTags.PCs) do
+                    if model and model.Parent and data.label then
+                        local completado = pcCompletado(model)
+                        if completado then
+                            data.label.TextColor3 = Color3.fromRGB(0, 255, 0)
+                            data.label.Text = "{ PC [✓] }"
+                        else
+                            data.label.TextColor3 = Color3.fromRGB(0, 150, 255)
+                            data.label.Text = "{ PC }"
+                        end
+                    end
+                end
+                task.wait(0.5)
+            end
+        end)
+    else
+        if Conexoes.PC then Conexoes.PC:Disconnect() Conexoes.PC = nil end
+        for model, data in pairs(NameTags.PCs) do
+            if data.gui then data.gui:Destroy() end
+        end
+        NameTags.PCs = {}
+    end
+end)
+
+-- =========================
+-- NAME CÁPSULA - { Cápsula }
+-- =========================
+CriarToggleAnimado("Name Cápsula", pageESP, function(ligado)
+    estadosESP["Name Cápsula"] = ligado
+    
+    if ligado then
+        local function CriarNameCapsula(obj)
+            if not obj:IsA("Model") or NameTags.Capsulas[obj] then return end
+            if not obj.PrimaryPart then return end
+            
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "ESP_Name_Capsula"
+            billboard.Size = UDim2.new(0, 200, 0, 30)
+            billboard.StudsOffset = Vector3.new(0, 3, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Adornee = obj.PrimaryPart
+            billboard.Parent = obj.PrimaryPart
+            
+            local texto = Instance.new("TextLabel")
+            texto.Size = UDim2.new(1, 0, 1, 0)
+            texto.BackgroundTransparency = 1
+            texto.Text = "{ Cápsula }"
+            texto.TextColor3 = Color3.fromRGB(255, 255, 0)
+            texto.TextStrokeTransparency = 0
+            texto.TextStrokeColor3 = Color3.new(0, 0, 0)
+            texto.Font = Enum.Font.GothamBold
+            texto.TextSize = 16
+            texto.Parent = billboard
+            
+            NameTags.Capsulas[obj] = billboard
+        end
+        
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("Model") and ehCapsula(obj.Name:lower()) then
+                CriarNameCapsula(obj)
+            end
+        end
+        
+        Conexoes.Capsula = Workspace.DescendantAdded:Connect(function(obj)
+            if estadosESP["Name Cápsula"] and obj:IsA("Model") and ehCapsula(obj.Name:lower()) then
+                task.wait(0.5)
+                CriarNameCapsula(obj)
+            end
+        end)
+    else
+        if Conexoes.Capsula then Conexoes.Capsula:Disconnect() Conexoes.Capsula = nil end
+        for obj, gui in pairs(NameTags.Capsulas) do
+            if gui then gui:Destroy() end
+        end
+        NameTags.Capsulas = {}
+    end
+end)
+
+-- =========================
+-- NAME PLAYERS - { Nome } - COR POR ROLE
+-- =========================
+CriarToggleAnimado("Name Players", pageESP, function(ligado)
+    estadosESP["Name Players"] = ligado
+    
+    if ligado then
+        local function CriarNamePlayer(plr)
+            if plr == player or NameTags.Players[plr] then return end
+            
+            local function SetupChar(char)
+                task.wait(1)
+                local head = char:WaitForChild("Head", 5)
+                if not head or not estadosESP["Name Players"] then return end
+                
+                local billboard = Instance.new("BillboardGui")
+                billboard.Name = "ESP_Name_Player"
+                billboard.Size = UDim2.new(0, 200, 0, 30)
+                billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+                billboard.AlwaysOnTop = true
+                billboard.Adornee = head
+                billboard.Parent = head
+                
+                local texto = Instance.new("TextLabel")
+                texto.Size = UDim2.new(1, 0, 1, 0)
+                texto.BackgroundTransparency = 1
+                texto.TextStrokeTransparency = 0
+                texto.TextStrokeColor3 = Color3.new(0, 0, 0)
+                texto.Font = Enum.Font.GothamBold
+                texto.TextSize = 14
+                texto.Parent = billboard
+                
+                NameTags.Players[plr] = {gui = billboard, label = texto}
+            end
+            
+            plr.CharacterAdded:Connect(SetupChar)
+            if plr.Character then SetupChar(plr.Character) end
+        end
+        
+        for _, plr in pairs(Players:GetPlayers()) do
+            CriarNamePlayer(plr)
+        end
+        
+        Conexoes.Player = Players.PlayerAdded:Connect(function(plr)
+            if estadosESP["Name Players"] then
+                CriarNamePlayer(plr)
+            end
+        end)
+        
+        task.spawn(function()
+            while estadosESP["Name Players"] do
+                for plr, data in pairs(NameTags.Players) do
+                    if plr.Character and data.label then
+                        local ehFera = false
+                        if plr.Team then
+                            local teamName = plr.Team.Name:lower()
+                            ehFera = teamName:find("beast") ~= nil or teamName:find("fera") ~= nil or teamName:find("hunter") ~= nil
+                        end
+                        if not ehFera then
+                            ehFera = plr.Character:FindFirstChild("Hammer") ~= nil
+                                or plr.Character:FindFirstChild("Mallet") ~= nil
+                                or plr.Character:FindFirstChild("Claw") ~= nil
+                        end
+                        if not ehFera then
+                            local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+                            if hum and hum.DisplayName ~= plr.DisplayName then ehFera = true end
+                        end
+                        
+                        data.label.Text = "{ "..plr.Name.." }"
+                        if ehFera then
+                            data.label.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        else
+                            data.label.TextColor3 = Color3.fromRGB(0, 255, 0)
+                        end
+                    end
+                end
+                task.wait(0.3)
+            end
+        end)
+    else
+        if Conexoes.Player then Conexoes.Player:Disconnect() Conexoes.Player = nil end
+        for plr, data in pairs(NameTags.Players) do
+            if data.gui then data.gui:Destroy() end
+        end
+        NameTags.Players = {}
+    end
+end)
+
+-- =========================
+-- NAME EXIT - { SAIDA } - CORRIGIDO
+-- =========================
+CriarToggleAnimado("Name Exit", pageESP, function(ligado)
+    estadosESP["Name Exit"] = ligado
+    
+    if ligado then
+        local function CriarNameExit(obj)
+            if not obj:IsA("Model") or NameTags.Exits[obj] then return end
+            if not obj.PrimaryPart then return end
+            
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "ESP_Name_Exit"
+            billboard.Size = UDim2.new(0, 200, 0, 30)
+            billboard.StudsOffset = Vector3.new(0, 3, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Adornee = obj.PrimaryPart
+            billboard.Parent = obj.PrimaryPart
+            
+            local texto = Instance.new("TextLabel")
+            texto.Size = UDim2.new(1, 0, 1, 0)
+            texto.BackgroundTransparency = 1
+            texto.Text = "{ SAIDA }"
+            texto.TextColor3 = Color3.fromRGB(255, 140, 0)
+            texto.TextStrokeTransparency = 0
+            texto.TextStrokeColor3 = Color3.new(0, 0, 0)
+            texto.Font = Enum.Font.GothamBold
+            texto.TextSize = 16
+            texto.Parent = billboard
+            
+            NameTags.Exits[obj] = billboard
+        end
+        
+        -- Pega exits existentes
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("Model") and ehSaida(obj.Name:lower()) then
+                CriarNameExit(obj)
+            end
+        end
+        
+        -- Pega exits que spawnam depois
+        Conexoes.Exit = Workspace.DescendantAdded:Connect(function(obj)
+            if estadosESP["Name Exit"] and obj:IsA("Model") and ehSaida(obj.Name:lower()) then
+                task.wait(0.5)
+                CriarNameExit(obj)
+            end
+        end)
+    else
+        if Conexoes.Exit then Conexoes.Exit:Disconnect() Conexoes.Exit = nil end
+        for obj, gui in pairs(NameTags.Exits) do
+            if gui then gui:Destroy() end
+        end
+        NameTags.Exits = {}
+    end
+end)
 
 -- =========================
 -- SEPARADOR LIGHTING
