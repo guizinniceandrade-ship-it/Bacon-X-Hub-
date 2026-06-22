@@ -442,6 +442,7 @@ SeparadorFarm.ZIndex = 4
 local AutoFarmAtivo = false
 local VelocidadeFarm = 20
 local ConexaoFarm = nil
+local ConexaoNoclip = nil
 
 -- Função pra pegar coin mais próxima
 local function PegarCoinMaisProxima()
@@ -474,39 +475,57 @@ CriarToggleAnimado("Auto Farm Coin", pageMain, function(ligado)
     AutoFarmAtivo = ligado
     
     if ligado then
+        -- Liga Noclip
+        ConexaoNoclip = RunService.Stepped:Connect(function()
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+        
+        -- Liga Farm
         ConexaoFarm = task.spawn(function()
-            while AutoFarmAtivo and task.wait() do
+            while AutoFarmAtivo do
                 local char = player.Character
                 local humanoid = char and char:FindFirstChild("Humanoid")
                 local root = char and char:FindFirstChild("HumanoidRootPart")
                 
                 if root and humanoid and humanoid.Health > 0 then
+                    humanoid.WalkSpeed = VelocidadeFarm
                     local coin = PegarCoinMaisProxima()
                     
                     if coin then
-                        -- Usa MoveTo ao invés de Tween pra não bugar
                         humanoid:MoveTo(coin.Position)
-                        
-                        -- Espera chegar perto ou timeout
-                        local inicio = tick()
+                        -- Vai direto sem parar, sem timeout
                         repeat
                             task.wait()
-                            if not AutoFarmAtivo or not coin.Parent then break end
-                            if tick() - inicio > 5 then break end -- timeout 5s
-                        until (root.Position - coin.Position).Magnitude < 5
+                        until not AutoFarmAtivo or not coin.Parent or (root.Position - coin.Position).Magnitude < 4
                     end
                 end
-                task.wait(0.5)
+                task.wait()
             end
         end)
     else
+        -- Desliga Noclip
+        if ConexaoNoclip then
+            ConexaoNoclip:Disconnect()
+            ConexaoNoclip = nil
+        end
+        
+        -- Desliga Farm
         if ConexaoFarm then
             task.cancel(ConexaoFarm)
             ConexaoFarm = nil
         end
-        -- Para o movimento quando desliga
+        
+        -- Para e volta velocidade normal
         if player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:MoveTo(player.Character.HumanoidRootPart.Position)
+            local humanoid = player.Character.Humanoid
+            humanoid:MoveTo(player.Character.HumanoidRootPart.Position)
+            humanoid.WalkSpeed = 16
         end
     end
 end)
@@ -516,16 +535,21 @@ end)
 -- =========================
 CriarSlider("Velocidade do Farm", pageMain, 16, 30, 20, function(valor)
     VelocidadeFarm = valor
-    -- Aplica a velocidade no humanoid
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
+    -- Atualiza na hora se tiver ligado
+    if AutoFarmAtivo and player.Character and player.Character:FindFirstChild("Humanoid") then
         player.Character.Humanoid.WalkSpeed = valor
     end
 end)
 
 -- Atualiza velocidade quando respawna
 player.CharacterAdded:Connect(function(char)
-    char:WaitForChild("Humanoid").WalkSpeed = VelocidadeFarm
+    char:WaitForChild("Humanoid")
+    task.wait(0.5)
+    if AutoFarmAtivo then
+        char.Humanoid.WalkSpeed = VelocidadeFarm
+    end
 end)
+
 
 -- ===========================
 -- ABA ESP
