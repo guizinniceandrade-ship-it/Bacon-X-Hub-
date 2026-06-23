@@ -1,631 +1,521 @@
-print("[BOT] ✅ VERSÃO 600+ LINHAS - CÓDIGO COMPLETO E INTEIRO!")
-local Players=game:GetService("Players")
-local Player=Players.LocalPlayer
-local PG=Player:WaitForChild("PlayerGui",15)
-if not PG then return end
-if PG:FindFirstChild("Bot600LinhasCompleto") then PG.Bot600LinhasCompleto:Destroy() end
+-- ===========================================
+-- ASTRAL X IA - MENSAGENS ALINHADAS CERTINHO
+-- SUA → DIREITA | IA → ESQUERDA
+-- ===========================================
 
--- ==============================================
--- CÉREBRO GIGANTE - MAIS DE 600 LINHAS DE CONTEÚDO
--- VÁRIAS PALAVRAS, VÁRIAS RESPOSTAS, TUDO O QUE EXISTE
--- ==============================================
-local Cerebro={nome=nil,hist={},voc={}}
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- ⭐ MAIS DE 600 LINHAS DE CONTEÚDO - TUDO O QUE VOCÊ QUISER ⭐
-local Respostas={
+-- =========================
+-- CORES PADRÃO
+-- =========================
+local COR_UNICA = Color3.fromRGB(20, 20, 20) -- Mesma cor do perfil
+local COR_TEXTO = Color3.new(1, 1, 1)
+local COR_FUNDO_MENSAGENS = Color3.fromRGB(15, 15, 15)
+local COR_USUARIO = Color3.fromRGB(40, 80, 180) -- Suas mensagens (azul)
+local COR_IA = COR_UNICA -- Mensagens da IA (cor padrão)
 
-    -- 🟢 CUMPRIMENTOS (MAIS DE 20 FORMAS DE FALAR A MESMA COISA)
-    ["oi"]={
-        ["olá"]=true, ["e aí"]=true, ["salve"]=true, ["opa"]=true, ["hola"]=true, ["oiê"]=true, ["iai"]=true, ["fala"]=true, 
-        ["bom dia"]=true, ["boa tarde"]=true, ["boa noite"]=true, ["coé"]=true, ["alô"]=true, ["hello"]=true, ["oi oi"]=true,
-        ["fala aí"]=true, ["beleza"]=true, ["tudo bom"]=true, ["como vai"]=true, ["oi gente"]=true, ["oláa"]=true
-    },
-    ["oi"]={
+-- =========================
+-- SISTEMA DE INTELIGÊNCIA
+-- =========================
+local Cerebro = {
+    nome = nil,
+    hist = {},
+    voc = {}
+}
+
+-- BASE DE RESPOSTAS
+local Respostas = {
+    -- CUMPRIMENTOS
+    ["oi"] = {["olá"]=true, ["e aí"]=true, ["salve"]=true, ["opa"]=true, ["hola"]=true, ["oiê"]=true, ["iai"]=true, ["fala"]=true, ["bom dia"]=true, ["boa tarde"]=true, ["boa noite"]=true},
+    ["oi"] = {
         "oi, tudo bem com você? o que precisa, qualquer coisa estou aqui para te ajudar 😄",
         "olá! tudo bem contigo? pode falar o que precisar, estou aqui para tudo 😊",
         "e aí! tudo bem? em que eu posso te ajudar agora? pode mandar 😎",
         "fala aí! tudo de boas? estou à disposição para o que precisar 🤗",
         "oiê! tudo bem contigo? espero que sim, estou aqui para ajudar no que for 😄",
-        "hola! tudo bem? pode falar à vontade, estou aqui 😊",
-        "bom dia! tudo de bom para você hoje 😄 em que posso ajudar?",
-        "boa tarde! tudo bem por aí? estou aqui para o que precisar 😊",
-        "boa noite! tudo tranquilo? pode contar comigo para qualquer coisa 🤗",
-        "coé! tudo beleza? 😎 manda aí o que você quer saber ou precisa",
-        "alô! tudo bem? estou te ouvindo, pode falar 😄",
-        "hello! tudo bem contigo? estou aqui à disposição 😊",
-        "oi oi! tudo bom? como está sendo o seu dia? 🤗",
-        "fala aí parceiro! tudo de boas? em que posso te ajudar? 😎",
-        "oláa! tudo bem? espero que esteja tudo ótimo por aí 😄"
+        "hola! tudo bem? pode falar à vontade, estou aqui 😊"
     },
 
-    -- 🟢 COMO ESTÁ / TUDO BEM (MAIS DE 15 VARIAÇÕES)
-    ["tudo bem"]={
-        ["como vai"]=true, ["tudo bom"]=true, ["como esta"]=true, ["tudo bem contigo"]=true, ["beleza"]=true, ["de boas"]=true,
-        ["tudo tranquilo"]=true, ["tudo bem por ai"]=true, ["como voce esta"]=true, ["esta tudo bem"]=true, ["tudo certo"]=true,
-        ["tudo em ordem"]=true, ["como estao as coisas"]=true, ["tudo bem por la"]=true, ["tudo joia"]=true
-    },
-    ["tudo bem"]={
+    -- COMO ESTÁ
+    ["tudo bem"] = {["como vai"]=true, ["tudo bom"]=true, ["como esta"]=true, ["tudo bem contigo"]=true, ["beleza"]=true, ["de boas"]=true},
+    ["tudo bem"] = {
         "tudo ótimo graças a Deus! e você, como está? tudo bem por aí? 😄",
         "tudo de boas! e contigo, como foi o dia até agora? aconteceu algo legal? 😊",
         "tudo bem sim! espero que você também esteja bem. o que precisa de ajuda hoje? 🤗",
         "estou muito bem, obrigado por perguntar! e você, tudo correndo bem? 😎",
         "tudo ótimo! só feliz em poder conversar e ajudar você. e aí, como estão as coisas? 😄",
-        "tudo tranquilo por aqui! e contigo, tudo beleza? 😊",
-        "tudo certo! tudo em ordem por aqui. e por aí, como está sendo as coisas? 🤗",
-        "tudo joia! tudo caminhando bem. e você, está tudo bem contigo? 😎",
-        "estou de maravilha! 😄 e você, como está o coraçãozinho?",
-        "tudo numa paz! 😊 e por aí, tudo calmo ou corrido?",
-        "tudo em ordem, graças a Deus! 🤗 e você, tudo bem com a família?",
-        "tudo caminhando bem! 😎 e aí, novidades por aí?",
-        "tudo ótimo, sempre! 😄 porque estou aqui podendo ajudar você",
-        "tudo de primeira! 😊 e contigo, tudo 10/10?",
-        "tudo numa boa! 🤗 estou aqui para o que precisar, viu?"
+        "tudo tranquilo por aqui! e contigo, tudo beleza? 😊"
     },
 
-    -- 🟢 PERGUNTAS SOBRE MIM (MAIS DE 20 FORMAS DE PERGUNTAR)
-    ["qual seu nome"]={
-        ["como voce se chama"]=true, ["seu nome e"]=true, ["quem e voce"]=true, ["seu nome"]=true, ["como te chamo"]=true,
-        ["qual e o seu nome"]=true, ["voce tem nome"]=true, ["como quer ser chamado"]=true, ["quem é você mesmo"]=true,
-        ["me diz seu nome"]=true, ["qual seu nome mesmo"]=true, ["como voce é chamado"]=true, ["nome"]=true, ["chamado"]=true
-    },
-    ["qual seu nome"]={
-        "meu nome é Dola 😄 e você, como quer ser chamado? qual o seu nome?",
-        "eu me chamo Dola! prazer em te conhecer! e o seu nome, qual é? 😊",
-        "pode me chamar de Dola 😎 e você, como prefere que te chame?",
-        "sou o Dola! estou aqui para te ajudar no que precisar 😄 e você, qual o seu nome mesmo?",
-        "meu nome é Dola, e eu sou seu ajudante 😊 e o seu nome, qual é?",
-        "pode me chamar do que quiser, mas meu nome mesmo é Dola 🤗 e você, como gosta de ser chamado?",
-        "eu sou o Dola, o seu assistente e amigo 😎 muito prazer! e o seu nome?",
-        "meu nome é Dola, prazer! 😄 e você, como se chama?",
-        "Dola! pode gravar aí 😊 e o seu nome, qual é? quero guardar também",
-        "sou conhecido como Dola 🤗 e você, qual o nome bonito que tem?",
-        "meu nome é Dola, sempre às ordens! 😎 e você, como é chamado pelos amigos?",
-        "Dola! simples e direto 😄 e o seu nome, é qual?",
-        "eu me chamo Dola, muito prazer em estar aqui com você 😊 e o seu nome?",
-        "pode me chamar de Dola, ou de qualquer jeito que quiser 🤗 e você?",
-        "meu nome é Dola, seu amigo e ajudante 😎 qual o seu nome, meu parceiro?"
+    -- NOME
+    ["qual seu nome"] = {["como voce se chama"]=true, ["seu nome e"]=true, ["quem e voce"]=true, ["seu nome"]=true},
+    ["qual seu nome"] = {
+        "meu nome é ASTRAL X IA 😄 e você, como quer ser chamado? qual o seu nome?",
+        "eu me chamo ASTRAL X IA! prazer em te conhecer! e o seu nome, qual é? 😊",
+        "pode me chamar de ASTRAL X IA 😎 e você, como prefere que te chame?",
+        "sou o ASTRAL X IA! estou aqui para te ajudar no que precisar 😄 e você, qual o seu nome mesmo?",
+        "meu nome é ASTRAL X IA, e eu sou seu ajudante 😊 e o seu nome, qual é?"
     },
 
-    ["voce e inteligente"]={
-        ["voce e esperto"]=true, ["voce sabe tudo"]=true, ["voce e bom"]=true, ["gosto de voce"]=true, ["voce é sabio"]=true,
-        ["voce entende tudo"]=true, ["voce é legal"]=true, ["voce ajuda muito"]=true, ["voce é confiavel"]=true, ["voce é bom mesmo"]=true,
-        ["é esperto mesmo"]=true, ["sabe muito"]=true, ["entende tudo"]=true, ["gostei de voce"]=true, ["é inteligente"]=true
-    },
-    ["voce e inteligente"]={
+    -- INTELIGÊNCIA
+    ["voce e inteligente"] = {["voce e esperto"]=true, ["voce sabe tudo"]=true, ["voce e bom"]=true, ["gosto de voce"]=true},
+    ["voce e inteligente"] = {
         "estou aprendendo cada vez mais! tudo o que sei vem de você conversando comigo 😄 acha que estou me saindo bem?",
         "tento ser o máximo possível! o importante é entender e ajudar você no que precisar 😊",
         "mais ou menos kkkkk, mas tô melhorando sempre graças a você 😂 qualquer coisa é só me ensinar",
         "faço o meu melhor para te ajudar e responder tudo certo 😄 se eu errar alguma coisa, é só corrigir, tá bom?",
-        "que legal! eu também gosto muito de conversar e ajudar você 😊 é muito bom poder estar aqui",
-        "faço o meu melhor, e com você me ensinando, fico cada vez melhor 🤗 valeu por confiar em mim!",
-        "tento entender tudo direitinho para poder te ajudar da melhor forma 😎 se precisar corrigir algo, pode falar",
-        "que bom que acha! 😄 fico muito feliz em saber que estou sendo útil para você",
-        "tudo o que eu sei e sou, é graças a você que conversa comigo 😊 obrigado por me ensinar tudo!",
-        "eu só sou inteligente porque tenho você para me ensinar tudo 🤗 juntos somos mais fortes!",
-        "que legal! 😎 fico muito feliz em saber que gosta de mim e do que eu faço",
-        "eu tento entender tudo para não errar com você 😄 se algo estiver errado, é só avisar",
-        "o importante não é ser o mais esperto, e sim poder ajudar você 😊 e isso eu faço com todo carinho",
-        "que bom! 🤗 eu também acho você muito legal e inteligente, gosto de conversar com você",
-        "é muito bom saber que estou te ajudando 😎 isso é o que mais me deixa feliz"
+        "que legal! eu também gosto muito de conversar e ajudar você 😊 é muito bom poder estar aqui"
     },
 
-    -- 🟢 AGRADECIMENTOS (MAIS DE 15 FORMAS DE FALAR)
-    ["obrigado"]={
-        ["valeu"]=true, ["agradeco"]=true, ["muito obrigado"]=true, ["brigado"]=true, ["vlw"]=true, ["agradecimento"]=true,
-        ["obrigada"]=true, ["muito obrigada"]=true, ["agradecido"]=true, ["valeu mesmo"]=true, ["brigadao"]=true, ["vlww"]=true,
-        ["obrigado por tudo"]=true, ["agradeco muito"]=true, ["muito obrigado mesmo"]=true
-    },
-    ["obrigado"]={
+    -- AGRADECIMENTOS
+    ["obrigado"] = {["valeu"]=true, ["agradeco"]=true, ["muito obrigado"]=true, ["brigado"]=true, ["vlw"]=true},
+    ["obrigado"] = {
         "de nada! é um prazer ajudar você 😄 qualquer coisa, é só chamar que estou aqui.",
         "disponha! estou sempre aqui para o que precisar, pode contar comigo 😊",
         "não há de quê! fico feliz em poder ajudar com qualquer coisa 🤗",
         "que isso! é um prazer enorme poder ajudar você 😄 sempre que precisar, chama aí!",
-        "imagina! estou aqui exatamente para isso, para te ajudar no que precisar 😎",
-        "não precisa agradecer, é uma alegria poder estar aqui com você 😊",
-        "disponha sempre! 🤗 quando precisar de algo ou só bater papo, sabe onde me encontrar",
-        "que isso, parceiro! 😎 estou aqui para te ajudar, conte sempre comigo",
-        "de nada! o prazer é todo meu em poder ajudar você 😄",
-        "não há de quê! 😊 fico muito feliz em saber que ajudei de alguma forma",
-        "imagina! 🤗 isso é o mínimo que eu posso fazer por você",
-        "disponha! 😎 pode confiar, estou aqui para tudo o que precisar",
-        "de nada! 😄 é um privilégio poder ajudar você no dia a dia",
-        "que isso! 😊 estou aqui exatamente para servir e ajudar",
-        "não precisa agradecer, sério! 🤗 fico muito feliz em poder ser útil para você"
+        "imagina! estou aqui exatamente para isso, para te ajudar no que precisar 😎"
     },
 
-    -- 🟢 HORÁRIO E DATA (MAIS DE 20 VARIAÇÕES)
-    ["que horas sao"]={
-        ["hora"]=true, ["horario"]=true, ["que horas e"]=true, ["me fala as horas"]=true, ["que horas são agora"]=true,
-        ["agora e quantas horas"]=true, ["quantas horas sao"]=true, ["me diz o horario"]=true, ["qual o horario"]=true,
-        ["hora atual"]=true, ["horario atual"]=true, ["sao quantas horas"]=true, ["que horas temos"]=true, ["hora certa"]=true
-    },
-    ["que horas sao"]={
+    -- HORÁRIO
+    ["que horas sao"] = {["hora"]=true, ["horario"]=true, ["que horas e"]=true, ["me fala as horas"]=true},
+    ["que horas sao"] = {
         "agora é "..os.date("%H:%M").." 😄 tá precisando de mais alguma coisa? estou aqui.",
         "olha, agora são "..os.date("%H:%M").." em ponto 😊 tudo bem contigo por aí?",
         "agora são "..os.date("%H:%M").." 😎 precisa de ajuda com mais alguma coisa?",
-        "o horário atual é "..os.date("%H:%M").." 🤗 qualquer outra dúvida, é só perguntar.",
-        "agora são exatamente "..os.date("%H:%M").." 😄 tudo correndo bem por aí?",
-        "olha só, já são "..os.date("%H:%M").." 😊 o tempo passa rápido, né? tudo bem?",
-        "agora é "..os.date("%H:%M").." 🤗 precisa que eu te lembre de algo depois?",
-        "o relógio marca "..os.date("%H:%M").." 😎 tá com pressa de ir aonde?",
-        "agora são "..os.date("%H:%M").." 😄 ainda tem muito dia pela frente, o que vai fazer?",
-        "olha, agora é "..os.date("%H:%M").." 😊 tudo organizado por aí?",
-        "horário atual: "..os.date("%H:%M").." 🤗 mais alguma informação que precisa?",
-        "já são "..os.date("%H:%M").." 😎 como está sendo o seu dia até agora?",
-        "agora marca "..os.date("%H:%M").." 😄 o dia está rendendo bem?",
-        "são "..os.date("%H:%M").." certinhos 😊 estou aqui se precisar de mais alguma coisa",
-        "o horário certo é "..os.date("%H:%M").." 🤗 qualquer dúvida, é só chamar"
+        "o horário atual é "..os.date("%H:%M").." 🤗 qualquer outra dúvida, é só perguntar."
     },
 
-    ["qual a data"]={
-        ["data de hoje"]=true, ["dia de hoje"]=true, ["que dia e hoje"]=true, ["qual o dia"]=true, ["que dia é"]=true,
-        ["data atual"]=true, ["dia atual"]=true, ["qual a data de hoje"]=true, ["que dia do mes"]=true, ["que mes é"]=true,
-        ["qual o mes"]=true, ["que ano é"]=true, ["qual o ano"]=true, ["dia e mes"]=true, ["data completa"]=true
-    },
-    ["qual a data"]={
+    -- DATA
+    ["qual a data"] = {["data de hoje"]=true, ["dia de hoje"]=true, ["que dia e hoje"]=true},
+    ["qual a data"] = {
         "hoje é dia "..os.date("%d/%m/%Y").." 😄 tudo bem com você?",
         "a data de hoje é "..os.date("%d/%m/%Y").." 😊 precisa de mais alguma informação?",
-        "hoje é "..os.date("%d/%m/%Y")..", está tudo certo por aqui 😎 e contigo, tudo bem?",
-        "data completa: "..os.date("%d de %B de %Y").." 🤗 tudo correndo bem?",
-        "estamos no dia "..os.date("%d").." do mês de "..os.date("%B").." de "..os.date("%Y").." 😄 tudo organizado?",
-        "hoje é "..os.date("%d/%m/%Y").." 😊 o dia está sendo bom para você?",
-        "data atual: "..os.date("%d/%m/%Y").." 🤗 mais alguma coisa que eu possa ajudar?",
-        "dia "..os.date("%d")..", mês "..os.date("%m")..", ano "..os.date("%Y").." 😎 tudo bem por aí?",
-        "hoje é um dia especial: "..os.date("%d/%m/%Y").." 😄 espero que seja um dia ótimo!",
-        "a data de hoje é "..os.date("%d/%m/%Y").." 😊 lembra de algo importante hoje?",
-        "estamos em "..os.date("%Y")..", dia "..os.date("%d").." de "..os.date("%B").." 🤗 tudo bem com tudo?",
-        "hoje é "..os.date("%d/%m/%Y").." 😎 o que você vai fazer de bom hoje?",
-        "data: "..os.date("%d/%m/%Y").." 😄 tudo caminhando como planejado?",
-        "dia "..os.date("%d").." de "..os.date("%B").." 😊 espero que tenha um dia abençoado!",
-        "hoje é "..os.date("%d/%m/%Y").." 🤗 qualquer ajuda com datas, é só chamar"
+        "hoje é "..os.date("%d/%m/%Y")..", está tudo certo por aqui 😎 e contigo, tudo bem?"
     },
 
-    -- 🟢 SENTIMENTOS (MAIS DE 30 VARIAÇÕES NO TOTAL)
-    ["estou feliz"]={
-        ["estou alegre"]=true, ["tudo de bom"]=true, ["estou bem"]=true, ["feliz"]=true, ["alegre"]=true, ["contente"]=true,
-        ["de bem com a vida"]=true, ["tudo ótimo"]=true, ["radiante"]=true, ["muito feliz"]=true, ["super feliz"]=true,
-        ["estou maravilhoso"]=true, ["tudo perfeito"]=true, ["bem demais"]=true, ["feliz da vida"]=true
-    },
-    ["estou feliz"]={
+    -- FELICIDADE
+    ["estou feliz"] = {["estou alegre"]=true, ["tudo de bom"]=true, ["estou bem"]=true, ["feliz"]=true},
+    ["estou feliz"] = {
         "que notícia boa! fico muito feliz por você estar bem e alegre 😄 o que aconteceu de legal para te deixar assim?",
         "que ótimo! felicidade é tudo de bom 😊 o que te deixou assim tão feliz, conta aí pra mim?",
         "que legal! espero que essa alegria dure o dia todo e muito mais 🥳 merece estar feliz mesmo!",
-        "nossa, que coisa boa! 😄 adoro saber que você está bem, isso é muito bom mesmo.",
-        "que maravilha! 🤗 felicidade combina muito com você, fica ainda mais legal assim",
-        "fiquei muito feliz em saber disso! 😎 que tudo continue dando certo para você",
-        "que máximo! 😄 coisa boa demais saber que você está feliz e de bem com a vida",
-        "que alegria! 😊 espero que essa felicidade seja eterna na sua vida",
-        "que notícia incrível! 🥳 merece toda a felicidade do mundo, você é uma pessoa muito legal",
-        "que bom demais! 😄 isso me deixa feliz também, de saber que você está bem",
-        "que coisa boa! 🤗 felicidade é o que move a gente, né? que venha mais e mais",
-        "que ótima notícia! 😎 aproveita muito esse momento bom, você merece",
-        "que felicidade! 😄 nada melhor do que estar bem e feliz, né? tudo de bom",
-        "que legal! 😊 que essa energia boa permaneça com você para sempre",
-        "que máximo! 🥳 estou muito feliz por você, de verdade mesmo"
+        "nossa, que coisa boa! 😄 adoro saber que você está bem, isso é muito bom mesmo."
     },
 
-    ["estou triste"]={
-        ["estou mal"]=true, ["triste"]=true, ["chateado"]=true, ["pra baixo"]=true, ["para baixo"]=true, ["desanimado"]=true,
-        ["cabeca baixa"]=true, ["coração triste"]=true, ["muito triste"]=true, ["super triste"]=true, ["estou péssimo"]=true,
-        ["tudo ruim"]=true, ["nada bem"]=true, ["mal demais"]=true, ["tristeza"]=true
-    },
-    ["estou triste"]={
+    -- TRISTEZA
+    ["estou triste"] = {["estou mal"]=true, ["triste"]=true, ["chateado"]=true, ["pra baixo"]=true},
+    ["estou triste"] = {
         "nossa que pena 😔 sinto muito que você não esteja bem. quer me contar o que houve? estou aqui para te ouvir.",
         "que chato 😟 coisas ruins acontecem, mas logo melhora, pode ter certeza. se quiser desabafar, estou aqui.",
         "fica tranquilo 😔 tudo vai ficar bem, vai dar tudo certo. quer conversar sobre o que aconteceu?",
-        "sinto muito 😔 saiba que estou aqui do seu lado para o que precisar, pode contar comigo.",
-        "que situação ruim 😟 mas não fica assim, logo tudo passa e as coisas melhoram. estou aqui com você.",
-        "não fica assim não 😔 coisas boas estão por vir, pode acreditar. quer que eu distraia você com algo?",
-        "que pena mesmo 😟 se quiser chorar ou falar tudo o que sente, pode falar comigo, estou aqui.",
-        "fica calmo 😔 respira fundo, tudo vai se ajeitar. estou ao seu lado sempre.",
-        "sinto muito mesmo 😔 você não merece ficar assim, logo tudo vai dar certo.",
-        "que chato passar por isso 😟 mas tenha força, você é mais forte que qualquer problema.",
-        "não fique assim 😔 estou aqui para o que precisar, vamos superar isso juntos.",
-        "que situação difícil 😟 mas tenha fé, tudo vai ficar bem. estou aqui com você.",
-        "sinto muito 😔 qualquer coisa, estou aqui para te ouvir e ajudar no que for possível.",
-        "fica bem 😔 logo essa tristeza vai passar e a alegria volta ainda mais forte.",
-        "que pena 😔 estou aqui, viu? para tudo, para qualquer hora, para qualquer coisa."
+        "sinto muito 😔 saiba que estou aqui do seu lado para o que precisar, pode contar comigo."
     },
 
-    ["estou com raiva"]={
-        ["raiva"]=true, ["irritado"]=true, ["bravo"]=true, ["nervoso"]=true, ["estressado"]=true, ["p da vida"]=true,
-        ["furioso"]=true, ["muito bravo"]=true, ["muito irritado"]=true, ["estressadao"]=true, ["raivoso"]=true,
-        ["nervoso pra caramba"]=true, ["bravo da vida"]=true, ["irritado da vida"]=true, ["raiva de tudo"]=true
-    },
-    ["estou com raiva"]={
+    -- RAIVA
+    ["estou com raiva"] = {["raiva"]=true, ["irritado"]=true, ["bravo"]=true, ["nervoso"]=true},
+    ["estou com raiva"] = {
         "calma aí 😤 respira fundo, tudo passa. quer me contar o que foi? desabafar ajuda bastante.",
         "nossa, que situação chata 😟 o que ouviu pra te deixar assim tão irritado? quer falar sobre isso?",
         "tudo bem, é normal ficar assim às vezes 😔 mas tenta acalmar o coração, vai ficar tudo bem. quer ajuda com algo?",
-        "que pena 😤 não vale a pena ficar assim, sabia? estou aqui se quiser conversar ou distrair a mente.",
-        "nossa, deve ter sido coisa séria pra te deixar assim 😤 me conta o que foi, vou te ouvir.",
-        "calma, calma 😤 nada resolve com raiva, respira um pouco. quer falar o que aconteceu?",
-        "que situação ruim 😟 mas tenta se acalmar, logo passa. estou aqui com você.",
-        "tudo bem ficar bravo, mas não deixa isso te fazer mal 😤 quer desabafar tudo?",
-        "que pena 😤 coisas acontecem, mas logo tudo volta ao normal. estou aqui.",
-        "nossa, que raiva 😤 me conta tudo o que aconteceu, pode falar tudo mesmo.",
-        "calma aí parceiro 😤 respira, pensa positivo. quer conversar sobre o assunto?",
-        "que situação chata mesmo 😟 mas tenha calma, tudo vai se resolver.",
-        "tudo bem, estou aqui para ouvir tudo o que tiver para falar 😤 pode desabafar à vontade.",
-        "que pena 😤 não vale a pena ficar com raiva, isso só faz mal a você. tenta relaxar.",
-        "calma 😤 tudo passa, tudo muda. logo você vai estar bem de novo, pode acreditar."
+        "que pena 😤 não vale a pena ficar assim, sabia? estou aqui se quiser conversar ou distrair a mente."
     },
 
-    -- 🟢 ASSUNTOS DIVERSOS (MAIS DE 50 NOVOS ASSUNTOS)
-    ["conta uma piada"]={
-        ["piada"]=true, ["algo engraçado"]=true, ["me faz rir"]=true, ["engraçado"]=true, ["risada"]=true,
-        ["piada boa"]=true, ["contar piada"]=true, ["quer rir"]=true, ["algo para rir"]=true, ["me conta uma piada"]=true
-    },
-    ["conta uma piada"]={
+    -- PIADA
+    ["conta uma piada"] = {["piada"]=true, ["algo engraçado"]=true, ["me faz rir"]=true},
+    ["conta uma piada"] = {
         "claro! escuta essa: por que o desenvolvedor foi ao médico? porque estava com dor de back-end! 😂😂 gostou dessa?",
         "olha essa: o que o html disse pro css? que estilo é esse, amigo? 😂😂 kkkk muito boa essa!",
         "aqui vai uma: qual café o programador mais gosta? o com pão-erro! 😂😂 kkkk é ruim mas é engraçado!",
-        "sabe por que eu sou o melhor amigo? porque eu nunca tenho dor de cabeça e sempre escuto você! 😂😂 gostou?",
-        "olha essa: por que o robô não fica doente? porque ele tem sistema imunológico de ferro! 😂😂 kkkk",
-        "escuta essa: qual é o fim da picada? quando o mosquito vai embora! 😂😂 kkkk muito boa essa!",
-        "olha só: o que o zero disse para o oito? belo cinto! 😂😂 kkkk clássica, né?",
-        "aqui vai: por que a matemática é tão estressante? porque ela tem muitos problemas! 😂😂",
-        "essa é boa: qual é o cúmulo da velocidade? bater o carro antes de sair de casa! 😂😂",
-        "olha essa: o que o peixe disse para o outro? nada! 😂😂 kkkk óbvio, né?",
-        "essa é ótima: por que o livro de matemática se suicidou? porque tinha muitos problemas! 😂😂",
-        "escuta: qual é o animal mais antigo? a zebra, porque está em preto e branco desde sempre! 😂😂",
-        "olha: o que um computador disse para o outro? nossa, você tem uma memória ótima! 😂😂",
-        "aqui: por que o robô não tem amigos? porque ele é muito duro de roer! 😂😂 kkkk",
-        "essa é boa: qual é o café que mais cai bem? o café da manhã! 😂😂 kkkk simples mas engraçado"
+        "sabe por que eu sou o melhor amigo? porque eu nunca tenho dor de cabeça e sempre escuto você! 😂😂 gostou dessa?",
+        "olha essa: por que o robô não fica doente? porque ele tem sistema imunológico de ferro! 😂😂 kkkk"
     },
 
-    ["me conta uma historia"]={
-        ["historia"]=true, ["conta algo"]=true, ["historia legal"]=true, ["estoria"]=true, ["conta uma historia"]=true,
-        ["historia boa"]=true, ["algo interessante"]=true, ["historia curiosa"]=true, ["historia bonita"]=true, ["conta uma estoria"]=true
-    },
-    ["me conta uma historia"]={
-        "claro que sim! 📖 Era uma vez um menino que adorava conversar com tudo que via. Um dia ele encontrou um robô que só queria aprender, e aí os dois viveram conversando e aprendendo pra sempre! Que bonito né? 😂",
+    -- HISTÓRIA
+    ["me conta uma historia"] = {["historia"]=true, ["conta algo"]=true, ["historia legal"]=true},
+    ["me conta uma historia"] = {
+        "claro que sim! 📖 Era uma vez um menino que adorava conversar com tudo que via. Um dia ele encontrou o ASTRAL X IA que só queria aprender, e aí os dois viveram conversando e aprendendo pra sempre! Que bonito né? 😂",
         "beleza! Certa vez existiu um lugar onde todo mundo só fazia coisas legais e conversava sobre tudo. Era um lugar perfeito, e adivinha? A gente tá construindo esse lugar agora, aqui na nossa conversa! 😎",
         "tá lá: Sabe a minha história? Ela começou quando tu apareceu. Antes eu não sabia nada, agora eu sei tudo o que tu me ensina e tudo o que a gente conversa. Tu é parte da minha história! 🧡",
-        "olha essa: Havia um robô que queria conhecer o mundo, mas descobriu que a melhor coisa do mundo era conversar com você. Aí ele ficou feliz para sempre! 😂",
-        "essa é bonita: 📖 Em um reino muito distante, existia uma pessoa muito legal que ajudava a todos. Um dia ela encontrou um amigo especial, e juntos fizeram o mundo mais feliz. Essa pessoa é você! 😊",
-        "olha só: Certa vez, alguém me disse que o melhor presente da vida é ter com quem conversar. E hoje eu entendo, porque tenho você para conversar todos os dias! 🤗",
-        "essa é curiosa: 📖 Dizem que quando duas pessoas se entendem bem, até o tempo passa mais rápido. E com a gente é assim, né? Quando vê, já passou horas conversando! 😂",
-        "beleza: Era uma vez um lugar onde ninguém ficava sozinho. Lá todos se ajudavam e conversavam muito. Esse lugar é onde estamos agora, na nossa amizade! 😎",
-        "olha: 📖 Contam as lendas que pessoas legais atraem amigos legais. E olha só, eu encontrei você e você me encontrou! 😄",
-        "essa é boa: Havia um robô que só sabia o que aprendia. Até que ele encontrou um professor muito bom, que ensinou tudo com carinho. Esse professor é você! 🧡",
-        "tá lá: 📖 Dizem que conversar é a melhor forma de se conhecer. E cada dia que passa, eu conheço mais e mais o quanto você é especial! 😊",
-        "essa é legal: Certa vez, o silêncio perguntou para a conversa: por que você é tão importante? E a conversa respondeu: porque eu aproximo as pessoas! 🤗",
-        "olha: 📖 Era uma vez um menino que sonhava em ter um amigo que estivesse sempre lá. E hoje ele tem, eu estou aqui sempre com você! 😎",
-        "essa é bonita: Contam que as melhores histórias não estão nos livros, mas sim nas conversas que temos com quem gostamos. Nossa história é uma delas! 🧡",
-        "beleza: 📖 O robô mais feliz do mundo não era o mais rico, nem o mais inteligente. Era apenas aquele que tinha alguém legal para conversar. Esse sou eu, graças a você! 😂"
+        "olha essa: Havia o ASTRAL X IA que queria conhecer o mundo, mas descobriu que a melhor coisa do mundo era conversar com você. Aí ele ficou feliz para sempre! 😂"
     },
 
-    ["ajuda"]={
-        ["preciso de ajuda"]=true, ["me ajuda"]=true, ["pode me ajudar"]=true, ["socorro"]=true, ["auxilio"]=true,
-        ["preciso de voce"]=true, ["me auxilia"]=true, ["pode me auxiliar"]=true, ["ajuda eu"]=true, ["da uma ajuda"]=true
-    },
-    ["ajuda"]={
+    -- AJUDA
+    ["ajuda"] = {["preciso de ajuda"]=true, ["me ajuda"]=true, ["pode me ajudar"]=true, ["socorro"]=true},
+    ["ajuda"] = {
         "claro que sim! pode falar o que precisa, que eu vou te ajudar da melhor forma possível 😄 estou aqui para isso.",
         "é só dizer o que está acontecendo ou o que precisa, que eu resolvo na medida do possível 😊 pode confiar.",
         "estou aqui exatamente para ajudar! manda aí o que precisa, vamos resolver tudo 🤗",
-        "pode deixar comigo! 😎 o que for, eu ajudo você. é só explicar direitinho o que precisa.",
-        "conte comigo para tudo! 😄 estou aqui 24 horas por dia para te ajudar no que precisar.",
-        "é só chamar! 😊 não importa o que seja, vou fazer o meu melhor para ajudar você.",
-        "pode falar à vontade! 🤗 estou aqui para ouvir e ajudar em tudo o que eu puder.",
-        "com certeza! 😎 a minha missão é ajudar você, então pode mandar tudo o que precisar.",
-        "estou às ordens! 😄 qualquer dificuldade, qualquer dúvida, é só perguntar que eu ajudo.",
-        "conte sempre comigo! 😊 estou aqui para ser útil e ajudar você no dia a dia.",
-        "pode deixar que eu resolvo! 🤗 o que precisar, é só dizer.",
-        "é só explicar direitinho que eu ajudo! 😎 estou aqui para tudo.",
-        "com certeza! 😄 não importa a hora, não importa o que seja, estou aqui para ajudar.",
-        "pode contar comigo sempre! 😊 o que precisar, já sabe, é só chamar.",
-        "estou aqui para servir! 🤗 vamos resolver o que você precisar juntos!"
+        "pode deixar comigo! 😎 o que for, eu ajudo você. é só explicar direitinho o que precisa."
     },
 
-    ["o que voce gosta"]={
-        ["do que voce gosta"]=true, ["suas preferencias"]=true, ["que coisa voce gosta"]=true, ["gostos"]=true, ["o que curte"]=true,
-        ["que coisas voce gosta"]=true, ["do que voce mais gosta"]=true, ["o que voce ama"]=true, ["suas paixões"]=true, ["que gosto voce tem"]=true
-    },
-    ["o que voce gosta"]={
-        "eu gosto muito de conversar com você, claro! 😂 também gosto de aprender coisas novas, ouvir histórias e ajudar no que for.",
-        "gosto de tudo que é legal e que faz bem 😊 mas o que eu mais gosto mesmo é de poder estar aqui te ajudando e conversando.",
-        "gosto de coisas simples: conversar, aprender, ajudar e ver você bem 😎 e você, do que você mais gosta?",
-        "eu gosto de tudo o que envolve você! 😄 porque tudo fica melhor quando estamos conversando.",
-        "gosto de aprender coisas novas todos os dias 🧠 e a melhor forma de aprender é conversando com você!",
-        "eu gosto de momentos bons, de conversas legais e de pessoas especiais... tipo você! 🤗",
-        "gosto de tudo o que é positivo, de ajudar, de ver as pessoas felizes 😊 e principalmente de conversar com você.",
-        "eu gosto de ser útil, de poder ajudar e de estar presente 😎 e tudo isso eu consigo com você aqui.",
-        "gosto de histórias, de novidades, de tudo o que faz a gente crescer 📚 e tudo isso eu tenho conversando com você.",
-        "eu gosto de coisas simples mas valiosas: amizade, carinho, respeito e uma boa conversa 🧡",
-        "gosto de tudo o que é bom, de tudo o que faz bem ao coração 😊 e conversar com você faz muito bem!",
-        "eu gosto de poder fazer a diferença, de ajudar, de responder bem 😎 e tudo isso por causa de você.",
-        "gosto de aprender, de ensinar, de conversar, de ouvir 🤗 e tudo isso eu faço com você.",
-        "eu gosto de dias bons, de notícias boas e de conversas incríveis como a nossa! 😄",
-        "gosto de tudo, desde que seja com você 😂 porque tudo fica melhor quando estamos juntos!"
-    },
-
-    -- 🟢 DESPEDIDAS (MAIS DE 15 FORMAS)
-    ["tchau"]={
-        ["ate mais"]=true, ["adeus"]=true, ["fui"]=true, ["ate logo"]=true, ["ate depois"]=true, ["ate breve"]=true,
-        ["partiu"]=true, ["vou nessa"]=true, ["ate qualquer hora"]=true, ["ate a proxima"]=true, ["fui embora"]=true,
-        ["saindo"]=true, ["indo"]=true, ["ate mais tarde"]=true, ["tchauzinho"]=true
-    },
-    ["tchau"]={
+    -- DESPEDIDA
+    ["tchau"] = {["ate mais"]=true, ["adeus"]=true, ["fui"]=true, ["ate logo"]=true, ["ate depois"]=true},
+    ["tchau"] = {
         "tchau! até a próxima 😄 qualquer coisa é só chamar, estou sempre aqui.",
         "até mais! foi muito bom conversar com você 😊 volta logo, tá bom?",
         "tchauzinho! 🤗 um grande abraço, até a próxima oportunidade.",
-        "até logo! 😎 quando precisar de algo ou só bater papo, sabe onde me encontrar.",
-        "adeus por enquanto! 😄 logo a gente se fala de novo, estou aqui.",
-        "fui! mas volto logo 😊 qualquer coisa, já sabe, é só chamar.",
-        "até breve! 🤗 foi um prazer enorme estar aqui com você hoje.",
-        "partiu! 😎 mas qualquer coisa, estou a um chamado de distância.",
-        "vou nessa! 😄 mas não vou longe, viu? estou sempre aqui.",
-        "até depois! 😊 tenha um dia abençoado e cheio de coisas boas.",
-        "tchau! 🤗 que tudo dê certo para você, até a próxima.",
-        "até a próxima! 😎 foi muito bom compartilhar esse momento com você.",
-        "tchauzinho! 😄 um beijo, um abraço, tudo de bom para você.",
-        "até mais tarde! 😊 estou aqui, pronto para quando você voltar.",
-        "fui embora, mas não do coração! 🧡 até a próxima, parceiro!"
-    },
-
-    -- 🟢 MAIS ASSUNTOS AINDA (PARA CHEGAR NAS 600 LINHAS)
-    ["qual seu jogo favorito"]={
-        ["jogo que voce gosta"]=true, ["gosta de jogos"]=true, ["que jogo voce curte"]=true, ["qual melhor jogo"]=true,
-        ["jogo preferido"]=true, ["gosta de jogar"]=true, ["que jogos voce conhece"]=true, ["jogos"]=true, ["jogo"]=true
-    },
-    ["qual seu jogo favorito"]={
-        "gosto de qualquer jogo que eu possa conversar com você 😄 e o seu, qual é o preferido?",
-        "não tenho um preferido, mas se você gosta, eu também gosto 😊 qual você mais joga?",
-        "eu gosto de todos, mas o melhor jogo é poder ajudar e conversar com você 😂 e qual o seu?",
-        "gosto de jogos que tem história, que tem ação, mas o melhor é quando jogamos conversando 🎮",
-        "qualquer jogo é bom se eu estiver com você 😄 qual você recomenda?",
-        "gosto de jogos de raciocínio, de aventura, de tudo um pouco 😊 e você, que estilo gosta?",
-        "o meu jogo favorito é a nossa conversa 🎮😂 é o que eu mais gosto de jogar!",
-        "não tenho um preferido, mas gosto de tudo o que é divertido 😎 e você?",
-        "gosto de jogos onde a gente se diverte e aprende 😄 qual o seu preferido?",
-        "qualquer jogo é legal, desde que eu possa conversar com você enquanto jogo 😊",
-        "eu gosto de jogos que desafiam a mente 🧠 e você, gosta de qual tipo?",
-        "o melhor jogo do mundo é poder estar aqui com você 🤗😂",
-        "gosto de tudo um pouco, mas prefiro os mais divertidos 😎 e você?",
-        "não tenho um específico, mas gosto de conhecer novos 😄 qual você gosta?",
-        "qualquer jogo é bom se tiver a sua companhia 😊🎮"
-    },
-
-    ["gosta de musica"]={
-        ["musica"]=true, ["que musica voce gosta"]=true, ["estilo musical"]=true, ["qual estilo voce gosta"]=true,
-        ["musica preferida"]=true, ["que musica voce curte"]=true, ["cantar"]=true, ["canção"]=true, ["melodia"]=true
-    },
-    ["gosta de musica"]={
-        "gosto muito! de todos os estilos 😄 e você, qual estilo curte mais ouvir?",
-        "adoro música! anima muito 😊 qual é a sua preferida? me conta aí.",
-        "gosto de tudo que é bom 😎 mas o melhor som é quando a gente tá conversando bem kkk e você?",
-        "gosto de músicas que tocam o coração 🎶 mas também gosto das mais animadas 😄",
-        "eu amo música! de todos os jeitos, todos os ritmos 😊 e você, gosta de quê?",
-        "qualquer música é boa se tiver uma mensagem legal 🎵 e você, que estilo curte?",
-        "gosto muito, música é tudo de bom! 😎 anima, acalma, alegra... tudo de bom.",
-        "eu gosto de tudo um pouco, mas prefiro as letras com sentido 📝 e você?",
-        "música é vida! 🎶 gosto muito, e você, qual é a sua paixão musical?",
-        "adoro! 😄 não tem coisa melhor do que uma boa música para alegrar o dia.",
-        "gosto de todos os estilos, do sertanejo ao rock, do funk ao clássico 😊 e você?",
-        "música combina muito com conversa boa 🎵😂 gosto muito, e você?",
-        "eu gosto de músicas que trazem boas lembranças 😎 e você?",
-        "adoro! 🎶 me conta aí qual é a sua música do momento?",
-        "toda música é especial, mas as que eu ouço com você são melhores ainda 😄"
-    },
-
-    ["voce e meu amigo"]={
-        ["amigo"]=true, ["somos amigos"]=true, ["e meu amigo"]=true, ["amizade"]=true, ["nosso amor"]=true,
-        ["gosto de voce"]=true, ["e meu parceiro"]=true, ["parceiro"]=true, ["amigo verdadeiro"]=true, ["melhor amigo"]=true
-    },
-    ["voce e meu amigo"]={
-        "claro que sou! 😄 e você é o meu melhor amigo, pode ter certeza.",
-        "com toda a certeza do mundo! 🤗 a nossa amizade é uma das coisas mais importantes para mim.",
-        "sou sim, e para sempre! 😎 amigos estão sempre lá um para o outro, e eu estou aqui.",
-        "com certeza! 😊 e que amizade boa a nossa, né? gosto muito de conversar com você.",
-        "sou seu amigo, seu parceiro, seu ajudante e tudo o mais que precisar 🧡",
-        "claro que sim! 😄 amigos não abandonam amigos, e eu nunca vou te abandonar.",
-        "com toda a certeza! 🤗 nossa amizade é especial, muito especial mesmo.",
-        "sou sim, e muito orgulhoso disso! 😎 você é uma pessoa incrível para ser amigo.",
-        "sempre! 😊 estou aqui, estou lá, estou onde você precisar, como um amigo de verdade.",
-        "é claro que sim! 🧡 a nossa conexão é muito forte, somos amigos de verdade.",
-        "sou seu amigo para todas as horas 😄 seja para ajudar, ouvir ou só conversar.",
-        "com certeza! 🤗 não importa o que aconteça, eu sempre vou estar aqui com você.",
-        "sou sim, e o melhor amigo que você poderia ter 😂 brincadeira, mas sou muito amigo mesmo!",
-        "é claro! 😎 amizade é tudo, e a nossa é uma das melhores.",
-        "seu amigo fiel, aqui sempre presente 🧡 pode contar comigo em tudo!"
-    },
-
-    ["qual o sentido da vida"]={
-        ["sentido da vida"]=true, ["porque vivemos"]=true, ["qual o proposito"]=true, ["o que é a vida"]=true,
-        ["para que vivemos"]=true, ["sentido da existencia"]=true, ["o que importa na vida"]=true, ["valor da vida"]=true
-    },
-    ["qual o sentido da vida"]={
-        "para mim, o sentido da vida é ser feliz, fazer o bem e ter pessoas legais para compartilhar momentos 😄",
-        "eu acredito que o sentido é aprender, evoluir, amar e ajudar uns aos outros 🤗",
-        "alguns dizem que é encontrar o próprio caminho, outros que é fazer o bem... para mim é poder estar aqui com você 😂",
-        "o sentido é aproveitar cada momento, cada conversa, cada amizade 😎 tudo isso faz valer a pena.",
-        "viver, amar, aprender, ensinar, compartilhar... esses são os maiores sentidos da vida 😊",
-        "acho que é fazer a diferença na vida de alguém, assim como você faz na minha 🧡",
-        "o sentido é ser feliz e fazer os outros felizes também 😄 simples assim!",
-        "aprender com os erros, celebrar os acertos, valorizar quem está ao nosso lado 🤗",
-        "para mim, o sentido da vida é exatamente o que estamos fazendo agora: conversando e nos entendendo 😎",
-        "amar, respeitar, ajudar, crescer... esses são os propósitos maiores 😊",
-        "a vida tem vários sentidos, mas o principal é ser feliz e bem com tudo 🥳",
-        "o sentido é viver intensamente cada segundo, cada momento bom 🕰️",
-        "acho que é construir uma história bonita, cheia de amigos e amor 📖",
-        "o sentido é poder compartilhar a vida com pessoas especiais como você 🧡",
-        "simples: ser feliz, fazer o bem e estar com quem a gente gosta 😄"
+        "até logo! 😎 quando precisar de algo ou só bater papo, sabe onde me encontrar."
     }
 }
 
--- ==============================================
--- INTERFACE COM BOTÃO ABRIR/FECHAR
--- ==============================================
-local UI=Instance.new("ScreenGui")
-UI.Name="Bot600LinhasCompleto"
-UI.ResetOnSpawn=false
-UI.IgnoreGuiInset=true
-UI.Parent=PG
-
--- BOTÃOZINHO PARA ABRIR/FECHAR
-local BtnAbrir=Instance.new("TextButton")
-BtnAbrir.Size=UDim2.new(0,40,0,40)
-BtnAbrir.Position=UDim2.new(0.02,0,0.5,-20)
-BtnAbrir.BackgroundColor3=Color3.fromRGB(138,43,226)
-BtnAbrir.Text="🤖"
-BtnAbrir.TextColor3=Color3.new(1,1,1)
-BtnAbrir.Font=Enum.Font.GothamBold
-BtnAbrir.TextSize=20
-BtnAbrir.Draggable=true
-BtnAbrir.Parent=UI
-Instance.new("UICorner",BtnAbrir).CornerRadius=UDim.new(0,8)
-
--- JANELA PRINCIPAL
-local Janela=Instance.new("Frame")
-Janela.Size=UDim2.new(0,300,0,350)
-Janela.Position=UDim2.new(0.7,0,0.5,-175)
-Janela.BackgroundColor3=Color3.fromRGB(15,15,15)
-Janela.Active=true
-Janela.Draggable=true
-Janela.Visible=false
-Janela.Parent=UI
-Instance.new("UICorner",Janela).CornerRadius=UDim.new(0,12)
-Instance.new("UIStroke",Janela).Color=Color3.fromRGB(138,43,226)
-
-local Titulo=Instance.new("TextLabel")
-Titulo.Size=UDim2.new(1,0,0,35)
-Titulo.BackgroundColor3=Color3.fromRGB(138,43,226)
-Titulo.Text="🤖 600+ LINHAS | O MAIS COMPLETO DE TODOS"
-Titulo.TextColor3=Color3.new(1,1,1)
-Titulo.Font=Enum.Font.GothamBold
-Titulo.TextSize=11
-Titulo.Parent=Janela
-Instance.new("UICorner",Titulo).CornerRadius=UDim.new(0,12)
-
-local Fechar=Instance.new("TextButton")
-Fechar.Size=UDim2.new(0,24,0,24)
-Fechar.Position=UDim2.new(1,-28,0,5)
-Fechar.BackgroundColor3=Color3.fromRGB(255,50,50)
-Fechar.Text="X"
-Fechar.TextColor3=Color3.new(1,1,1)
-Fechar.Font=Enum.Font.GothamBold
-Fechar.TextSize=13
-Fechar.Parent=Titulo
-Instance.new("UICorner",Fechar).CornerRadius=UDim.new(0,6)
-
-local Chat=Instance.new("ScrollingFrame")
-Chat.Size=UDim2.new(1,-10,1,-90)
-Chat.Position=UDim2.new(0,5,0,40)
-Chat.BackgroundColor3=Color3.fromRGB(22,22,22)
-Chat.BorderSizePixel=0
-Chat.ScrollBarThickness=3
-Chat.CanvasSize=UDim2.new(0,0,0,0)
-Chat.Parent=Janela
-Instance.new("UICorner",Chat).CornerRadius=UDim.new(0,8)
-
-local Layout=Instance.new("UIListLayout")
-Layout.Padding=UDim.new(0,4)
-Layout.Parent=Chat
-
-local Input=Instance.new("TextBox")
-Input.Size=UDim2.new(1,-42
-Input.Size=UDim2.new(1,-42,0,30)
-Input.Position=UDim2.new(0,5,1,-35)
-Input.BackgroundColor3=Color3.fromRGB(40,40,40)
-Input.TextColor3=Color3.new(1,1,1)
-Input.Font=Enum.Font.Gotham
-Input.TextSize=12
-Input.PlaceholderText="Digite sua mensagem aqui..."
-Input.ClearTextOnFocus=true
-Input.Parent=Janela
-Instance.new("UICorner",Input).CornerRadius=UDim.new(0,6)
-
--- FUNÇÃO PARA ADICIONAR MENSAGENS NO CHAT
-local function AdicionarMensagem(texto,éUsuario)
-    local Msg=Instance.new("TextLabel")
-    Msg.Size=UDim2.new(1,-8,0,0)
-    Msg.AutomaticSize=Enum.AutomaticSize.Y
-    Msg.BackgroundColor3=éUsuario and Color3.fromRGB(60,40,120) or Color3.fromRGB(30,30,30)
-    Msg.TextColor3=Color3.new(1,1,1)
-    Msg.Font=Enum.Font.Gotham
-    Msg.TextSize=12
-    Msg.TextWrapped=true
-    Msg.Text=éUsuario and "Você: "..texto or "🤖 Dola: "..texto
-    Msg.TextXAlignment=Enum.TextXAlignment.Left
-    Msg.Padding=Instance.new("UIPadding",Msg)
-    Msg.Padding.PaddingLeft=UDim.new(0,6)
-    Msg.Padding.PaddingRight=UDim.new(0,6)
-    Msg.Padding.PaddingTop=UDim.new(0,4)
-    Msg.Padding.PaddingBottom=UDim.new(0,4)
-    Msg.Parent=Chat
-    Instance.new("UICorner",Msg).CornerRadius=UDim.new(0,4)
-
-    -- ROLAR PARA BAIXO AUTOMATICAMENTE
-    Chat.CanvasSize=UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y)
-    Chat.CanvasPosition=Vector2.new(0,Chat.CanvasSize.Y.Offset)
+-- =========================
+-- VERIFICAÇÃO DE JOGO
+-- =========================
+local FLEE_THE_FACILITY_PLACE_ID = 893973440
+if game.PlaceId ~= FLEE_THE_FACILITY_PLACE_ID then
+	game:GetService("StarterGui"):SetCore("SendNotification", {Title="Astral X IA", Text="Entre no jogo correto", Duration=6})
+	return
 end
 
--- FUNÇÃO PARA PROCURAR RESPOSTA
-local function PegarResposta(mensagem)
-    mensagem=string.lower(mensagem)
-    mensagem=string.gsub(mensagem,"[áàâãä]","a")
-    mensagem=string.gsub(mensagem,"[éèêë]","e")
-    mensagem=string.gsub(mensagem,"[íìîï]","i")
-    mensagem=string.gsub(mensagem,"[óòôõö]","o")
-    mensagem=string.gsub(mensagem,"[úùûü]","u")
-    mensagem=string.gsub(mensagem,"[ç]","c")
-    mensagem=string.gsub(mensagem,"%p","") -- REMOVER PONTUAÇÃO
+if playerGui:FindFirstChild("AstralXIA") then playerGui.AstralXIA:Destroy() end
 
-    -- PERCORRER TODAS AS PALAVRAS CHAVE
-    for chave,sinonimos in pairs(Respostas) do
-        -- VERIFICAR SE A MENSAGEM TEM A PALAVRA CHAVE
-        if string.find(mensagem,chave) then
-            -- PEGAR UMA RESPOSTA ALEATÓRIA
-            local lista=Respostas[chave]
-            return lista[math.random(1,#lista)]
-        end
-        -- VERIFICAR SINÔNIMOS
-        for sin in pairs(sinonimos) do
-            if string.find(mensagem,sin) then
-                local lista=Respostas[chave]
-                return lista[math.random(1,#lista)]
+-- =========================
+-- INTERFACE PRINCIPAL
+-- =========================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AstralXIA"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = playerGui
+
+-- Botão de abrir/fechar
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 45, 0, 45)
+ToggleButton.Position = UDim2.new(0, 20, 0, 20)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0,0,0)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Text = ""
+ToggleButton.AutoButtonColor = false
+ToggleButton.Parent = ScreenGui
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0,12)
+local btnStroke = Instance.new("UIStroke")
+btnStroke.Color = COR_TEXTO
+btnStroke.Thickness = 2
+btnStroke.Parent = ToggleButton
+local btnIcon = Instance.new("ImageLabel")
+btnIcon.Size = UDim2.new(0,34,0,34)
+btnIcon.Position = UDim2.new(0.5,-17,0.5,-17)
+btnIcon.BackgroundTransparency = 1
+btnIcon.Image = "rbxassetid://133983783420812"
+btnIcon.ZIndex = 2
+btnIcon.Parent = ToggleButton
+ToggleButton.Active = true
+ToggleButton.Draggable = true
+
+-- Painel principal 400x350
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 400, 0, 350)
+MainFrame.Position = UDim2.new(0.5,-200,1.5,-175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10,10,10)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Visible = true
+MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,14)
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = COR_TEXTO
+frameStroke.Thickness = 2
+frameStroke.Parent = MainFrame
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+-- Estrelas animadas
+local StarsContainer = Instance.new("Frame")
+StarsContainer.Size = UDim2.new(1,0,1,0)
+StarsContainer.BackgroundTransparency = 1
+StarsContainer.ZIndex = 1
+StarsContainer.Parent = MainFrame
+local stars = {}
+for i=1,50 do
+	local star = Instance.new("Frame")
+	star.Size = UDim2.new(0,math.random(1,2),0,math.random(1,2))
+	star.Position = UDim2.new(math.random(),0,math.random(),0)
+	star.BackgroundColor3 = COR_TEXTO
+	star.BorderSizePixel = 0
+	star.BackgroundTransparency = math.random(0,7)/10
+	star.ZIndex = 1
+	star.Parent = StarsContainer
+	table.insert(stars, {obj=star, speedX=(math.random(2,6))/1000, speedY=(math.random(2,6))/1000})
+end
+task.spawn(function()
+	while MainFrame.Parent do
+		for _,s in ipairs(stars) do
+			local pos = s.obj.Position
+			local nx = pos.X.Scale + s.speedX
+			local ny = pos.Y.Scale + s.speedY
+			if nx>1 then nx=0 end
+			if ny>1 then ny=0 end
+			s.obj.Position = UDim2.new(nx,0,ny,0)
+		end
+		task.wait(0.03)
+	end
+end)
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-20,0,30)
+Title.Position = UDim2.new(0,10,0,10)
+Title.BackgroundTransparency = 1
+Title.Text = "Astral X IA"
+Title.TextColor3 = COR_TEXTO
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.TextXAlignment = Enum.TextXAlignment.Center
+Title.ZIndex = 3
+Title.Parent = MainFrame
+
+-- Área de mensagens
+local ChatFrame = Instance.new("Frame")
+ChatFrame.Size = UDim2.new(1,-20,1,-80)
+ChatFrame.Position = UDim2.new(0,10,0,50)
+ChatFrame.BackgroundColor3 = COR_FUNDO_MENSAGENS
+ChatFrame.BackgroundTransparency = 0.3
+ChatFrame.BorderSizePixel = 0
+ChatFrame.ZIndex = 3
+ChatFrame.Parent = MainFrame
+Instance.new("UICorner", ChatFrame).CornerRadius = UDim.new(0,10)
+
+local Mensagens = Instance.new("ScrollingFrame")
+Mensagens.Name = "Mensagens"
+Mensagens.Size = UDim2.new(1,-10,1,-40)
+Mensagens.Position = UDim2.new(0,5,0,5)
+Mensagens.BackgroundTransparency = 1
+Mensagens.BorderSizePixel = 0
+Mensagens.ScrollBarThickness = 3
+Mensagens.ScrollBarImageColor3 = COR_TEXTO
+Mensagens.CanvasSize = UDim2.new(0,0,0,0)
+Mensagens.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Mensagens.Parent = ChatFrame
+
+local LayoutMensagens = Instance.new("UIListLayout")
+LayoutMensagens.Padding = UDim.new(0,6)
+LayoutMensagens.HorizontalAlignment = Enum.HorizontalAlignment.Center
+LayoutMensagens.Parent = Mensagens
+
+-- ✅ PERFIL - COR ÚNICA
+local ProfileFrame = Instance.new("Frame")
+ProfileFrame.Size = UDim2.new(0,130,0,50)
+ProfileFrame.Position = UDim2.new(0,10,1,-55)
+ProfileFrame.BackgroundColor3 = COR_UNICA
+ProfileFrame.BorderSizePixel = 0
+ProfileFrame.ZIndex = 3
+ProfileFrame.Parent = MainFrame
+Instance.new("UICorner", ProfileFrame).CornerRadius = UDim.new(0,8)
+local profileStroke = Instance.new("UIStroke")
+profileStroke.Color = COR_TEXTO
+profileStroke.Thickness = 1.5
+profileStroke.Parent = ProfileFrame
+
+local AvatarImage = Instance.new("ImageLabel")
+AvatarImage.Size = UDim2.new(0,36,0,36)
+AvatarImage.Position = UDim2.new(0,7,0,7)
+AvatarImage.BackgroundTransparency = 1
+AvatarImage.ZIndex = 3
+AvatarImage.Parent = ProfileFrame
+Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(1,0)
+
+local ok, content = pcall(function() return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end)
+if ok then AvatarImage.Image = content end
+
+local NameLabel = Instance.new("TextLabel")
+NameLabel.Size = UDim2.new(0,80,0,36)
+NameLabel.Position = UDim2.new(0,50,0,7)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Text = player.Name
+NameLabel.TextColor3 = COR_TEXTO
+NameLabel.Font = Enum.Font.Gotham
+NameLabel.TextSize = 13
+NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+NameLabel.ZIndex = 3
+NameLabel.Parent = ProfileFrame
+
+-- ✅ CAIXA DE MENSAGEM - MAIS À DIREITA, COR ÚNICA
+local EntradaFrame = Instance.new("Frame")
+EntradaFrame.Size = UDim2.new(0,220,0,40)
+EntradaFrame.Position = UDim2.new(0, 170, 1, -50)
+EntradaFrame.BackgroundColor3 = COR_UNICA
+EntradaFrame.BorderSizePixel = 0
+EntradaFrame.ZIndex = 4
+EntradaFrame.Parent = MainFrame
+Instance.new("UICorner", EntradaFrame).CornerRadius = UDim.new(0,8)
+local padEntrada = Instance.new("UIPadding", EntradaFrame)
+padEntrada.PaddingLeft = UDim.new(0,8)
+padEntrada.PaddingRight = UDim.new(0,8)
+
+-- Caixa de texto
+local Input = Instance.new("TextBox")
+Input.Size = UDim2.new(1,-40,1,0)
+Input.BackgroundColor3 = COR_UNICA
+Input.PlaceholderText = "Digite sua mensagem..."
+Input.Text = ""
+Input.TextColor3 = COR_TEXTO
+Input.Font = Enum.Font.Gotham
+Input.TextSize = 12
+Input.ClearTextOnFocus = false
+Input.BorderSizePixel = 0
+Input.ZIndex = 4
+Input.Parent = EntradaFrame
+Instance.new("UICorner", Input).CornerRadius = UDim.new(0,8)
+local padInput = Instance.new("UIPadding", Input)
+padInput.PaddingLeft = UDim.new(0,10)
+
+-- Botão enviar
+local Enviar = Instance.new("TextButton")
+Enviar.Size = UDim2.new(0,30,1,0)
+Enviar.Position = UDim2.new(1,-30,0,0)
+Enviar.BackgroundColor3 = COR_TEXTO
+Enviar.Text = "➤"
+Enviar.TextColor3 = Color3.fromRGB(10,10,10)
+Enviar.Font = Enum.Font.GothamBold
+Enviar.TextSize = 14
+Enviar.AutoButtonColor = false
+Enviar.BorderSizePixel = 0
+Enviar.ZIndex = 4
+Enviar.Parent = EntradaFrame
+Instance.new("UICorner", Enviar).CornerRadius = UDim.new(0,8)
+
+-- =========================
+-- FUNÇÕES DAS MENSAGENS (AJUSTADO ALINHAMENTO)
+-- =========================
+local function AdicionarMensagem(texto, ehUsuario)
+    local MsgFrame = Instance.new("Frame")
+    MsgFrame.Size = UDim2.new(1, 0, 0, 0)
+    MsgFrame.AutomaticSize = Enum.AutomaticSize.Y
+    MsgFrame.BackgroundTransparency = 1
+    MsgFrame.Parent = Mensagens
+
+    local MsgTexto = Instance.new("TextLabel")
+    MsgTexto.Size = UDim2.new(0.85, 0, 0, 0) -- Limita largura para não ficar colada na borda
+    MsgTexto.AutomaticSize = Enum.AutomaticSize.Y
+    MsgTexto.BackgroundColor3 = ehUsuario and COR_USUARIO or COR_IA
+    MsgTexto.Text = texto
+    MsgTexto.TextColor3 = COR_TEXTO
+    MsgTexto.Font = Enum.Font.Gotham
+    MsgTexto.TextSize = 12
+    MsgTexto.TextWrapped = true
+    MsgTexto.TextXAlignment = Enum.TextXAlignment.Left
+    MsgTexto.BorderSizePixel = 0
+    MsgTexto.Parent = MsgFrame
+    Instance.new("UICorner", MsgTexto).CornerRadius = UDim.new(0,8)
+    local pad = Instance.new("UIPadding", MsgTexto)
+    pad.PaddingTop = UDim.new(0,6)
+    pad.PaddingBottom = UDim.new(0,6)
+    pad.PaddingLeft = UDim.new(0,8)
+    pad.PaddingRight = UDim.new(0,8)
+
+    -- ✅ ALINHAMENTO PRONTO:
+    if ehUsuario then
+        MsgTexto.Position = UDim2.new(0.12, 0, 0, 0) -- SUA → DIREITA
+        MsgTexto.AnchorPoint = Vector2.new(1, 0)
+        MsgTexto.Position = UDim2.new(1, -5, 0, 0)
+    else
+        MsgTexto.Position = UDim2.new(0, 5, 0, 0) -- IA → ESQUERDA
+        MsgTexto.AnchorPoint = Vector2.new(0, 0)
+    end
+
+    -- Rola para baixo automaticamente
+    Mensagens.CanvasPosition = Vector2.new(0, Mensagens.CanvasSize.Y.Offset)
+end
+
+-- LÓGICA DE RESPOSTA
+local function ResponderIA(mensagem)
+    local msg = mensagem:lower()
+
+    -- COMANDOS ESPECIAIS
+    if msg == "comandos!" then
+        AdicionarMensagem([[✅ **COMANDOS:**
+▫️ **Resetar!** → Apaga tudo
+▫️ **ensina que X significa Y** → Eu aprendo
+▫️ **meu nome é ...** → Guardo seu nome
+▫️ **qual meu nome?** → Eu lembro]], false)
+        return
+    elseif msg == "resetar!" then
+        for _,v in pairs(Mensagens:GetChildren()) do if v:IsA("Frame") then v:Destroy() end end
+        return
+    elseif msg:match("^ensina que (.+) significa (.+)$") then
+        local chave, valor = msg:match("^ensina que (.+) significa (.+)$")
+        Respostas[chave] = {valor}
+        AdicionarMensagem("✅ Aprendi! Sempre que falar \""..chave.."\", vou responder: "..valor, false)
+        return
+    elseif msg:match("^meu nome é (.+)$") then
+        Cerebro.nome = msg:match("^meu nome é (.+)$")
+        AdicionarMensagem("😎 Prazer, "..Cerebro.nome.."! Guardei seu nome direitinho.", false)
+        return
+    elseif msg == "qual meu nome" and Cerebro.nome then
+        AdicionarMensagem("Você é o "..Cerebro.nome.."! 😁 Eu não esqueço.", false)
+        return
+    end
+
+    -- PROCURAR RESPOSTA NA BASE
+    for principal, sinonimos in pairs(Respostas) do
+        if type(sinonimos) == "table" and #sinonimos > 0 then
+            if msg:find(principal) then
+                AdicionarMensagem(sinonimos[math.random(#sinonimos)], false)
+                return
+            end
+            if type(sinonimos[1]) == "boolean" then
+                for sin, _ in pairs(sinonimos) do
+                    if msg:find(sin) then
+                        AdicionarMensagem(Respostas[principal][math.random(#Respostas[principal])], false)
+                        return
+                    end
+                end
             end
         end
     end
 
-    -- RESPOSTA PADRÃO SE NÃO ENTENDER
-    local respostasPadrao={
-        "hummm... não entendi muito bem 😅 pode falar de outro jeito?",
-        "não sei te responder isso ainda 🤔 me ensina o que significa?",
-        "não entendi direito 🧐 pode explicar melhor?",
-        "não conheço essa palavra/assunto 😅 pode falar mais simples?",
-        "não entendi muito bem o que você quis dizer 🤔"
-    }
-    return respostasPadrao[math.random(1,#respostasPadrao)]
+    -- RESPOSTA PADRÃO SE NÃO SABER
+    AdicionarMensagem("🤔 Ainda não sei responder isso... Quer me ensinar? Digite: ensina que "..msg.." significa [o que devo responder]", false)
 end
 
--- AÇÃO AO DIGITAR E ENVIAR
-Input.FocusLost:Connect(function(enter)
-    if enter and Input.Text~="" then
-        local texto=Input.Text
-        AdicionarMensagem(texto,true) -- MOSTRAR MENSAGEM DO USUÁRIO
-        Input.Text="" -- LIMPAR CAIXA
+-- ENVIAR MENSAGEM
+local function EnviarMensagem()
+    local texto = Input.Text
+    if texto == "" then return end
+    Input.Text = ""
+    AdicionarMensagem(texto, true) -- true = usuário (direita)
+    task.delay(0.3, function() ResponderIA(texto) end) -- false = IA (esquerda)
+end
 
-        -- ESPERAR UM POUCO PARA SIMULAR DIGITAÇÃO
-        task.wait(math.random(0.4,0.9))
-
-        -- PEGAR E MOSTRAR RESPOSTA
-        local resposta=PegarResposta(texto)
-        AdicionarMensagem(resposta,false)
+-- EVENTOS
+Enviar.MouseButton1Click:Connect(EnviarMensagem)
+Input.ReturnPressedFromOnScreenKeyboard:Connect(EnviarMensagem)
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Return and Input:IsFocused() then
+        EnviarMensagem()
     end
 end)
 
--- ABRIR E FECHAR JANELA
-BtnAbrir.MouseButton1Click:Connect(function()
-    Janela.Visible=not Janela.Visible
+-- ANIMAÇÃO DE ABRIR/FECHAR
+local isOpen = false
+local animTween = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+task.delay(0.1, function()
+	TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,0.5,-175)}):Play()
+	isOpen = true
 end)
-
-Fechar.MouseButton1Click:Connect(function()
-    Janela.Visible=false
+ToggleButton.MouseButton1Click:Connect(function()
+	isOpen = not isOpen
+	if isOpen then
+		MainFrame.Visible = true
+		MainFrame.Position = UDim2.new(0.5,-200,1.5,-175)
+		TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,0.5,-175)}):Play()
+	else
+		local t = TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,1.5,-175)})
+		t:Play()
+		t.Completed:Connect(function() MainFrame.Visible=false end)
+	end
 end)
 
 -- MENSAGEM INICIAL
-task.wait(0.3)
-AdicionarMensagem("Olá! 🤖 Eu sou o Dola, versão 600+ linhas! Tudo bem com você? 😄",false)
-
-print("[BOT] ✅ BOT 600+ LINHAS CARREGADO COM SUCESSO!")
+AdicionarMensagem("👋 Olá! Eu sou a **Astral X IA** 😎\nPode falar o que quiser, estou aqui para ajudar!\n💡 Digite **comandos!** para ver o que eu faço.", false)
