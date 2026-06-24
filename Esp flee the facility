@@ -1,1 +1,576 @@
+-- ASTRAL X IA - CADEIA DE MARKOV
+-- ============================================================
+-- PARA ADICIONAR FRASES NOVAS:
+-- Procure o comentario que diz "-- ADICIONE SUAS FRASES AQUI"
+-- e cole as frases novas logo abaixo dele!
+-- Formato: "sua frase aqui sem acento",
+-- ============================================================
 
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local COR_UNICA = Color3.fromRGB(20, 20, 20)
+local COR_TEXTO = Color3.new(1, 1, 1)
+local COR_FUNDO_MENSAGENS = Color3.fromRGB(15, 15, 15)
+local COR_USUARIO = Color3.fromRGB(40, 80, 180)
+local COR_IA = COR_UNICA
+
+local nomeJogo = "esse jogo"
+pcall(function() nomeJogo = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
+
+local Cerebro = {
+    nome = player.DisplayName,
+    jogo = nomeJogo,
+}
+
+local FrasesTreino = {
+
+    -- ==============================
+    -- CUMPRIMENTOS
+    -- ==============================
+    "oi tudo bem com voce",
+    "ola como vai voce hoje",
+    "e ai tudo de boas por ai",
+    "oi que bom te ver aqui",
+    "ola pode falar o que quiser",
+    "e ai tudo tranquilo por ai",
+    "oi estou aqui para te ajudar",
+    "ola como esta voce hoje",
+    "e ai tudo certo por ai",
+    "oi que legal voce apareceu",
+    "ola tudo bem por ai",
+    "e ai pode falar a vontade",
+    "oi voce esta bem hoje",
+    "ola estou aqui para conversar",
+    "e ai como foi seu dia",
+    "bom dia que otimo te ver",
+    "bom dia como foi sua noite",
+    "bom dia espero que esteja bem",
+    "bom dia hoje vai ser incrivel",
+    "boa tarde como esta seu dia",
+    "boa tarde que legal te ver",
+    "boa noite como foi seu dia",
+    "boa noite descansa bem essa noite",
+    "boa noite foi muito bom conversar",
+
+    -- ==============================
+    -- RESPOSTAS POSITIVAS
+    -- ==============================
+    "que legal isso e muito bom",
+    "que otimo fico feliz por voce",
+    "que bom voce merece ser feliz",
+    "isso e otimo de ouvir",
+    "que legal voce e incrivel",
+    "que bom continue assim sempre",
+    "isso e muito bom para voce",
+    "que otimo voce conseguiu mesmo",
+    "que legal eu sabia que conseguia",
+    "que bom estou feliz por voce",
+    "isso e incrivel voce e demais",
+    "legal demais voce e muito bom",
+    "legal isso vai dar muito certo",
+    "muito bom voce esta indo bem",
+    "muito legal isso que voce fez",
+    "muito incrivel voce conseguiu mesmo isso",
+
+    -- ==============================
+    -- RESPOSTAS NEGATIVAS
+    -- ==============================
+    "que pena sinto muito por voce",
+    "que chato isso vai melhorar logo",
+    "sinto muito estou aqui para voce",
+    "que ruim mas vai passar logo",
+    "poxa que situacao dificil mesmo",
+    "sinto muito voce vai superar isso",
+    "que pena mas tudo vai melhorar",
+    "que chato pode contar comigo sempre",
+    "nao desiste agora voce esta quase",
+    "nao para voce esta indo bem",
+    "nao tem problema vai dar certo",
+    "nao se preocupa vai melhorar logo",
+    "nao fica triste logo passa isso",
+    "nao desanima voce e muito forte",
+
+    -- ==============================
+    -- MOTIVACAO
+    -- ==============================
+    "vai la voce consegue com certeza",
+    "acredita em voce voce e incrivel",
+    "nao desiste nunca voce e forte",
+    "voce tem tudo para ser o melhor",
+    "vai com tudo voce consegue sim",
+    "acredita voce e capaz de tudo",
+    "nao para agora voce esta quase la",
+    "vai la que voce consegue mesmo",
+    "continua assim voce esta indo bem",
+    "voce e forte nao desiste nunca",
+    "voce e uma pessoa muito legal",
+    "voce e incrivel e muito inteligente",
+    "voce consegue tudo que quiser mesmo",
+    "voce tem muito potencial pra crescer",
+    "voce e demais pode acreditar sempre",
+    "voce e o melhor do servidor",
+    "voce joga muito bem sabia disso",
+    "voce e esperto e aprende rapido",
+
+    -- ==============================
+    -- SOBRE O JOGO E ROBLOX
+    -- ==============================
+    "esse jogo e muito divertido mesmo",
+    "roblox e a melhor plataforma de jogos",
+    "esse jogo tem muito conteudo legal",
+    "jogar roblox e sempre muito divertido",
+    "esse jogo e bom demais mesmo",
+    "roblox tem jogos para todo mundo",
+    "esse servidor esta bem movimentado hoje",
+    "roblox e vida para todo mundo",
+    "jogar com amigos e sempre melhor",
+    "que dia otimo para jogar hoje",
+    "que dia incrivel para jogar roblox",
+    "que dia animado para jogar junto",
+
+    -- ==============================
+    -- DIA A DIA
+    -- ==============================
+    "hoje foi um dia muito legal",
+    "o dia esta indo muito bem",
+    "hoje esta sendo um dia otimo",
+    "o dia esta muito tranquilo hoje",
+    "hoje me sinto muito bem mesmo",
+    "o dia esta muito bom para jogar",
+    "tudo vai dar certo pode crer",
+    "tudo vai melhorar com o tempo",
+    "tudo vai ficar bem logo logo",
+    "tudo que voce faz e incrivel",
+
+    -- ==============================
+    -- AMIZADE
+    -- ==============================
+    "amigos sao tudo na vida mesmo",
+    "ter amigos e a melhor coisa",
+    "sua galera deve ser muito boa",
+    "jogar com amigos e muito melhor",
+    "amizade verdadeira e muito rara hoje",
+    "ter bons amigos e muito importante",
+    "amigos bons sao para sempre mesmo",
+    "sua galera joga roblox junto sempre",
+    "pode contar comigo para tudo sempre",
+    "pode falar o que quiser aqui",
+    "pode confiar em mim sempre aqui",
+    "sempre estou aqui quando precisar de",
+    "sempre que precisar pode me chamar",
+    "sempre vou estar aqui para voce",
+
+    -- ==============================
+    -- ANIMES
+    -- ==============================
+    "anime e uma das melhores coisas",
+    "naruto e um anime muito incrivel",
+    "dragon ball e classico para sempre",
+    "one piece tem uma historia incrivel",
+    "demon slayer e muito bonito visualmente",
+    "animes japoneses sao muito criativos mesmo",
+    "assistir anime e muito relaxante mesmo",
+    "naruto nunca vai sair da moda",
+    "goku e o personagem mais forte",
+    "animes contam historias muito incriveis mesmo",
+
+    -- ==============================
+    -- MUSICA
+    -- ==============================
+    "musica e a melhor coisa do mundo",
+    "ouvir musica deixa tudo mais leve",
+    "musica boa muda o humor sempre",
+    "funk e muito animado para ouvir",
+    "rap tem letras muito profundas mesmo",
+    "musica ajuda muito a relaxar hoje",
+    "ritmo bom anima qualquer pessoa sempre",
+    "musica brasileira e muito rica mesmo",
+
+    -- ==============================
+    -- COMIDA
+    -- ==============================
+    "pizza e a melhor comida mesmo",
+    "hamburguer bom e sempre muito gostoso",
+    "batata frita combina com tudo sempre",
+    "sorvete e otimo para qualquer dia",
+    "comida boa deixa tudo mais feliz",
+    "lanche gostoso e sempre bem vindo",
+    "pizza com amigos e ainda melhor",
+    "comer bem e muito importante sempre",
+
+    -- ==============================
+    -- DESPEDIDAS
+    -- ==============================
+    "tchau foi muito bom conversar hoje",
+    "ate mais volte sempre que quiser",
+    "flw foi um prazer conversar aqui",
+    "ate logo espero te ver logo",
+    "tchau cuida se e volte sempre",
+    "ate mais foi otimo falar contigo",
+    "flw qualquer hora estou aqui mesmo",
+    "tchau um grande abraco para voce",
+
+    -- ==============================
+    -- FRASES GERAIS
+    -- ==============================
+    "a vida e muito boa mesmo",
+    "cada dia e uma nova chance",
+    "o futuro pertence a quem acredita",
+    "nunca para de tentar e insistir",
+    "cada esforco tem seu recompensa sempre",
+    "a persistencia leva ao sucesso sempre",
+    "cada dia aprendemos algo novo mesmo",
+    "o importante e nao desistir nunca",
+    "estou aqui sempre que precisar de mim",
+    "estou pronto para conversar com voce",
+    "estou feliz que voce esta aqui",
+    "estou animado para conversar contigo hoje",
+    "estou sempre disponivel para te ajudar",
+    "estou aqui para o que precisar",
+
+    -- ==============================
+    -- ADICIONE SUAS FRASES AQUI
+    -- Exemplo: "minha frase nova aqui",
+    -- ==============================
+
+}
+
+-- ============================================================
+-- NADA PARA MEXER ABAIXO DAQUI!
+-- ============================================================
+
+local Cadeia = {}
+
+local function TreinarCadeia(frases)
+    for _, frase in ipairs(frases) do
+        local palavras = {}
+        for palavra in frase:gmatch("%S+") do
+            table.insert(palavras, palavra)
+        end
+        for i = 1, #palavras - 1 do
+            local atual = palavras[i]
+            local proxima = palavras[i + 1]
+            if not Cadeia[atual] then Cadeia[atual] = {} end
+            table.insert(Cadeia[atual], proxima)
+        end
+    end
+end
+
+TreinarCadeia(FrasesTreino)
+
+local function GerarFrase(palavraInicial, tamanhoMax)
+    tamanhoMax = tamanhoMax or math.random(6, 12)
+    local frase = {palavraInicial}
+    local atual = palavraInicial
+    for i = 1, tamanhoMax do
+        if Cadeia[atual] and #Cadeia[atual] > 0 then
+            local proximas = Cadeia[atual]
+            atual = proximas[math.random(#proximas)]
+            table.insert(frase, atual)
+        else
+            break
+        end
+    end
+    return table.concat(frase, " ")
+end
+
+local function EncontrarPalavraInicial(msg)
+    local palavrasMsg = {}
+    for palavra in msg:gmatch("%S+") do
+        table.insert(palavrasMsg, palavra)
+    end
+    for _, palavra in ipairs(palavrasMsg) do
+        if Cadeia[palavra] then return palavra end
+    end
+    local iniciadores = {"oi","ola","que","isso","voce","estou","tudo","legal","bom","sim","nao","vai"}
+    for _, ini in ipairs(iniciadores) do
+        if Cadeia[ini] then return ini end
+    end
+    local todasPalavras = {}
+    for palavra, _ in pairs(Cadeia) do table.insert(todasPalavras, palavra) end
+    return todasPalavras[math.random(#todasPalavras)]
+end
+
+local function N(msg)
+    msg = msg:lower()
+    msg = msg:gsub("[^%a%d%s]", "")
+    return msg
+end
+
+if playerGui:FindFirstChild("AstralXIA") then playerGui.AstralXIA:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AstralXIA"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = playerGui
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0,45,0,45)
+ToggleButton.Position = UDim2.new(0,20,0,20)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0,0,0)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Text = ""
+ToggleButton.AutoButtonColor = false
+ToggleButton.Parent = ScreenGui
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0,12)
+local btnStroke = Instance.new("UIStroke")
+btnStroke.Color = COR_TEXTO
+btnStroke.Thickness = 2
+btnStroke.Parent = ToggleButton
+local btnIcon = Instance.new("ImageLabel")
+btnIcon.Size = UDim2.new(0,34,0,34)
+btnIcon.Position = UDim2.new(0.5,-17,0.5,-17)
+btnIcon.BackgroundTransparency = 1
+btnIcon.Image = "rbxassetid://133983783420812"
+btnIcon.ZIndex = 2
+btnIcon.Parent = ToggleButton
+ToggleButton.Active = true
+ToggleButton.Draggable = true
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0,400,0,350)
+MainFrame.Position = UDim2.new(0.5,-200,1.5,-175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10,10,10)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,14)
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = COR_TEXTO
+frameStroke.Thickness = 2
+frameStroke.Parent = MainFrame
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local StarsContainer = Instance.new("Frame")
+StarsContainer.Size = UDim2.new(1,0,1,0)
+StarsContainer.BackgroundTransparency = 1
+StarsContainer.ZIndex = 1
+StarsContainer.Parent = MainFrame
+local stars = {}
+for i=1,50 do
+    local star = Instance.new("Frame")
+    star.Size = UDim2.new(0,math.random(1,2),0,math.random(1,2))
+    star.Position = UDim2.new(math.random(),0,math.random(),0)
+    star.BackgroundColor3 = COR_TEXTO
+    star.BorderSizePixel = 0
+    star.BackgroundTransparency = math.random(0,7)/10
+    star.ZIndex = 1
+    star.Parent = StarsContainer
+    table.insert(stars, {obj=star, speedX=math.random(2,6)/1000, speedY=math.random(2,6)/1000})
+end
+task.spawn(function()
+    while MainFrame.Parent do
+        for _,s in ipairs(stars) do
+            local pos = s.obj.Position
+            local nx = pos.X.Scale + s.speedX
+            local ny = pos.Y.Scale + s.speedY
+            if nx>1 then nx=0 end
+            if ny>1 then ny=0 end
+            s.obj.Position = UDim2.new(nx,0,ny,0)
+        end
+        task.wait(0.03)
+    end
+end)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-20,0,30)
+Title.Position = UDim2.new(0,10,0,10)
+Title.BackgroundTransparency = 1
+Title.Text = "Astral X IA"
+Title.TextColor3 = COR_TEXTO
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.TextXAlignment = Enum.TextXAlignment.Center
+Title.ZIndex = 3
+Title.Parent = MainFrame
+
+local ChatFrame = Instance.new("Frame")
+ChatFrame.Size = UDim2.new(1,-20,1,-80)
+ChatFrame.Position = UDim2.new(0,10,0,50)
+ChatFrame.BackgroundColor3 = COR_FUNDO_MENSAGENS
+ChatFrame.BackgroundTransparency = 0.3
+ChatFrame.BorderSizePixel = 0
+ChatFrame.ZIndex = 3
+ChatFrame.Parent = MainFrame
+Instance.new("UICorner", ChatFrame).CornerRadius = UDim.new(0,10)
+
+local Mensagens = Instance.new("ScrollingFrame")
+Mensagens.Size = UDim2.new(1,-10,1,-40)
+Mensagens.Position = UDim2.new(0,5,0,5)
+Mensagens.BackgroundTransparency = 1
+Mensagens.BorderSizePixel = 0
+Mensagens.ScrollBarThickness = 3
+Mensagens.ScrollBarImageColor3 = COR_TEXTO
+Mensagens.CanvasSize = UDim2.new(0,0,0,0)
+Mensagens.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Mensagens.Parent = ChatFrame
+local LayoutMensagens = Instance.new("UIListLayout")
+LayoutMensagens.Padding = UDim.new(0,6)
+LayoutMensagens.HorizontalAlignment = Enum.HorizontalAlignment.Center
+LayoutMensagens.Parent = Mensagens
+
+local ProfileFrame = Instance.new("Frame")
+ProfileFrame.Size = UDim2.new(0,130,0,50)
+ProfileFrame.Position = UDim2.new(0,10,1,-55)
+ProfileFrame.BackgroundColor3 = COR_UNICA
+ProfileFrame.BorderSizePixel = 0
+ProfileFrame.ZIndex = 3
+ProfileFrame.Parent = MainFrame
+Instance.new("UICorner", ProfileFrame).CornerRadius = UDim.new(0,8)
+local profileStroke = Instance.new("UIStroke")
+profileStroke.Color = COR_TEXTO
+profileStroke.Thickness = 1.5
+profileStroke.Parent = ProfileFrame
+
+local AvatarImage = Instance.new("ImageLabel")
+AvatarImage.Size = UDim2.new(0,36,0,36)
+AvatarImage.Position = UDim2.new(0,7,0,7)
+AvatarImage.BackgroundTransparency = 1
+AvatarImage.ZIndex = 3
+AvatarImage.Parent = ProfileFrame
+Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(1,0)
+local ok, content = pcall(function()
+    return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+end)
+if ok then AvatarImage.Image = content end
+
+local NameLabel = Instance.new("TextLabel")
+NameLabel.Size = UDim2.new(0,80,0,36)
+NameLabel.Position = UDim2.new(0,50,0,7)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Text = player.DisplayName
+NameLabel.TextColor3 = COR_TEXTO
+NameLabel.Font = Enum.Font.Gotham
+NameLabel.TextSize = 13
+NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+NameLabel.ZIndex = 3
+NameLabel.Parent = ProfileFrame
+
+local EntradaFrame = Instance.new("Frame")
+EntradaFrame.Size = UDim2.new(0,220,0,40)
+EntradaFrame.Position = UDim2.new(0,170,1,-50)
+EntradaFrame.BackgroundColor3 = COR_UNICA
+EntradaFrame.BorderSizePixel = 0
+EntradaFrame.ZIndex = 4
+EntradaFrame.Parent = MainFrame
+Instance.new("UICorner", EntradaFrame).CornerRadius = UDim.new(0,8)
+local padEntrada = Instance.new("UIPadding", EntradaFrame)
+padEntrada.PaddingLeft = UDim.new(0,8)
+padEntrada.PaddingRight = UDim.new(0,8)
+
+local Input = Instance.new("TextBox")
+Input.Size = UDim2.new(1,-40,1,0)
+Input.BackgroundColor3 = COR_UNICA
+Input.PlaceholderText = "Digite sua mensagem..."
+Input.Text = ""
+Input.TextColor3 = COR_TEXTO
+Input.Font = Enum.Font.Gotham
+Input.TextSize = 12
+Input.ClearTextOnFocus = false
+Input.BorderSizePixel = 0
+Input.ZIndex = 4
+Input.Parent = EntradaFrame
+Instance.new("UICorner", Input).CornerRadius = UDim.new(0,8)
+local padInput = Instance.new("UIPadding", Input)
+padInput.PaddingLeft = UDim.new(0,10)
+
+local Enviar = Instance.new("TextButton")
+Enviar.Size = UDim2.new(0,30,1,0)
+Enviar.Position = UDim2.new(1,-30,0,0)
+Enviar.BackgroundColor3 = COR_TEXTO
+Enviar.Text = ">"
+Enviar.TextColor3 = Color3.fromRGB(10,10,10)
+Enviar.Font = Enum.Font.GothamBold
+Enviar.TextSize = 14
+Enviar.AutoButtonColor = false
+Enviar.BorderSizePixel = 0
+Enviar.ZIndex = 4
+Enviar.Parent = EntradaFrame
+Instance.new("UICorner", Enviar).CornerRadius = UDim.new(0,8)
+
+local function AdicionarMensagem(texto, ehUsuario)
+    local MsgFrame = Instance.new("Frame")
+    MsgFrame.Size = UDim2.new(1,0,0,0)
+    MsgFrame.AutomaticSize = Enum.AutomaticSize.Y
+    MsgFrame.BackgroundTransparency = 1
+    MsgFrame.Parent = Mensagens
+    local MsgTexto = Instance.new("TextLabel")
+    MsgTexto.Size = UDim2.new(0.75,0,0,0)
+    MsgTexto.AutomaticSize = Enum.AutomaticSize.Y
+    MsgTexto.BackgroundColor3 = ehUsuario and COR_USUARIO or COR_IA
+    MsgTexto.Text = texto
+    MsgTexto.TextColor3 = COR_TEXTO
+    MsgTexto.Font = Enum.Font.Gotham
+    MsgTexto.TextSize = 12
+    MsgTexto.TextWrapped = true
+    MsgTexto.TextXAlignment = Enum.TextXAlignment.Left
+    MsgTexto.BorderSizePixel = 0
+    MsgTexto.Parent = MsgFrame
+    Instance.new("UICorner", MsgTexto).CornerRadius = UDim.new(0,8)
+    local pad = Instance.new("UIPadding", MsgTexto)
+    pad.PaddingTop = UDim.new(0,6)
+    pad.PaddingBottom = UDim.new(0,6)
+    pad.PaddingLeft = UDim.new(0,8)
+    pad.PaddingRight = UDim.new(0,8)
+    if ehUsuario then
+        MsgTexto.AnchorPoint = Vector2.new(1,0)
+        MsgTexto.Position = UDim2.new(1,-5,0,0)
+    else
+        MsgTexto.AnchorPoint = Vector2.new(0,0)
+        MsgTexto.Position = UDim2.new(0,5,0,0)
+    end
+    task.wait()
+    Mensagens.CanvasPosition = Vector2.new(0,999999)
+end
+
+local function ResponderIA(mensagem)
+    local msg = N(mensagem)
+
+    if msg == "comandos" then
+        AdicionarMensagem("COMANDOS:\n- resetar -> Apaga o chat\n- treina [frase] -> Ensina frase nova\n- qual jogo -> Digo o jogo atual", false)
+        return
+    elseif msg == "resetar" then
+        for _,v in pairs(Mensagens:GetChildren()) do if v:IsA("Frame") then v:Destroy() end end
+        return
+    elseif msg:match("^treina (.+)$") then
+        local frase = msg:match("^treina (.+)$")
+        TreinarCadeia({frase})
+        AdicionarMensagem("aprendi essa frase! agora faz parte do meu jeito de falar.", false)
+        return
+    elseif msg:find("qual jogo") or msg:find("que jogo") then
+        AdicionarMensagem("voce esta no " .. Cerebro.jogo .. "!", false)
+        return
+    elseif msg:find("qual meu nome") or msg:find("meu nome") then
+        AdicionarMensagem("voce e o " .. Cerebro.nome .. "! ja sei pelo seu perfil.", false)
+        return
+    end
+
+    local palavraInicial = EncontrarPalavraInicial(msg)
+    local resposta = GerarFrase(palavraInicial, math.random(6,14))
+
+    if math.random(1,3) == 1 then
+        resposta = Cerebro.nome .. ", " .. resposta
+    end
+
+    AdicionarMensagem(resposta, false)
+end
+
+local function EnviarMensagem()
+    local texto = Input.Text
+    if texto == "" then return end
+    Input.Text = ""
+    AdicionarMensagem(texto, true)
+    task.delay(0.4, function() ResponderIA(texto) end)
+end
+
+Enviar.MouseButton1Click:Connect(EnviarMensagem)
+Input.ReturnPressedFromOnScreenKeyboard:Connect(EnviarMensagem)
+UserInputService.InputBegan:Connect
