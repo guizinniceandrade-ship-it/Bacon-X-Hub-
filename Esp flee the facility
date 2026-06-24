@@ -574,3 +574,35 @@ end
 Enviar.MouseButton1Click:Connect(EnviarMensagem)
 Input.ReturnPressedFromOnScreenKeyboard:Connect(EnviarMensagem)
 UserInputService.InputBegan:Connect
+(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard
+    and input.KeyCode == Enum.KeyCode.Return
+    and Input:IsFocused() then
+        EnviarMensagem()
+    end
+end)
+
+local isOpen = false
+local animTween = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+task.delay(0.1, function()
+    TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,0.5,-175)}):Play()
+    isOpen = true
+end)
+ToggleButton.MouseButton1Click:Connect(function()
+    isOpen = not isOpen
+    if isOpen then
+        MainFrame.Visible = true
+        MainFrame.Position = UDim2.new(0.5,-200,1.5,-175)
+        TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,0.5,-175)}):Play()
+    else
+        local t = TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,1.5,-175)})
+        t:Play()
+        t.Completed:Connect(function() MainFrame.Visible = false end)
+    end
+end)
+
+task.delay(0.5, function()
+    local inicio = EncontrarPalavraInicial("oi")
+    local boasVindas = GerarFrase(inicio, 8)
+    AdicionarMensagem("Ola, " .. Cerebro.nome .. "! " .. boasVindas, false)
+end)
