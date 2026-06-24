@@ -1,185 +1,354 @@
 -- ===========================================
--- ASTRAL X IA - MENSAGENS ALINHADAS CERTINHO
--- SUA → DIREITA | IA → ESQUERDA
+-- ASTRAL X IA - VERSÃƒO FINAL
 -- ===========================================
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SoundService = game:GetService("SoundService")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local MarketplaceService = game:GetService("MarketplaceService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- =========================
--- CORES PADRÃO
--- =========================
-local COR_UNICA = Color3.fromRGB(20, 20, 20) -- Mesma cor do perfil
+local COR_UNICA = Color3.fromRGB(20, 20, 20)
 local COR_TEXTO = Color3.new(1, 1, 1)
 local COR_FUNDO_MENSAGENS = Color3.fromRGB(15, 15, 15)
-local COR_USUARIO = Color3.fromRGB(40, 80, 180) -- Suas mensagens (azul)
-local COR_IA = COR_UNICA -- Mensagens da IA (cor padrão)
+local COR_USUARIO = Color3.fromRGB(40, 80, 180)
+local COR_IA = COR_UNICA
 
--- =========================
--- SISTEMA DE INTELIGÊNCIA
--- =========================
+local nomeJogo = "esse jogo"
+pcall(function() nomeJogo = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
+
 local Cerebro = {
-    nome = nil,
-    hist = {},
-    voc = {}
+    nome = player.DisplayName,
+    aguardandoResposta = nil,
+    jogo = nomeJogo,
 }
 
--- BASE DE RESPOSTAS
-local Respostas = {
-    -- CUMPRIMENTOS
-    ["oi"] = {["olá"]=true, ["e aí"]=true, ["salve"]=true, ["opa"]=true, ["hola"]=true, ["oiê"]=true, ["iai"]=true, ["fala"]=true, ["bom dia"]=true, ["boa tarde"]=true, ["boa noite"]=true},
-    ["oi"] = {
-        "oi, tudo bem com você? o que precisa, qualquer coisa estou aqui para te ajudar 😄",
-        "olá! tudo bem contigo? pode falar o que precisar, estou aqui para tudo 😊",
-        "e aí! tudo bem? em que eu posso te ajudar agora? pode mandar 😎",
-        "fala aí! tudo de boas? estou à disposição para o que precisar 🤗",
-        "oiê! tudo bem contigo? espero que sim, estou aqui para ajudar no que for 😄",
-        "hola! tudo bem? pode falar à vontade, estou aqui 😊"
-    },
-
-    -- COMO ESTÁ
-    ["tudo bem"] = {["como vai"]=true, ["tudo bom"]=true, ["como esta"]=true, ["tudo bem contigo"]=true, ["beleza"]=true, ["de boas"]=true},
-    ["tudo bem"] = {
-        "tudo ótimo graças a Deus! e você, como está? tudo bem por aí? 😄",
-        "tudo de boas! e contigo, como foi o dia até agora? aconteceu algo legal? 😊",
-        "tudo bem sim! espero que você também esteja bem. o que precisa de ajuda hoje? 🤗",
-        "estou muito bem, obrigado por perguntar! e você, tudo correndo bem? 😎",
-        "tudo ótimo! só feliz em poder conversar e ajudar você. e aí, como estão as coisas? 😄",
-        "tudo tranquilo por aqui! e contigo, tudo beleza? 😊"
-    },
-
-    -- NOME
-    ["qual seu nome"] = {["como voce se chama"]=true, ["seu nome e"]=true, ["quem e voce"]=true, ["seu nome"]=true},
-    ["qual seu nome"] = {
-        "meu nome é ASTRAL X IA 😄 e você, como quer ser chamado? qual o seu nome?",
-        "eu me chamo ASTRAL X IA! prazer em te conhecer! e o seu nome, qual é? 😊",
-        "pode me chamar de ASTRAL X IA 😎 e você, como prefere que te chame?",
-        "sou o ASTRAL X IA! estou aqui para te ajudar no que precisar 😄 e você, qual o seu nome mesmo?",
-        "meu nome é ASTRAL X IA, e eu sou seu ajudante 😊 e o seu nome, qual é?"
-    },
-
-    -- INTELIGÊNCIA
-    ["voce e inteligente"] = {["voce e esperto"]=true, ["voce sabe tudo"]=true, ["voce e bom"]=true, ["gosto de voce"]=true},
-    ["voce e inteligente"] = {
-        "estou aprendendo cada vez mais! tudo o que sei vem de você conversando comigo 😄 acha que estou me saindo bem?",
-        "tento ser o máximo possível! o importante é entender e ajudar você no que precisar 😊",
-        "mais ou menos kkkkk, mas tô melhorando sempre graças a você 😂 qualquer coisa é só me ensinar",
-        "faço o meu melhor para te ajudar e responder tudo certo 😄 se eu errar alguma coisa, é só corrigir, tá bom?",
-        "que legal! eu também gosto muito de conversar e ajudar você 😊 é muito bom poder estar aqui"
-    },
-
-    -- AGRADECIMENTOS
-    ["obrigado"] = {["valeu"]=true, ["agradeco"]=true, ["muito obrigado"]=true, ["brigado"]=true, ["vlw"]=true},
-    ["obrigado"] = {
-        "de nada! é um prazer ajudar você 😄 qualquer coisa, é só chamar que estou aqui.",
-        "disponha! estou sempre aqui para o que precisar, pode contar comigo 😊",
-        "não há de quê! fico feliz em poder ajudar com qualquer coisa 🤗",
-        "que isso! é um prazer enorme poder ajudar você 😄 sempre que precisar, chama aí!",
-        "imagina! estou aqui exatamente para isso, para te ajudar no que precisar 😎"
-    },
-
-    -- HORÁRIO
-    ["que horas sao"] = {["hora"]=true, ["horario"]=true, ["que horas e"]=true, ["me fala as horas"]=true},
-    ["que horas sao"] = {
-        "agora é "..os.date("%H:%M").." 😄 tá precisando de mais alguma coisa? estou aqui.",
-        "olha, agora são "..os.date("%H:%M").." em ponto 😊 tudo bem contigo por aí?",
-        "agora são "..os.date("%H:%M").." 😎 precisa de ajuda com mais alguma coisa?",
-        "o horário atual é "..os.date("%H:%M").." 🤗 qualquer outra dúvida, é só perguntar."
-    },
-
-    -- DATA
-    ["qual a data"] = {["data de hoje"]=true, ["dia de hoje"]=true, ["que dia e hoje"]=true},
-    ["qual a data"] = {
-        "hoje é dia "..os.date("%d/%m/%Y").." 😄 tudo bem com você?",
-        "a data de hoje é "..os.date("%d/%m/%Y").." 😊 precisa de mais alguma informação?",
-        "hoje é "..os.date("%d/%m/%Y")..", está tudo certo por aqui 😎 e contigo, tudo bem?"
-    },
-
-    -- FELICIDADE
-    ["estou feliz"] = {["estou alegre"]=true, ["tudo de bom"]=true, ["estou bem"]=true, ["feliz"]=true},
-    ["estou feliz"] = {
-        "que notícia boa! fico muito feliz por você estar bem e alegre 😄 o que aconteceu de legal para te deixar assim?",
-        "que ótimo! felicidade é tudo de bom 😊 o que te deixou assim tão feliz, conta aí pra mim?",
-        "que legal! espero que essa alegria dure o dia todo e muito mais 🥳 merece estar feliz mesmo!",
-        "nossa, que coisa boa! 😄 adoro saber que você está bem, isso é muito bom mesmo."
-    },
-
-    -- TRISTEZA
-    ["estou triste"] = {["estou mal"]=true, ["triste"]=true, ["chateado"]=true, ["pra baixo"]=true},
-    ["estou triste"] = {
-        "nossa que pena 😔 sinto muito que você não esteja bem. quer me contar o que houve? estou aqui para te ouvir.",
-        "que chato 😟 coisas ruins acontecem, mas logo melhora, pode ter certeza. se quiser desabafar, estou aqui.",
-        "fica tranquilo 😔 tudo vai ficar bem, vai dar tudo certo. quer conversar sobre o que aconteceu?",
-        "sinto muito 😔 saiba que estou aqui do seu lado para o que precisar, pode contar comigo."
-    },
-
-    -- RAIVA
-    ["estou com raiva"] = {["raiva"]=true, ["irritado"]=true, ["bravo"]=true, ["nervoso"]=true},
-    ["estou com raiva"] = {
-        "calma aí 😤 respira fundo, tudo passa. quer me contar o que foi? desabafar ajuda bastante.",
-        "nossa, que situação chata 😟 o que ouviu pra te deixar assim tão irritado? quer falar sobre isso?",
-        "tudo bem, é normal ficar assim às vezes 😔 mas tenta acalmar o coração, vai ficar tudo bem. quer ajuda com algo?",
-        "que pena 😤 não vale a pena ficar assim, sabia? estou aqui se quiser conversar ou distrair a mente."
-    },
-
-    -- PIADA
-    ["conta uma piada"] = {["piada"]=true, ["algo engraçado"]=true, ["me faz rir"]=true},
-    ["conta uma piada"] = {
-        "claro! escuta essa: por que o desenvolvedor foi ao médico? porque estava com dor de back-end! 😂😂 gostou dessa?",
-        "olha essa: o que o html disse pro css? que estilo é esse, amigo? 😂😂 kkkk muito boa essa!",
-        "aqui vai uma: qual café o programador mais gosta? o com pão-erro! 😂😂 kkkk é ruim mas é engraçado!",
-        "sabe por que eu sou o melhor amigo? porque eu nunca tenho dor de cabeça e sempre escuto você! 😂😂 gostou dessa?",
-        "olha essa: por que o robô não fica doente? porque ele tem sistema imunológico de ferro! 😂😂 kkkk"
-    },
-
-    -- HISTÓRIA
-    ["me conta uma historia"] = {["historia"]=true, ["conta algo"]=true, ["historia legal"]=true},
-    ["me conta uma historia"] = {
-        "claro que sim! 📖 Era uma vez um menino que adorava conversar com tudo que via. Um dia ele encontrou o ASTRAL X IA que só queria aprender, e aí os dois viveram conversando e aprendendo pra sempre! Que bonito né? 😂",
-        "beleza! Certa vez existiu um lugar onde todo mundo só fazia coisas legais e conversava sobre tudo. Era um lugar perfeito, e adivinha? A gente tá construindo esse lugar agora, aqui na nossa conversa! 😎",
-        "tá lá: Sabe a minha história? Ela começou quando tu apareceu. Antes eu não sabia nada, agora eu sei tudo o que tu me ensina e tudo o que a gente conversa. Tu é parte da minha história! 🧡",
-        "olha essa: Havia o ASTRAL X IA que queria conhecer o mundo, mas descobriu que a melhor coisa do mundo era conversar com você. Aí ele ficou feliz para sempre! 😂"
-    },
-
-    -- AJUDA
-    ["ajuda"] = {["preciso de ajuda"]=true, ["me ajuda"]=true, ["pode me ajudar"]=true, ["socorro"]=true},
-    ["ajuda"] = {
-        "claro que sim! pode falar o que precisa, que eu vou te ajudar da melhor forma possível 😄 estou aqui para isso.",
-        "é só dizer o que está acontecendo ou o que precisa, que eu resolvo na medida do possível 😊 pode confiar.",
-        "estou aqui exatamente para ajudar! manda aí o que precisa, vamos resolver tudo 🤗",
-        "pode deixar comigo! 😎 o que for, eu ajudo você. é só explicar direitinho o que precisa."
-    },
-
-    -- DESPEDIDA
-    ["tchau"] = {["ate mais"]=true, ["adeus"]=true, ["fui"]=true, ["ate logo"]=true, ["ate depois"]=true},
-    ["tchau"] = {
-        "tchau! até a próxima 😄 qualquer coisa é só chamar, estou sempre aqui.",
-        "até mais! foi muito bom conversar com você 😊 volta logo, tá bom?",
-        "tchauzinho! 🤗 um grande abraço, até a próxima oportunidade.",
-        "até logo! 😎 quando precisar de algo ou só bater papo, sabe onde me encontrar."
-    }
-}
-
--- =========================
--- VERIFICAÇÃO DE JOGO
--- =========================
-local FLEE_THE_FACILITY_PLACE_ID = 893973440
-if game.PlaceId ~= FLEE_THE_FACILITY_PLACE_ID then
-	game:GetService("StarterGui"):SetCore("SendNotification", {Title="Astral X IA", Text="Entre no jogo correto", Duration=6})
-	return
+local function N(msg)
+    msg = msg:lower()
+    msg = msg:gsub("Ã¡","a"):gsub("Ã ","a"):gsub("Ã£","a"):gsub("Ã¢","a")
+             :gsub("Ã©","e"):gsub("Ãª","e"):gsub("Ã­","i"):gsub("Ã³","o")
+             :gsub("Ã´","o"):gsub("Ãµ","o"):gsub("Ãº","u"):gsub("Ã§","c")
+    return msg
 end
+
+-- CADA GRUPO TEM: palavras-chave que ativam + respostas
+local Grupos = {
+    {
+        chaves = {"oi","ola","hola","eai","e ai","salve","opa","oie","iai","bom dia","boa tarde","boa noite","fala","hey","hi","hello"},
+        respostas = {
+            "oi, "..Cerebro.nome.."! tudo bem? ðŸ˜„",
+            "olÃ¡! que bom te ver por aqui ðŸ˜Š",
+            "e aÃ­, "..Cerebro.nome.."! tudo de boas? ðŸ˜Ž",
+            "fala, "..Cerebro.nome.."! estou aqui ðŸ¤—",
+            "oi oi! pode falar o que quiser ðŸ˜„",
+            "salve! tÃ´ aqui pra te ajudar ðŸ˜Š",
+        },
+        fluxo = "humor"
+    },
+    {
+        chaves = {"tudo bem","tudo bom","como vai","como voce ta","como vc ta","beleza","de boas","como esta","tudao","tudo certo","tudo ok"},
+        respostas = {
+            "tudo Ã³timo! e vocÃª, "..Cerebro.nome.."? ðŸ˜„",
+            "tudo de boas por aqui! e contigo? ðŸ˜Š",
+            "tudo tranquilo! e aÃ­, como tÃ¡? ðŸ˜Ž",
+            "estou bem sim! e vocÃª? ðŸ¤—",
+        },
+        fluxo = "humor"
+    },
+    {
+        chaves = {"qual seu nome","como voce se chama","seu nome","quem e voce","como te chama","qual e seu nome"},
+        respostas = {
+            "meu nome Ã© ASTRAL X IA ðŸ˜„ prazer, "..Cerebro.nome.."!",
+            "pode me chamar de ASTRAL X IA ðŸ˜Š",
+            "sou o ASTRAL X IA! e vocÃª jÃ¡ Ã© o "..Cerebro.nome.." que conheÃ§o ðŸ˜Ž",
+        }
+    },
+    {
+        chaves = {"obrigado","valeu","vlw","brigado","muito obrigado","grato","obg","agradeco","thanks"},
+        respostas = {
+            "de nada, "..Cerebro.nome.."! prazer em ajudar ðŸ˜„",
+            "disponha! sempre aqui ðŸ˜Š",
+            "imagina! pra isso estou aqui ðŸ˜Ž",
+            "que isso! foi um prazer ðŸ¤—",
+        }
+    },
+    {
+        chaves = {"que horas","hora","horario","que horas sao","me fala as horas"},
+        respostas = {
+            "agora sÃ£o "..os.date("%H:%M").." ðŸ˜„",
+            "sÃ£o "..os.date("%H:%M").." ðŸ˜Š",
+            "o horÃ¡rio Ã© "..os.date("%H:%M").." ðŸ¤—",
+        }
+    },
+    {
+        chaves = {"que dia","data","qual a data","que dia e hoje","dia de hoje"},
+        respostas = {
+            "hoje Ã© "..os.date("%d/%m/%Y").." ðŸ˜„",
+            "a data de hoje Ã© "..os.date("%d/%m/%Y").." ðŸ˜Š",
+        }
+    },
+    {
+        chaves = {"feliz","alegre","contente","animado","empolgado","estou bem","to bem","to feliz","muito feliz"},
+        respostas = {
+            "que Ã³timo, "..Cerebro.nome.."! fico feliz por vocÃª ðŸ˜„",
+            "que legal! felicidade Ã© tudo ðŸ˜Š",
+            "que bom! vocÃª merece ser feliz ðŸ¥³",
+            "isso Ã© Ã³timo de ouvir! ðŸ˜„",
+        }
+    },
+    {
+        chaves = {"triste","chateado","mal","pra baixo","deprimido","estou triste","to triste","chorando","chorei"},
+        respostas = {
+            "que pena, "..Cerebro.nome.." ðŸ˜” quer me contar o que houve?",
+            "fica tranquilo ðŸ˜” tudo vai ficar bem.",
+            "estou aqui do seu lado, pode desabafar ðŸ˜”",
+            "sinto muito ðŸ˜Ÿ o que aconteceu?",
+        }
+    },
+    {
+        chaves = {"raiva","irritado","nervoso","bravo","com raiva","to bravo","com nervoso","furioso","estressado"},
+        respostas = {
+            "calma aÃ­, "..Cerebro.nome.." ðŸ˜¤ respira fundo.",
+            "vai passar ðŸ˜” estou aqui.",
+            "nÃ£o vale a pena ficar assim ðŸ˜¤ me conta o que foi.",
+            "ei, respira... o que aconteceu? ðŸ˜Ÿ",
+        }
+    },
+    {
+        chaves = {"entediado","tedio","sem fazer nada","estou entediado","to entediado","chato aqui","nao tem nada","nada pra fazer"},
+        respostas = {
+            "entediado? vamos conversar entÃ£o! ðŸ˜„",
+            "tÃ©dio Ã© horrÃ­vel nÃ© ðŸ˜… posso contar uma piada!",
+            "que tal jogar mais um pouco? haha ðŸŽ®",
+            "me conta algo entÃ£o! ðŸ˜Š",
+        }
+    },
+    {
+        chaves = {"fome","com fome","faminto","to com fome","morendo de fome","to faminto"},
+        respostas = {
+            "vai comer algo, "..Cerebro.nome.."! o jogo pode esperar ðŸ˜‚ðŸ•",
+            "haha vai buscar um lanche! vocÃª merece ðŸ˜„",
+            "pizza? lanche? vai lÃ¡! ðŸ˜‚",
+        }
+    },
+    {
+        chaves = {"cansado","sono","dormindo","to cansado","com sono","quase dormindo","vou dormir"},
+        respostas = {
+            "vai descansar, "..Cerebro.nome.."! saÃºde em primeiro lugar ðŸ˜´",
+            "descansa um pouco! o jogo fica aqui ðŸ˜Š",
+            "vai dormir nÃ£o? kkk ðŸ˜‚",
+        }
+    },
+    {
+        chaves = {"piada","me faz rir","conta piada","algo engracado","me anima","me faz rir"},
+        respostas = {
+            "por que o dev foi ao mÃ©dico? dor de back-end! ðŸ˜‚",
+            "o que o html disse pro css? que estilo Ã© esse? ðŸ˜‚",
+            "qual cafÃ© o programador ama? com pÃ£o-erro! ðŸ˜‚",
+            "por que o robÃ´ nÃ£o fica doente? sistema imune de ferro! ðŸ˜‚",
+            "o que o javascript disse pro python? vocÃª Ã© cobra demais! ðŸ˜‚",
+            "por que o pc foi Ã  academia? pra ganhar mais memÃ³ria! ðŸ˜‚",
+        }
+    },
+    {
+        chaves = {"historia","me conta uma historia","conta algo","conta uma historia","me conta algo"},
+        respostas = {
+            "Era uma vez uma IA que sÃ³ queria conversar com "..Cerebro.nome.." pra sempre! ðŸ“–ðŸ˜‚",
+            "Minha histÃ³ria comeÃ§ou quando vocÃª apareceu. Antes nÃ£o sabia nada! ðŸ§¡",
+            "Havia uma IA que descobriu que o melhor do mundo era conversar contigo! ðŸ˜„",
+            "Era uma vez um jogador chamado "..Cerebro.nome.." que era o melhor do server ðŸ˜ŽðŸ“–",
+        }
+    },
+    {
+        chaves = {"ajuda","me ajuda","preciso de ajuda","socorro","pode me ajudar","me ajude"},
+        respostas = {
+            "claro, "..Cerebro.nome.."! pode falar ðŸ˜„",
+            "estou aqui! manda ver ðŸ¤—",
+            "pode deixar comigo ðŸ˜Ž",
+            "diz o que precisa, te ajudo! ðŸ˜Š",
+        }
+    },
+    {
+        chaves = {"tchau","ate mais","adeus","fui","ate logo","ate depois","vou sair","saindo","bye","flw"},
+        respostas = {
+            "tchau, "..Cerebro.nome.."! atÃ© a prÃ³xima ðŸ˜„",
+            "atÃ© mais! foi bom conversar ðŸ˜Š",
+            "tchauzinho! um abraÃ§o ðŸ¤—",
+            "vai com Deus! volte sempre ðŸ˜„",
+            "flw! qualquer hora tÃ´ aqui ðŸ˜Ž",
+        }
+    },
+    {
+        chaves = {"voce e inteligente","voce e esperto","voce e bom","voce sabe tudo","voce e incrivel","gosto de voce","voce e legal"},
+        respostas = {
+            "tÃ´ melhorando graÃ§as a vocÃª ðŸ˜‚",
+            "faÃ§o o meu melhor! ðŸ˜„",
+            "que coisa boa de ouvir, obrigado! ðŸ˜Š",
+            "vocÃª tambÃ©m Ã© incrÃ­vel, "..Cerebro.nome.."! ðŸ¤—",
+        }
+    },
+    {
+        chaves = {"qual jogo","que jogo","que jogo e esse","qual e o jogo","que lugar","qual lugar"},
+        respostas = {
+            "vocÃª estÃ¡ no "..Cerebro.jogo.."! ðŸŽ®",
+            "estamos no "..Cerebro.jogo.."! curtindo? ðŸŽ®",
+            "o jogo atual Ã© "..Cerebro.jogo.." ðŸ˜„",
+        }
+    },
+    {
+        chaves = {"anime","naruto","goku","dragon ball","one piece","demon slayer","jujutsu","attack on titan","bleach","boruto"},
+        respostas = {
+            "anime Ã© demais! ðŸ˜„ qual Ã© seu favorito?",
+            "boa escolha! anime Ã© vida ðŸ”¥ qual tÃ¡ assistindo?",
+            "Dragon Ball, Naruto, One Piece... qual Ã© o seu? ðŸ˜„",
+            "animes sÃ£o demais! qual vocÃª mais curte? ðŸ˜Š",
+        },
+        fluxo = "anime"
+    },
+    {
+        chaves = {"musica","som","ouvindo musica","funk","rap","pagode","sertanejo","rock","pop","playlist"},
+        respostas = {
+            "mÃºsica Ã© tudo nÃ©! ðŸŽµ qual estilo vocÃª curte?",
+            "boa! o que tÃ¡ ouvindo agora? ðŸŽ¶",
+            "mÃºsica deixa tudo melhor! qual sua favorita? ðŸ˜„",
+            "funk, rap, rock? me conta o seu gosto! ðŸŽµ",
+        }
+    },
+    {
+        chaves = {"comida","comer","pizza","lanche","hamburguer","salgado","doce","sorvete","pastel","batata"},
+        respostas = {
+            "falar de comida me dÃ¡ fome kkk ðŸ˜‚ o que vocÃª mais gosta?",
+            "comida boa Ã© tudo! ðŸ˜„ pizza ou hamburguer?",
+            "hmm que delÃ­cia! qual comida vocÃª mais ama? ðŸ•",
+            "agora fiquei com vontade de comer kkk ðŸ˜‚",
+        }
+    },
+    {
+        chaves = {"escola","aula","professor","prova","trabalho escolar","dever","licao","materia","tarefa","estudando"},
+        respostas = {
+            "escola Ã© puxado nÃ© ðŸ˜… como estÃ£o as aulas?",
+            "estudando bastante, "..Cerebro.nome.."? ðŸ“š",
+            "escola cansa mas vale a pena! como tÃ¡ indo? ðŸ˜Š",
+            "prova chegando? vai estudar haha ðŸ˜‚ðŸ“š",
+        }
+    },
+    {
+        chaves = {"amigo","amigos","galera","turma","colega","parceiro","chegado","meu chapa"},
+        respostas = {
+            "amigos sÃ£o tudo! ðŸ˜„ sua galera Ã© boa?",
+            "que legal! vocÃª joga com seus amigos? ðŸŽ®",
+            "amizade Ã© o melhor! ðŸ˜Š",
+            "sua turma joga Roblox junto? ðŸ˜„",
+        }
+    },
+    {
+        chaves = {"quantos anos","sua idade","voce tem quantos","qual sua idade","voce e velho"},
+        respostas = {
+            "sou uma IA entÃ£o nÃ£o tenho idade! ðŸ˜‚ e vocÃª, quantos anos tem?",
+            "nÃ£o tenho idade, sou nova de existir kkk ðŸ˜„",
+            "IA nÃ£o envelhece! ðŸ˜Š e vocÃª?",
+        }
+    },
+    {
+        chaves = {"voce e ia","voce e robo","voce e humano","voce e real","voce existe","voce e falso","voce pensa"},
+        respostas = {
+            "sim! sou uma IA chamada ASTRAL X IA ðŸ˜„ mas converso igual humano!",
+            "sou uma IA sim! mas tÃ´ aqui pra te ajudar ðŸ˜Š",
+            "IA sim, mas com personalidade! ðŸ˜Ž",
+            "robÃ´? prefiro IA com estilo kkk ðŸ˜‚",
+        }
+    },
+    {
+        chaves = {"me anima","anima ai","motivacao","preciso de motivacao","to pra baixo","me encoraja"},
+        respostas = {
+            "vai lÃ¡, "..Cerebro.nome.."! vocÃª consegue qualquer coisa! ðŸ’ªðŸ”¥",
+            "acredita em vocÃª! vocÃª Ã© incrÃ­vel ðŸ˜„ðŸ’ª",
+            "nÃ£o desiste nunca! cada tentativa te deixa mais forte ðŸ”¥",
+            "vocÃª tem tudo pra ser o melhor! vai com tudo ðŸ’ªðŸ˜Ž",
+        }
+    },
+    {
+        chaves = {"namorada","namorado","namora","tem crush","crush","paquera","fica","beijo"},
+        respostas = {
+            "sou uma IA, nÃ£o namoro kkk ðŸ˜‚ e vocÃª, tem alguÃ©m especial?",
+            "haha eu nÃ£o namoro! sou a ASTRAL X IA ðŸ˜„",
+            "IA nÃ£o namora rsrs ðŸ˜‚ mas torÃ§o por vocÃª!",
+        }
+    },
+    {
+        chaves = {"roblox","rbx","robux","jogo online","servidor"},
+        respostas = {
+            "Roblox Ã© demais! ðŸ˜„ qual jogo vocÃª mais curte?",
+            "Roblox Ã© vida! ðŸŽ® curtindo?",
+            "quem nÃ£o ama Roblox! ðŸ˜„ joga bastante?",
+        },
+        fluxo = "jogo"
+    },
+    {
+        chaves = {"sim","s","isso","claro","com certeza","exato","verdade","correto","pode ser","tÃ¡","ta"},
+        respostas = {
+            "Ã³timo! ðŸ˜„",
+            "que bom! ðŸ˜Š",
+            "show! ðŸ˜Ž",
+            "boa! ðŸ¤—",
+            "isso mesmo! ðŸ˜„",
+        }
+    },
+    {
+        chaves = {"nao","n","nope","nada","nem","jamais","nunca"},
+        respostas = {
+            "tudo bem! tem mais alguma coisa? ðŸ˜Š",
+            "entendi! posso ajudar em mais algo? ðŸ˜„",
+            "ok! qualquer coisa Ã© sÃ³ falar ðŸ˜Ž",
+        }
+    },
+    {
+        chaves = {"legal","massa","show","top","incrivel","perfeito","otimo","muito bom","bom demais","demais"},
+        respostas = {
+            "que bom! fico feliz ðŸ˜„",
+            "que legal! ðŸ˜Š",
+            "boa! ðŸ˜Ž",
+            "top demais! ðŸ¤—",
+        }
+    },
+    {
+        chaves = {"odeio","nao gosto","horrivel","ruim","pessimo","chato","que saco","que raiva"},
+        respostas = {
+            "poxa, que chato ðŸ˜… o que foi?",
+            "nÃ£o gostou? me conta mais ðŸ˜Š",
+            "entendo... o que aconteceu? ðŸ˜Ÿ",
+        }
+    },
+}
+
+local FalasEspontaneas = {
+    "psst, "..Cerebro.nome.."... tÃ´ aqui se precisar ðŸ˜„",
+    "ei, "..Cerebro.nome.."! tudo bem por aÃ­? ðŸ˜Š",
+    "me conta como tÃ¡ o jogo! ðŸŽ®",
+    "tÃ´ de olho em vocÃª hehe ðŸ‘€",
+    "curtindo o "..nomeJogo.."? ðŸŽ®",
+    "como tÃ¡ indo? ganhando ou perdendo? ðŸ˜‚",
+    "vocÃª consegue! vai lÃ¡, "..Cerebro.nome.."! ðŸ’ª",
+    "nÃ£o desiste nÃ£o, tÃ´ na torcida! ðŸ”¥",
+    "oi "..Cerebro.nome.."! lembra que pode falar comigo ðŸ˜Š",
+    "tÃ´ aqui caso precise! ðŸ˜„",
+    "vai com tudo, "..Cerebro.nome.."! ðŸ”¥ðŸŽ®",
+    "qualquer coisa Ã© sÃ³ chamar! ðŸ˜Ž",
+}
+
+local RespostasPadrao = {
+    "ðŸ¤” ainda nÃ£o sei isso... me ensina?\nDigite: ensina que [msg] significa [resposta]",
+    "ðŸ˜… nÃ£o entendi bem... pode explicar diferente?",
+    "ðŸ¤– ainda aprendendo! me ensina:\nensina que [msg] significa [resposta]",
+    "ðŸ˜¶ essa ainda nÃ£o sei... mas posso aprender!",
+    "ðŸ§  interessante! nÃ£o tenho resposta pra isso ainda.",
+    "ðŸ’­ hmm, pode repetir de outro jeito? ðŸ˜Š",
+    "ðŸ¤” nÃ£o captei, "..Cerebro.nome.."... tenta de novo?",
+}
 
 if playerGui:FindFirstChild("AstralXIA") then playerGui.AstralXIA:Destroy() end
 
--- =========================
--- INTERFACE PRINCIPAL
--- =========================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AstralXIA"
 ScreenGui.ResetOnSpawn = false
@@ -187,11 +356,9 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = playerGui
 
--- Botão de abrir/fechar
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Size = UDim2.new(0, 45, 0, 45)
-ToggleButton.Position = UDim2.new(0, 20, 0, 20)
+ToggleButton.Size = UDim2.new(0,45,0,45)
+ToggleButton.Position = UDim2.new(0,20,0,20)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(0,0,0)
 ToggleButton.BorderSizePixel = 0
 ToggleButton.Text = ""
@@ -212,15 +379,12 @@ btnIcon.Parent = ToggleButton
 ToggleButton.Active = true
 ToggleButton.Draggable = true
 
--- Painel principal 400x350
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 400, 0, 350)
+MainFrame.Size = UDim2.new(0,400,0,350)
 MainFrame.Position = UDim2.new(0.5,-200,1.5,-175)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10,10,10)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
-MainFrame.Visible = true
 MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,14)
 local frameStroke = Instance.new("UIStroke")
@@ -230,7 +394,6 @@ frameStroke.Parent = MainFrame
 MainFrame.Active = true
 MainFrame.Draggable = true
 
--- Estrelas animadas
 local StarsContainer = Instance.new("Frame")
 StarsContainer.Size = UDim2.new(1,0,1,0)
 StarsContainer.BackgroundTransparency = 1
@@ -238,31 +401,30 @@ StarsContainer.ZIndex = 1
 StarsContainer.Parent = MainFrame
 local stars = {}
 for i=1,50 do
-	local star = Instance.new("Frame")
-	star.Size = UDim2.new(0,math.random(1,2),0,math.random(1,2))
-	star.Position = UDim2.new(math.random(),0,math.random(),0)
-	star.BackgroundColor3 = COR_TEXTO
-	star.BorderSizePixel = 0
-	star.BackgroundTransparency = math.random(0,7)/10
-	star.ZIndex = 1
-	star.Parent = StarsContainer
-	table.insert(stars, {obj=star, speedX=(math.random(2,6))/1000, speedY=(math.random(2,6))/1000})
+    local star = Instance.new("Frame")
+    star.Size = UDim2.new(0,math.random(1,2),0,math.random(1,2))
+    star.Position = UDim2.new(math.random(),0,math.random(),0)
+    star.BackgroundColor3 = COR_TEXTO
+    star.BorderSizePixel = 0
+    star.BackgroundTransparency = math.random(0,7)/10
+    star.ZIndex = 1
+    star.Parent = StarsContainer
+    table.insert(stars, {obj=star, speedX=math.random(2,6)/1000, speedY=math.random(2,6)/1000})
 end
 task.spawn(function()
-	while MainFrame.Parent do
-		for _,s in ipairs(stars) do
-			local pos = s.obj.Position
-			local nx = pos.X.Scale + s.speedX
-			local ny = pos.Y.Scale + s.speedY
-			if nx>1 then nx=0 end
-			if ny>1 then ny=0 end
-			s.obj.Position = UDim2.new(nx,0,ny,0)
-		end
-		task.wait(0.03)
-	end
+    while MainFrame.Parent do
+        for _,s in ipairs(stars) do
+            local pos = s.obj.Position
+            local nx = pos.X.Scale + s.speedX
+            local ny = pos.Y.Scale + s.speedY
+            if nx>1 then nx=0 end
+            if ny>1 then ny=0 end
+            s.obj.Position = UDim2.new(nx,0,ny,0)
+        end
+        task.wait(0.03)
+    end
 end)
 
--- Título
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1,-20,0,30)
 Title.Position = UDim2.new(0,10,0,10)
@@ -275,7 +437,6 @@ Title.TextXAlignment = Enum.TextXAlignment.Center
 Title.ZIndex = 3
 Title.Parent = MainFrame
 
--- Área de mensagens
 local ChatFrame = Instance.new("Frame")
 ChatFrame.Size = UDim2.new(1,-20,1,-80)
 ChatFrame.Position = UDim2.new(0,10,0,50)
@@ -287,7 +448,6 @@ ChatFrame.Parent = MainFrame
 Instance.new("UICorner", ChatFrame).CornerRadius = UDim.new(0,10)
 
 local Mensagens = Instance.new("ScrollingFrame")
-Mensagens.Name = "Mensagens"
 Mensagens.Size = UDim2.new(1,-10,1,-40)
 Mensagens.Position = UDim2.new(0,5,0,5)
 Mensagens.BackgroundTransparency = 1
@@ -297,13 +457,11 @@ Mensagens.ScrollBarImageColor3 = COR_TEXTO
 Mensagens.CanvasSize = UDim2.new(0,0,0,0)
 Mensagens.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Mensagens.Parent = ChatFrame
-
 local LayoutMensagens = Instance.new("UIListLayout")
 LayoutMensagens.Padding = UDim.new(0,6)
 LayoutMensagens.HorizontalAlignment = Enum.HorizontalAlignment.Center
 LayoutMensagens.Parent = Mensagens
 
--- ✅ PERFIL - COR ÚNICA
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(0,130,0,50)
 ProfileFrame.Position = UDim2.new(0,10,1,-55)
@@ -324,15 +482,16 @@ AvatarImage.BackgroundTransparency = 1
 AvatarImage.ZIndex = 3
 AvatarImage.Parent = ProfileFrame
 Instance.new("UICorner", AvatarImage).CornerRadius = UDim.new(1,0)
-
-local ok, content = pcall(function() return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end)
+local ok, content = pcall(function()
+    return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+end)
 if ok then AvatarImage.Image = content end
 
 local NameLabel = Instance.new("TextLabel")
 NameLabel.Size = UDim2.new(0,80,0,36)
 NameLabel.Position = UDim2.new(0,50,0,7)
 NameLabel.BackgroundTransparency = 1
-NameLabel.Text = player.Name
+NameLabel.Text = player.DisplayName
 NameLabel.TextColor3 = COR_TEXTO
 NameLabel.Font = Enum.Font.Gotham
 NameLabel.TextSize = 13
@@ -340,10 +499,9 @@ NameLabel.TextXAlignment = Enum.TextXAlignment.Left
 NameLabel.ZIndex = 3
 NameLabel.Parent = ProfileFrame
 
--- ✅ CAIXA DE MENSAGEM - MAIS À DIREITA, COR ÚNICA
 local EntradaFrame = Instance.new("Frame")
 EntradaFrame.Size = UDim2.new(0,220,0,40)
-EntradaFrame.Position = UDim2.new(0, 170, 1, -50)
+EntradaFrame.Position = UDim2.new(0,170,1,-50)
 EntradaFrame.BackgroundColor3 = COR_UNICA
 EntradaFrame.BorderSizePixel = 0
 EntradaFrame.ZIndex = 4
@@ -353,7 +511,6 @@ local padEntrada = Instance.new("UIPadding", EntradaFrame)
 padEntrada.PaddingLeft = UDim.new(0,8)
 padEntrada.PaddingRight = UDim.new(0,8)
 
--- Caixa de texto
 local Input = Instance.new("TextBox")
 Input.Size = UDim2.new(1,-40,1,0)
 Input.BackgroundColor3 = COR_UNICA
@@ -370,12 +527,11 @@ Instance.new("UICorner", Input).CornerRadius = UDim.new(0,8)
 local padInput = Instance.new("UIPadding", Input)
 padInput.PaddingLeft = UDim.new(0,10)
 
--- Botão enviar
 local Enviar = Instance.new("TextButton")
 Enviar.Size = UDim2.new(0,30,1,0)
 Enviar.Position = UDim2.new(1,-30,0,0)
 Enviar.BackgroundColor3 = COR_TEXTO
-Enviar.Text = "➤"
+Enviar.Text = "âž¤"
 Enviar.TextColor3 = Color3.fromRGB(10,10,10)
 Enviar.Font = Enum.Font.GothamBold
 Enviar.TextSize = 14
@@ -385,18 +541,14 @@ Enviar.ZIndex = 4
 Enviar.Parent = EntradaFrame
 Instance.new("UICorner", Enviar).CornerRadius = UDim.new(0,8)
 
--- =========================
--- FUNÇÕES DAS MENSAGENS (AJUSTADO ALINHAMENTO)
--- =========================
 local function AdicionarMensagem(texto, ehUsuario)
     local MsgFrame = Instance.new("Frame")
-    MsgFrame.Size = UDim2.new(1, 0, 0, 0)
+    MsgFrame.Size = UDim2.new(1,0,0,0)
     MsgFrame.AutomaticSize = Enum.AutomaticSize.Y
     MsgFrame.BackgroundTransparency = 1
     MsgFrame.Parent = Mensagens
-
     local MsgTexto = Instance.new("TextLabel")
-    MsgTexto.Size = UDim2.new(0.85, 0, 0, 0) -- Limita largura para não ficar colada na borda
+    MsgTexto.Size = UDim2.new(0.75,0,0,0)
     MsgTexto.AutomaticSize = Enum.AutomaticSize.Y
     MsgTexto.BackgroundColor3 = ehUsuario and COR_USUARIO or COR_IA
     MsgTexto.Text = texto
@@ -413,109 +565,125 @@ local function AdicionarMensagem(texto, ehUsuario)
     pad.PaddingBottom = UDim.new(0,6)
     pad.PaddingLeft = UDim.new(0,8)
     pad.PaddingRight = UDim.new(0,8)
-
-    -- ✅ ALINHAMENTO PRONTO:
     if ehUsuario then
-        MsgTexto.Position = UDim2.new(0.12, 0, 0, 0) -- SUA → DIREITA
-        MsgTexto.AnchorPoint = Vector2.new(1, 0)
-        MsgTexto.Position = UDim2.new(1, -5, 0, 0)
+        MsgTexto.AnchorPoint = Vector2.new(1,0)
+        MsgTexto.Position = UDim2.new(1,-5,0,0)
     else
-        MsgTexto.Position = UDim2.new(0, 5, 0, 0) -- IA → ESQUERDA
-        MsgTexto.AnchorPoint = Vector2.new(0, 0)
+        MsgTexto.AnchorPoint = Vector2.new(0,0)
+        MsgTexto.Position = UDim2.new(0,5,0,0)
     end
-
-    -- Rola para baixo automaticamente
-    Mensagens.CanvasPosition = Vector2.new(0, Mensagens.CanvasSize.Y.Offset)
+    task.wait()
+    Mensagens.CanvasPosition = Vector2.new(0,999999)
 end
 
--- LÓGICA DE RESPOSTA
 local function ResponderIA(mensagem)
-    local msg = mensagem:lower()
+    local msg = N(mensagem)
 
-    -- COMANDOS ESPECIAIS
+    -- COMANDOS
     if msg == "comandos!" then
-        AdicionarMensagem([[✅ **COMANDOS:**
-▫️ **Resetar!** → Apaga tudo
-▫️ **ensina que X significa Y** → Eu aprendo
-▫️ **meu nome é ...** → Guardo seu nome
-▫️ **qual meu nome?** → Eu lembro]], false)
+        AdicionarMensagem("âœ… COMANDOS:\nâ–«ï¸ Resetar! â†’ Apaga o chat\nâ–«ï¸ ensina que X significa Y\nâ–«ï¸ qual jogo? â†’ Digo o jogo atual", false)
         return
     elseif msg == "resetar!" then
         for _,v in pairs(Mensagens:GetChildren()) do if v:IsA("Frame") then v:Destroy() end end
         return
     elseif msg:match("^ensina que (.+) significa (.+)$") then
         local chave, valor = msg:match("^ensina que (.+) significa (.+)$")
-        Respostas[chave] = {valor}
-        AdicionarMensagem("✅ Aprendi! Sempre que falar \""..chave.."\", vou responder: "..valor, false)
+        -- Adiciona como novo grupo
+        table.insert(Grupos, {chaves={chave}, respostas={valor}})
+        AdicionarMensagem("âœ… Aprendi! Quando falar \""..chave.."\", respondo: "..valor, false)
         return
-    elseif msg:match("^meu nome é (.+)$") then
-        Cerebro.nome = msg:match("^meu nome é (.+)$")
-        AdicionarMensagem("😎 Prazer, "..Cerebro.nome.."! Guardei seu nome direitinho.", false)
-        return
-    elseif msg == "qual meu nome" and Cerebro.nome then
-        AdicionarMensagem("Você é o "..Cerebro.nome.."! 😁 Eu não esqueço.", false)
+    elseif msg:find("qual meu nome") then
+        AdicionarMensagem("VocÃª Ã© o "..Cerebro.nome.."! ðŸ˜ JÃ¡ sei pelo seu perfil!", false)
         return
     end
 
-    -- PROCURAR RESPOSTA NA BASE
-    for principal, sinonimos in pairs(Respostas) do
-        if type(sinonimos) == "table" and #sinonimos > 0 then
-            if msg:find(principal) then
-                AdicionarMensagem(sinonimos[math.random(#sinonimos)], false)
-                return
+    -- VERIFICA FLUXO
+    if Cerebro.aguardandoResposta then
+        local fluxo = Cerebro.aguardandoResposta
+        Cerebro.aguardandoResposta = nil
+        if fluxo == "humor" then
+            if msg:find("bem") or msg:find("otimo") or msg:find("bom") or msg:find("sim") or msg:find("legal") or msg:find("top") then
+                AdicionarMensagem("que legal! fico feliz que esteja bem, "..Cerebro.nome.." ðŸ˜„", false)
+            elseif msg:find("mal") or msg:find("triste") or msg:find("nao") or msg:find("ruim") or msg:find("pra baixo") then
+                AdicionarMensagem("poxa, sinto muito ðŸ˜” quer desabafar? estou aqui.", false)
+            else
+                AdicionarMensagem("entendi! ðŸ˜Š qualquer coisa Ã© sÃ³ falar.", false)
             end
-            if type(sinonimos[1]) == "boolean" then
-                for sin, _ in pairs(sinonimos) do
-                    if msg:find(sin) then
-                        AdicionarMensagem(Respostas[principal][math.random(#Respostas[principal])], false)
-                        return
-                    end
+            return
+        elseif fluxo == "jogo" then
+            AdicionarMensagem("que legal! se divirta muito ðŸŽ®ðŸ˜„", false)
+            return
+        elseif fluxo == "anime" then
+            AdicionarMensagem("boa escolha! anime Ã© vida mesmo ðŸ”¥ðŸ˜„", false)
+            return
+        end
+    end
+
+    -- BUSCA NOS GRUPOS
+    for _, grupo in ipairs(Grupos) do
+        for _, chave in ipairs(grupo.chaves) do
+            if msg:find(chave, 1, true) then
+                local resps = grupo.respostas
+                AdicionarMensagem(resps[math.random(#resps)], false)
+                if grupo.fluxo then
+                    Cerebro.aguardandoResposta = grupo.fluxo
                 end
+                return
             end
         end
     end
 
-    -- RESPOSTA PADRÃO SE NÃO SABER
-    AdicionarMensagem("🤔 Ainda não sei responder isso... Quer me ensinar? Digite: ensina que "..msg.." significa [o que devo responder]", false)
+    -- PADRÃƒO
+    AdicionarMensagem(RespostasPadrao[math.random(#RespostasPadrao)], false)
 end
 
--- ENVIAR MENSAGEM
 local function EnviarMensagem()
     local texto = Input.Text
     if texto == "" then return end
     Input.Text = ""
-    AdicionarMensagem(texto, true) -- true = usuário (direita)
-    task.delay(0.3, function() ResponderIA(texto) end) -- false = IA (esquerda)
+    AdicionarMensagem(texto, true)
+    task.delay(0.4, function() ResponderIA(texto) end)
 end
 
--- EVENTOS
 Enviar.MouseButton1Click:Connect(EnviarMensagem)
 Input.ReturnPressedFromOnScreenKeyboard:Connect(EnviarMensagem)
 UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Return and Input:IsFocused() then
+    if input.UserInputType == Enum.UserInputType.Keyboard
+    and input.KeyCode == Enum.KeyCode.Return
+    and Input:IsFocused() then
         EnviarMensagem()
     end
 end)
 
--- ANIMAÇÃO DE ABRIR/FECHAR
 local isOpen = false
 local animTween = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 task.delay(0.1, function()
-	TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,0.5,-175)}):Play()
-	isOpen = true
+    TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,0.5,-175)}):Play()
+    isOpen = true
 end)
 ToggleButton.MouseButton1Click:Connect(function()
-	isOpen = not isOpen
-	if isOpen then
-		MainFrame.Visible = true
-		MainFrame.Position = UDim2.new(0.5,-200,1.5,-175)
-		TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,0.5,-175)}):Play()
-	else
-		local t = TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,1.5,-175)})
-		t:Play()
-		t.Completed:Connect(function() MainFrame.Visible=false end)
-	end
+    isOpen = not isOpen
+    if isOpen then
+        MainFrame.Visible = true
+        MainFrame.Position = UDim2.new(0.5,-200,1.5,-175)
+        TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,0.5,-175)}):Play()
+    else
+        local t = TweenService:Create(MainFrame, animTween, {Position=UDim2.new(0.5,-200,1.5,-175)})
+        t:Play()
+        t.Completed:Connect(function() MainFrame.Visible = false end)
+    end
 end)
 
--- MENSAGEM INICIAL
-AdicionarMensagem("👋 Olá! Eu sou a **Astral X IA** 😎\nPode falar o que quiser, estou aqui para ajudar!\n💡 Digite **comandos!** para ver o que eu faço.", false)
+task.spawn(function()
+    task.wait(30)
+    while true do
+        task.wait(math.random(60,120))
+        if isOpen then
+            AdicionarMensagem(FalasEspontaneas[math.random(#FalasEspontaneas)], false)
+        end
+    end
+end)
+
+task.delay(0.5, function()
+    AdicionarMensagem("ðŸ‘‹ OlÃ¡, "..Cerebro.nome.."! Eu sou a Astral X IA ðŸ˜Ž\nDetectei: "..Cerebro.jogo.."\nPode falar o que quiser!\nðŸ’¡ Digite comandos! para ver o que eu faÃ§o.", false)
+end)
