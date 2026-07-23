@@ -449,38 +449,73 @@ for _, aba in ipairs(Abas) do
 end
 
 -- ===========================================
--- ABA LOCAL PLAYER - TODOS TRAVADOS
--- ✅ Velocidade | Pulo | Gravidade
--- ✅ NENHUM VOLTA AO PADRÃO
+-- ABA LOCAL PLAYER - COMPLETO
+-- ✅ Velocidade | Força do Pulo | Pulo Infinito | Noclip | Anti-Fling
+-- ✅ NENHUM VOLTA AO PADRÃO | BOTÕES ANIMADOS
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
 local VelocidadeSalva = 16
-local PuloSalvo = 5
-local GravidadeSalva = 192 -- Valor normal do Roblox
+local ForcaPuloSalva = 5
+local PuloInfinitoAtivo = false
+local NoclipAtivo = false
+local AntiFlingAtivo = false
 
--- Aplica TUDO de uma vez
+-- Aplica os valores básicos
 local function AplicarValores(hum)
 	if hum then
 		hum.WalkSpeed = VelocidadeSalva
-		hum.JumpPower = PuloSalvo
-		hum.Gravity = GravidadeSalva
+		hum.JumpPower = ForcaPuloSalva
 	end
 end
 
--- Força TODOS os valores a cada quadro
+-- FORÇA TUDO A CADA QUADRO
 RunService.Heartbeat:Connect(function()
 	local char = player.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		if hum then
+			-- Velocidade
 			if hum.WalkSpeed ~= VelocidadeSalva then hum.WalkSpeed = VelocidadeSalva end
-			if hum.JumpPower ~= PuloSalvo then hum.JumpPower = PuloSalvo end
-			if hum.Gravity ~= GravidadeSalva then hum.Gravity = GravidadeSalva end
+			-- Força do Pulo
+			if hum.JumpPower ~= ForcaPuloSalva then hum.JumpPower = ForcaPuloSalva end
+			-- Pulo Infinito
+			if PuloInfinitoAtivo then
+				hum.Jumping = true
+				hum:ChangeState(Enum.HumanoidStateType.Jumping)
+			end
+			-- Noclip
+			if NoclipAtivo then
+				for _, parte in pairs(char:GetChildren()) do
+					if parte:IsA("BasePart") then
+						parte.CanCollide = false
+					end
+				end
+			else
+				for _, parte in pairs(char:GetChildren()) do
+					if parte:IsA("BasePart") then
+						parte.CanCollide = true
+					end
+				end
+			end
+		end
+
+		-- ANTI-FLING: Pessoas te atravessam
+		if AntiFlingAtivo then
+			for _, v in pairs(Players:GetPlayers()) do
+				if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("HumanoidRootPart") then
+					v.Character.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, -1000, 0)
+					task.delay(0.05, function()
+						if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+							v.Character.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 1000, 0)
+						end
+					end)
+				end
+			end
 		end
 	end
 end)
 
--- Quando nasce, aplica e confirma
+-- AO NASCER: Reseta tudo e aplica de novo
 player.CharacterAdded:Connect(function(char)
 	local hum = char:WaitForChild("Humanoid", 5)
 	if hum then
@@ -491,25 +526,34 @@ player.CharacterAdded:Connect(function(char)
 	end
 end)
 
--- 1. Velocidade
+-- ===========================================
+-- SLIDERS
+-- ===========================================
 CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeSalva, function(NovaVel)
     VelocidadeSalva = NovaVel
     local char = player.Character
 	if char then local hum = char:FindFirstChildOfClass("Humanoid") if hum then AplicarValores(hum) end end
 end)
 
--- 2. Pulo
-CriarSlider("Força do Pulo", AbaLocalPlayer, 5, 100, PuloSalvo, function(NovoPulo)
-    PuloSalvo = NovoPulo
+CriarSlider("Força do Pulo", AbaLocalPlayer, 5, 100, ForcaPuloSalva, function(NovoPulo)
+    ForcaPuloSalva = NovoPulo
     local char = player.Character
 	if char then local hum = char:FindFirstChildOfClass("Humanoid") if hum then AplicarValores(hum) end end
 end)
 
--- 3. GRAVIDADE (debaixo do pulo)
-CriarSlider("Gravidade", AbaLocalPlayer, 0, 60, GravidadeSalva, function(NovaGrav)
-    GravidadeSalva = NovaGrav
-    local char = player.Character
-	if char then local hum = char:FindFirstChildOfClass("Humanoid") if hum then AplicarValores(hum) end end
+-- ===========================================
+-- BOTÕES TOGGLE (BOLINHA BRANCA QUANDO ATIVO)
+-- ===========================================
+CriarToggleAnimado("Pulo Infinito", AbaLocalPlayer, function(ligado)
+	PuloInfinitoAtivo = ligado
+end)
+
+CriarToggleAnimado("Noclip", AbaLocalPlayer, function(ligado)
+	NoclipAtivo = ligado
+end)
+
+CriarToggleAnimado("Anti-Fling / Não Empurrar", AbaLocalPlayer, function(ligado)
+	AntiFlingAtivo = ligado
 end)
 
 -- ===========================================
