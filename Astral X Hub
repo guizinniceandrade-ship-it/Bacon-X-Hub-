@@ -1,5 +1,8 @@
 -- ===========================================
--- Astral X Hub
+-- ASTRAL X HUB - SEMPRE POR CIMA
+-- ✅ Fica visível sobre TUDO
+-- ✅ Perfil quebra linha automaticamente
+-- ✅ Funciona em qualquer jogo
 -- ===========================================
 
 local Players = game:GetService("Players")
@@ -8,23 +11,8 @@ local SoundService = game:GetService("SoundService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-
--- =========================
--- VERIFICAÇÃO DE JOGO
--- =========================
-local FLEE_THE_FACILITY_PLACE_ID = 893973440
-
-if game.PlaceId ~= FLEE_THE_FACILITY_PLACE_ID then
-	game:GetService("StarterGui"):SetCore("SendNotification", {
-		Title = "Astral X Hub",
-		Text = "Entre no jogo correto para executar",
-		Duration = 6,
-	})
-	return
-end
 
 if playerGui:FindFirstChild("AstralXHub") then
 	playerGui.AstralXHub:Destroy()
@@ -34,12 +22,15 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AstralXHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder = 9999 -- ✅ VALOR MÁXIMO: FICA POR CIMA DE TUDO
 ScreenGui.Parent = playerGui
 ScreenGui.IgnoreGuiInset = true
 
 -- =========================
--- SISTEMA DE SOM
+-- RESTO DO CÓDIGO TUDO IGUAL...
 -- =========================
+
+-- SISTEMA DE SOM
 if not ReplicatedStorage:FindFirstChild("CanalDeSomGlobal") then
     local Canal = Instance.new("RemoteEvent")
     Canal.Name = "CanalDeSomGlobal"
@@ -76,9 +67,7 @@ local function TocarSomGlobal(nomeSom)
     end
 end
 
--- =========================
 -- BOTÃO DE ABRIR/FECHAR
--- =========================
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Size = UDim2.new(0, 45, 0, 45)
@@ -103,15 +92,13 @@ btnIcon.Size = UDim2.new(0, 34, 0, 34)
 btnIcon.Position = UDim2.new(0.5, -17, 0.5, -17)
 btnIcon.BackgroundTransparency = 1
 btnIcon.Image = "rbxassetid://133983783420812"
-btnIcon.ZIndex = 2
+btnIcon.ZIndex = 10
 btnIcon.Parent = ToggleButton
 
 ToggleButton.Active = true
 ToggleButton.Draggable = true
 
--- =========================
 -- PAINEL PRINCIPAL
--- =========================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
@@ -120,6 +107,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Visible = true
+MainFrame.ZIndex = 99 -- ✅ TAMBÉM FORÇA ELE POR CIMA
 MainFrame.Parent = ScreenGui
 
 local frameCorner = Instance.new("UICorner")
@@ -134,9 +122,7 @@ frameStroke.Parent = MainFrame
 MainFrame.Active = true
 MainFrame.Draggable = true
 
--- =========================
 -- FUNDO DE ESTRELAS
--- =========================
 local StarsContainer = Instance.new("Frame")
 StarsContainer.Name = "StarsContainer"
 StarsContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -176,9 +162,7 @@ task.spawn(function()
 	end
 end)
 
--- =========================
 -- TÍTULO
--- =========================
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 250, 0, 30)
 Title.Position = UDim2.new(0, 15, 0, 10)
@@ -191,9 +175,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.ZIndex = 3
 Title.Parent = MainFrame
 
--- =========================
 -- ABAS
--- =========================
 local TabContainer = Instance.new("Frame")
 TabContainer.Size = UDim2.new(0, 130, 0, 170)
 TabContainer.Position = UDim2.new(0, 10, 0, 50)
@@ -241,9 +223,7 @@ for _, aba in ipairs(Abas) do
 	tabButtons[aba.Nome] = {Botao = tabBtn, Stroke = tabStroke}
 end
 
--- =========================
--- PERFIL
--- =========================
+-- PERFIL (TAMANHO ORIGEM + QUEBRA LINHA)
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(0, 130, 0, 50)
 ProfileFrame.Position = UDim2.new(0, 10, 1, -60)
@@ -280,20 +260,19 @@ if ok then
 end
 
 local NameLabel = Instance.new("TextLabel")
-NameLabel.Size = UDim2.new(0, 80, 0, 36)
+NameLabel.Size = UDim2.new(0, 85, 0, 36)
 NameLabel.Position = UDim2.new(0, 50, 0, 7)
 NameLabel.BackgroundTransparency = 1
 NameLabel.Text = player.Name
 NameLabel.TextColor3 = Color3.new(1,1,1)
 NameLabel.Font = Enum.Font.Gotham
-NameLabel.TextSize = 13
+NameLabel.TextSize = 12
 NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+NameLabel.TextWrapped = true -- ✅ QUEBRA LINHA AUTOMÁTICO
 NameLabel.ZIndex = 4
 NameLabel.Parent = ProfileFrame
 
--- =========================
 -- ÁREA DE CONTEÚDO
--- =========================
 local ContentFrame = Instance.new("Frame")
 ContentFrame.Size = UDim2.new(0, 380, 0, 280)
 ContentFrame.Position = UDim2.new(0, 150, 0, 50)
@@ -310,7 +289,7 @@ for _, aba in ipairs(Abas) do
 	page.ZIndex = 3
 	page.ScrollBarThickness = 4
     page.ScrollBarImageColor3 = Color3.new(1,1,1)
-	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	page.AutomaticCanvasSize = Enum.AutomaticSize.Y -- ✅ CRESC SOZINHO
 	page.CanvasSize = UDim2.new(0, 0, 0, 0)
 	page.Parent = ContentFrame
 
@@ -328,9 +307,7 @@ for _, aba in ipairs(Abas) do
 	pages[aba.Nome] = page
 end
 
--- =========================
 -- FUNÇÕES DE CRIAÇÃO UI
--- =========================
 local function CriarToggleAnimado(texto, pai, funcao)
     local ToggleFrame = Instance.new("Frame", pai)
     ToggleFrame.Size = UDim2.new(1, -8, 0, 36)
@@ -458,13 +435,7 @@ local function CriarSlider(texto, pai, min, max, padrao, funcao)
     return SliderFrame
 end
 
--- ===========================
--- ABA MAIN
--- ===========================
-
--- =========================
--- SISTEMA DE NAVEGAÇÃO
--- =========================
+-- NAVEGAÇÃO
 local function selectTab(name)
 	for tabName, dados in pairs(tabButtons) do
 		local isSelected = (tabName == name)
@@ -490,9 +461,7 @@ end
 
 selectTab("Main")
 
--- =========================
 -- ANIMAÇÃO DE ABRIR/FECHAR
--- =========================
 local ToggleSound = Instance.new("Sound")
 ToggleSound.SoundId = "rbxassetid://140207837688369"
 ToggleSound.Volume = 0.5
