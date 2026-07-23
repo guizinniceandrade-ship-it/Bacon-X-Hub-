@@ -449,38 +449,38 @@ for _, aba in ipairs(Abas) do
 end
 
 -- ===========================================
--- ABA LOCAL PLAYER - VELOCIDADE + PULO TRAVADOS
--- ✅ NÃO VOLTA MAIS PARA O PADRÃO EM NENHUMA SITUAÇÃO
+-- ABA LOCAL PLAYER - TODOS TRAVADOS
+-- ✅ Velocidade | Pulo | Gravidade
+-- ✅ NENHUM VOLTA AO PADRÃO
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
 local VelocidadeSalva = 16
-local PuloSalvo = 5 -- Valor padrão do Roblox
+local PuloSalvo = 5
+local GravidadeSalva = 192 -- Valor normal do Roblox
 
--- Aplica os valores
+-- Aplica TUDO de uma vez
 local function AplicarValores(hum)
 	if hum then
 		hum.WalkSpeed = VelocidadeSalva
 		hum.JumpPower = PuloSalvo
+		hum.Gravity = GravidadeSalva
 	end
 end
 
--- Força ambos os valores em CADA quadro do jogo
+-- Força TODOS os valores a cada quadro
 RunService.Heartbeat:Connect(function()
 	local char = player.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		if hum then
-			if hum.WalkSpeed ~= VelocidadeSalva then
-				hum.WalkSpeed = VelocidadeSalva
-			end
-			if hum.JumpPower ~= PuloSalvo then
-				hum.JumpPower = PuloSalvo
-			end
+			if hum.WalkSpeed ~= VelocidadeSalva then hum.WalkSpeed = VelocidadeSalva end
+			if hum.JumpPower ~= PuloSalvo then hum.JumpPower = PuloSalvo end
+			if hum.Gravity ~= GravidadeSalva then hum.Gravity = GravidadeSalva end
 		end
 	end
 end)
 
--- Quando nasce, aplica e confirma de novo depois
+-- Quando nasce, aplica e confirma
 player.CharacterAdded:Connect(function(char)
 	local hum = char:WaitForChild("Humanoid", 5)
 	if hum then
@@ -491,28 +491,25 @@ player.CharacterAdded:Connect(function(char)
 	end
 end)
 
--- Slider da Velocidade
-CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeSalva, function(NovaVelocidade)
-    VelocidadeSalva = NovaVelocidade
+-- 1. Velocidade
+CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeSalva, function(NovaVel)
+    VelocidadeSalva = NovaVel
     local char = player.Character
-	if char then
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if hum then
-			AplicarValores(hum)
-		end
-	end
+	if char then local hum = char:FindFirstChildOfClass("Humanoid") if hum then AplicarValores(hum) end end
 end)
 
--- Slider do PULO (fica logo debaixo)
+-- 2. Pulo
 CriarSlider("Força do Pulo", AbaLocalPlayer, 5, 100, PuloSalvo, function(NovoPulo)
     PuloSalvo = NovoPulo
     local char = player.Character
-	if char then
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if hum then
-			AplicarValores(hum)
-		end
-	end
+	if char then local hum = char:FindFirstChildOfClass("Humanoid") if hum then AplicarValores(hum) end end
+end)
+
+-- 3. GRAVIDADE (debaixo do pulo)
+CriarSlider("Gravidade", AbaLocalPlayer, 0, 60, GravidadeSalva, function(NovaGrav)
+    GravidadeSalva = NovaGrav
+    local char = player.Character
+	if char then local hum = char:FindFirstChildOfClass("Humanoid") if hum then AplicarValores(hum) end end
 end)
 
 -- ===========================================
