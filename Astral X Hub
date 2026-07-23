@@ -458,14 +458,25 @@ local AbaMain = pages["Main"]
 local AbaESP = pages["ESP"]
 
 -- ===========================================
--- ABA LOCAL PLAYER
+-- ABA LOCAL PLAYER - CORRIGIDO
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
-local VelocidadePadrao = 16
-CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadePadrao, function(valor)
+local VelocidadeAtual = 16 -- Guarda o valor que você escolheu
+
+-- Aplica a velocidade toda vez que o personagem carregar
+local function AtualizarVelocidade()
     if player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.WalkSpeed = valor
+        player.Character.Humanoid.WalkSpeed = VelocidadeAtual
     end
+end
+
+-- Quando você morre e nasce de novo, já aplica automaticamente
+player.CharacterAdded:Connect(AtualizarVelocidade)
+
+-- Cria o slider que salva o valor
+CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeAtual, function(novoValor)
+    VelocidadeAtual = novoValor -- Salva o valor novo
+    AtualizarVelocidade() -- Aplica na hora
 end)
 
 -- ===========================================
