@@ -449,25 +449,33 @@ for _, aba in ipairs(Abas) do
 end
 
 -- ===========================================
--- ABA LOCAL PLAYER - SISTEMA DE VELOCIDADE TRAVADA
--- ✅ NÃO VOLTA MAIS PARA 16 | PERFEITO PARA MM2
+-- ABA LOCAL PLAYER - VELOCIDADE + PULO TRAVADOS
+-- ✅ NÃO VOLTA MAIS PARA O PADRÃO EM NENHUMA SITUAÇÃO
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
 local VelocidadeSalva = 16
+local PuloSalvo = 5 -- Valor padrão do Roblox
 
-local function AplicarSpeed(hum)
+-- Aplica os valores
+local function AplicarValores(hum)
 	if hum then
 		hum.WalkSpeed = VelocidadeSalva
+		hum.JumpPower = PuloSalvo
 	end
 end
 
--- Força a velocidade em CADA quadro do jogo
+-- Força ambos os valores em CADA quadro do jogo
 RunService.Heartbeat:Connect(function()
 	local char = player.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
-		if hum and hum.WalkSpeed ~= VelocidadeSalva then
-			hum.WalkSpeed = VelocidadeSalva
+		if hum then
+			if hum.WalkSpeed ~= VelocidadeSalva then
+				hum.WalkSpeed = VelocidadeSalva
+			end
+			if hum.JumpPower ~= PuloSalvo then
+				hum.JumpPower = PuloSalvo
+			end
 		end
 	end
 end)
@@ -476,21 +484,33 @@ end)
 player.CharacterAdded:Connect(function(char)
 	local hum = char:WaitForChild("Humanoid", 5)
 	if hum then
-		AplicarSpeed(hum)
+		AplicarValores(hum)
 		task.delay(0.3, function()
-			AplicarSpeed(hum)
+			AplicarValores(hum)
 		end)
 	end
 end)
 
--- Slider de velocidade
+-- Slider da Velocidade
 CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeSalva, function(NovaVelocidade)
     VelocidadeSalva = NovaVelocidade
     local char = player.Character
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		if hum then
-			AplicarSpeed(hum)
+			AplicarValores(hum)
+		end
+	end
+end)
+
+-- Slider do PULO (fica logo debaixo)
+CriarSlider("Força do Pulo", AbaLocalPlayer, 5, 100, PuloSalvo, function(NovoPulo)
+    PuloSalvo = NovoPulo
+    local char = player.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			AplicarValores(hum)
 		end
 	end
 end)
