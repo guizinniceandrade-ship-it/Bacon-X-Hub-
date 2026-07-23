@@ -1,7 +1,8 @@
 -- ===========================================
--- ASTRAL X HUB - SEMPRE POR CIMA
--- ✅ Fica visível sobre TUDO
--- ✅ Perfil quebra linha automaticamente
+-- ASTRAL X HUB - ORGANIZADO
+-- ✅ Marcações claras de cada aba
+-- ✅ Fica sempre por cima de tudo
+-- ✅ Perfil com quebra de linha automática
 -- ✅ Funciona em qualquer jogo
 -- ===========================================
 
@@ -22,15 +23,13 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AstralXHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.DisplayOrder = 9999 -- ✅ VALOR MÁXIMO: FICA POR CIMA DE TUDO
+ScreenGui.DisplayOrder = 9999 -- ✅ SEMPRE POR CIMA DE TUDO
 ScreenGui.Parent = playerGui
 ScreenGui.IgnoreGuiInset = true
 
 -- =========================
--- RESTO DO CÓDIGO TUDO IGUAL...
--- =========================
-
 -- SISTEMA DE SOM
+-- =========================
 if not ReplicatedStorage:FindFirstChild("CanalDeSomGlobal") then
     local Canal = Instance.new("RemoteEvent")
     Canal.Name = "CanalDeSomGlobal"
@@ -67,7 +66,9 @@ local function TocarSomGlobal(nomeSom)
     end
 end
 
+-- =========================
 -- BOTÃO DE ABRIR/FECHAR
+-- =========================
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Size = UDim2.new(0, 45, 0, 45)
@@ -98,7 +99,9 @@ btnIcon.Parent = ToggleButton
 ToggleButton.Active = true
 ToggleButton.Draggable = true
 
+-- =========================
 -- PAINEL PRINCIPAL
+-- =========================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
@@ -107,7 +110,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Visible = true
-MainFrame.ZIndex = 99 -- ✅ TAMBÉM FORÇA ELE POR CIMA
+MainFrame.ZIndex = 99
 MainFrame.Parent = ScreenGui
 
 local frameCorner = Instance.new("UICorner")
@@ -122,7 +125,9 @@ frameStroke.Parent = MainFrame
 MainFrame.Active = true
 MainFrame.Draggable = true
 
+-- =========================
 -- FUNDO DE ESTRELAS
+-- =========================
 local StarsContainer = Instance.new("Frame")
 StarsContainer.Name = "StarsContainer"
 StarsContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -162,7 +167,9 @@ task.spawn(function()
 	end
 end)
 
+-- =========================
 -- TÍTULO
+-- =========================
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 250, 0, 30)
 Title.Position = UDim2.new(0, 15, 0, 10)
@@ -175,7 +182,9 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.ZIndex = 3
 Title.Parent = MainFrame
 
+-- =========================
 -- ABAS
+-- =========================
 local TabContainer = Instance.new("Frame")
 TabContainer.Size = UDim2.new(0, 130, 0, 170)
 TabContainer.Position = UDim2.new(0, 10, 0, 50)
@@ -223,7 +232,9 @@ for _, aba in ipairs(Abas) do
 	tabButtons[aba.Nome] = {Botao = tabBtn, Stroke = tabStroke}
 end
 
--- PERFIL (TAMANHO ORIGEM + QUEBRA LINHA)
+-- =========================
+-- PERFIL
+-- =========================
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(0, 130, 0, 50)
 ProfileFrame.Position = UDim2.new(0, 10, 1, -60)
@@ -268,11 +279,13 @@ NameLabel.TextColor3 = Color3.new(1,1,1)
 NameLabel.Font = Enum.Font.Gotham
 NameLabel.TextSize = 12
 NameLabel.TextXAlignment = Enum.TextXAlignment.Left
-NameLabel.TextWrapped = true -- ✅ QUEBRA LINHA AUTOMÁTICO
+NameLabel.TextWrapped = true
 NameLabel.ZIndex = 4
 NameLabel.Parent = ProfileFrame
 
--- ÁREA DE CONTEÚDO
+-- =========================
+-- ÁREA DE CONTEÚDO DAS ABAS
+-- =========================
 local ContentFrame = Instance.new("Frame")
 ContentFrame.Size = UDim2.new(0, 380, 0, 280)
 ContentFrame.Position = UDim2.new(0, 150, 0, 50)
@@ -289,7 +302,7 @@ for _, aba in ipairs(Abas) do
 	page.ZIndex = 3
 	page.ScrollBarThickness = 4
     page.ScrollBarImageColor3 = Color3.new(1,1,1)
-	page.AutomaticCanvasSize = Enum.AutomaticSize.Y -- ✅ CRESC SOZINHO
+	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	page.CanvasSize = UDim2.new(0, 0, 0, 0)
 	page.Parent = ContentFrame
 
@@ -307,7 +320,37 @@ for _, aba in ipairs(Abas) do
 	pages[aba.Nome] = page
 end
 
+-- ===========================================
+-- ABA MAIN
+-- ===========================================
+local AbaMain = pages["Main"]
+-- COLOQUE AQUI TODO O CONTEÚDO DA ABA MAIN
+
+
+-- ===========================================
+-- ABA ESP
+-- ===========================================
+local AbaESP = pages["ESP"]
+-- COLOQUE AQUI TODO O CONTEÚDO DA ABA ESP
+
+
+-- ===========================================
+-- ABA LOCAL PLAYER
+-- ===========================================
+local AbaLocalPlayer = pages["Local Player"]
+-- COLOQUE AQUI TODO O CONTEÚDO DA ABA LOCAL PLAYER
+
+
+-- ===========================================
+-- ABA TELEPORTE
+-- ===========================================
+local AbaTeleporte = pages["Teleporte"]
+-- COLOQUE AQUI TODO O CONTEÚDO DA ABA TELEPORTE
+
+
+-- =========================
 -- FUNÇÕES DE CRIAÇÃO UI
+-- =========================
 local function CriarToggleAnimado(texto, pai, funcao)
     local ToggleFrame = Instance.new("Frame", pai)
     ToggleFrame.Size = UDim2.new(1, -8, 0, 36)
@@ -435,7 +478,9 @@ local function CriarSlider(texto, pai, min, max, padrao, funcao)
     return SliderFrame
 end
 
+-- =========================
 -- NAVEGAÇÃO
+-- =========================
 local function selectTab(name)
 	for tabName, dados in pairs(tabButtons) do
 		local isSelected = (tabName == name)
@@ -461,7 +506,9 @@ end
 
 selectTab("Main")
 
+-- =========================
 -- ANIMAÇÃO DE ABRIR/FECHAR
+-- =========================
 local ToggleSound = Instance.new("Sound")
 ToggleSound.SoundId = "rbxassetid://140207837688369"
 ToggleSound.Volume = 0.5
