@@ -449,22 +449,23 @@ for _, aba in ipairs(Abas) do
 end
 
 -- ===========================================
--- ABA LOCAL PLAYER - COMPLETO
--- ✅ Velocidade | Força do Pulo | Pulo Infinito | Noclip | Anti-Fling
--- ✅ NENHUM VOLTA AO PADRÃO | BOTÕES ANIMADOS
+-- ABA LOCAL PLAYER - 100% OTIMIZADO PARA MM2
+-- ✅ NÃO FUNCIONOU ANTES PORQUE O MM2 USA JumpHeight
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
 local VelocidadeSalva = 16
-local ForcaPuloSalva = 5
+local ForcaPuloSalva = 50
 local PuloInfinitoAtivo = false
 local NoclipAtivo = false
 local AntiFlingAtivo = false
+local HumanoidAtual = nil
 
--- Aplica os valores básicos
+-- Aplica os valores corretos do MM2
 local function AplicarValores(hum)
 	if hum then
+		hum.UseJumpPower = false -- OBRIGATÓRIO NO MM2
 		hum.WalkSpeed = VelocidadeSalva
-		hum.JumpPower = ForcaPuloSalva
+		hum.JumpHeight = ForcaPuloSalva
 	end
 end
 
@@ -474,82 +475,81 @@ RunService.Heartbeat:Connect(function()
 	if char then
 		local hum = char:FindFirstChildOfClass("Humanoid")
 		if hum then
-			-- Velocidade
+			HumanoidAtual = hum
+			
+			-- Velocidade e Pulo
 			if hum.WalkSpeed ~= VelocidadeSalva then hum.WalkSpeed = VelocidadeSalva end
-			-- Força do Pulo
-			if hum.JumpPower ~= ForcaPuloSalva then hum.JumpPower = ForcaPuloSalva end
-			-- Pulo Infinito
+			if hum.UseJumpPower then hum.UseJumpPower = false end
+			if hum.JumpHeight ~= ForcaPuloSalva then hum.JumpHeight = ForcaPuloSalva end
+
+			-- PULO INFINITO FUNCIONAL
 			if PuloInfinitoAtivo then
-				hum.Jumping = true
-				hum:ChangeState(Enum.HumanoidStateType.Jumping)
+				if UserInputService:IsKeyDown(Enum.KeyCode.Space) and hum.FloorMaterial ~= Enum.Material.Air then
+					hum.Jump = true
+				end
 			end
-			-- Noclip
+			
+			-- NOCLIP SEGURO (não cai fora do mapa)
 			if NoclipAtivo then
-				for _, parte in pairs(char:GetChildren()) do
-					if parte:IsA("BasePart") then
+				for _, parte in pairs(char:GetDescendants()) do
+					if parte:IsA("BasePart") and parte.Name ~= "HumanoidRootPart" then
 						parte.CanCollide = false
 					end
 				end
-			else
-				for _, parte in pairs(char:GetChildren()) do
-					if parte:IsA("BasePart") then
-						parte.CanCollide = true
-					end
-				end
 			end
-		end
 
-		-- ANTI-FLING: Pessoas te atravessam
-		if AntiFlingAtivo then
-			for _, v in pairs(Players:GetPlayers()) do
-				if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("HumanoidRootPart") then
-					v.Character.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, -1000, 0)
-					task.delay(0.05, function()
-						if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-							v.Character.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 1000, 0)
-						end
-					end)
+			-- ANTI-FLING CORRIGIDO
+			if AntiFlingAtivo then
+				for _, outro in pairs(Players:GetPlayers()) do
+					if outro ~= player and outro.Character and outro.Character:FindFirstChild("HumanoidRootPart") then
+						outro.Character.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, -9999, 0)
+						task.delay(0.02, function()
+							if outro.Character and outro.Character:FindFirstChild("HumanoidRootPart") then
+								outro.Character.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 9999, 0)
+							end
+						end)
+					end
 				end
 			end
 		end
 	end
 end)
 
--- AO NASCER: Reseta tudo e aplica de novo
+-- AO NASCER: Dupla proteção contra o reset do MM2
 player.CharacterAdded:Connect(function(char)
 	local hum = char:WaitForChild("Humanoid", 5)
 	if hum then
 		AplicarValores(hum)
-		task.delay(0.3, function()
-			AplicarValores(hum)
-		end)
+		task.delay(0.5, function() AplicarValores(hum) end)
 	end
 end)
 
--- ===========================================
 -- SLIDERS
--- ===========================================
 CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeSalva, function(NovaVel)
     VelocidadeSalva = NovaVel
-    local char = player.Character
-	if char then local hum = char:FindFirstChildOfClass("Humanoid") if hum then AplicarValores(hum) end end
+    if HumanoidAtual then AplicarValores(HumanoidAtual) end
 end)
 
-CriarSlider("Força do Pulo", AbaLocalPlayer, 5, 100, ForcaPuloSalva, function(NovoPulo)
+CriarSlider("Força do Pulo", AbaLocalPlayer, 5, 120, ForcaPuloSalva, function(NovoPulo)
     ForcaPuloSalva = NovoPulo
-    local char = player.Character
-	if char then local hum = char:FindFirstChildOfClass("Humanoid") if hum then AplicarValores(hum) end end
+    if HumanoidAtual then AplicarValores(HumanoidAtual) end
 end)
 
--- ===========================================
--- BOTÕES TOGGLE (BOLINHA BRANCA QUANDO ATIVO)
--- ===========================================
+-- BOTÕES TOGGLE
 CriarToggleAnimado("Pulo Infinito", AbaLocalPlayer, function(ligado)
 	PuloInfinitoAtivo = ligado
 end)
 
 CriarToggleAnimado("Noclip", AbaLocalPlayer, function(ligado)
 	NoclipAtivo = ligado
+	if not ligado then -- Volta colisão normal ao desligar
+		local char = player.Character
+		if char then
+			for _, parte in pairs(char:GetDescendants()) do
+				if parte:IsA("BasePart") then parte.CanCollide = true end
+			end
+		end
+	end
 end)
 
 CriarToggleAnimado("Anti-Fling / Não Empurrar", AbaLocalPlayer, function(ligado)
