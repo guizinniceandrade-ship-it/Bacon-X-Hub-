@@ -1,9 +1,6 @@
 -- ===========================================
--- ASTRAL X HUB - ORGANIZADO
--- ✅ Marcações claras de cada aba
--- ✅ Fica sempre por cima de tudo
--- ✅ Perfil com quebra de linha automática
--- ✅ Funciona em qualquer jogo
+-- ASTRAL X HUB - MARCAÇÃO EXATA DA IMAGEM
+-- ✅ Ordem corrigida | Sem erros
 -- ===========================================
 
 local Players = game:GetService("Players")
@@ -23,7 +20,7 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AstralXHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.DisplayOrder = 9999 -- ✅ SEMPRE POR CIMA DE TUDO
+ScreenGui.DisplayOrder = 9999
 ScreenGui.Parent = playerGui
 ScreenGui.IgnoreGuiInset = true
 
@@ -64,6 +61,136 @@ local function TocarSomGlobal(nomeSom)
             break
         end
     end
+end
+
+-- =========================
+-- 🛠️ FUNÇÕES DE CRIAÇÃO UI (AGORA ANTES DO USO)
+-- =========================
+local function CriarToggleAnimado(texto, pai, funcao)
+    local ToggleFrame = Instance.new("Frame", pai)
+    ToggleFrame.Size = UDim2.new(1, -8, 0, 36)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+    ToggleFrame.BorderSizePixel = 0
+    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0,8)
+
+    local Texto = Instance.new("TextLabel", ToggleFrame)
+    Texto.Size = UDim2.new(1, -60, 1, 0)
+    Texto.Position = UDim2.new(0, 12, 0, 0)
+    Texto.BackgroundTransparency = 1
+    Texto.Text = texto
+    Texto.TextColor3 = Color3.new(1,1,1)
+    Texto.Font = Enum.Font.Gotham
+    Texto.TextSize = 14
+    Texto.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Botao = Instance.new("TextButton", ToggleFrame)
+    Botao.Size = UDim2.new(0, 46, 0, 24)
+    Botao.Position = UDim2.new(1, -54, 0.5, -12)
+    Botao.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Botao.BorderSizePixel = 0
+    Botao.Text = ""
+    Botao.AutoButtonColor = false
+    Botao.ZIndex = 5
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(1, 0)
+
+    local Bolinha = Instance.new("Frame", Botao)
+    Bolinha.Size = UDim2.new(0, 18, 0, 18)
+    Bolinha.Position = UDim2.new(0, 3, 0.5, -9)
+    Bolinha.BackgroundColor3 = Color3.new(1,1,1)
+    Bolinha.BorderSizePixel = 0
+    Bolinha.ZIndex = 6
+    Instance.new("UICorner", Bolinha).CornerRadius = UDim.new(1, 0)
+
+    local Ativado = false
+    local tween = TweenInfo.new(0.25, Enum.EasingStyle.Quad)
+
+    Botao.MouseButton1Click:Connect(function()
+        Ativado = not Ativado
+        TocarSomGlobal(Ativado and "Ativado" or "Desligado")
+        if Ativado then
+            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.new(1,1,1)}):Play()
+            TweenService:Create(Bolinha, tween, {Position = UDim2.new(1, -21, 0.5, -9), BackgroundColor3 = Color3.fromRGB(20,20,20)}):Play()
+        else
+            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.fromRGB(30,30,30)}):Play()
+            TweenService:Create(Bolinha, tween, {Position = UDim2.new(0, 3, 0.5, -9), BackgroundColor3 = Color3.new(1,1,1)}):Play()
+        end
+        funcao(Ativado)
+    end)
+    return ToggleFrame
+end
+
+local function CriarSlider(texto, pai, min, max, padrao, funcao)
+    local SliderFrame = Instance.new("Frame", pai)
+    SliderFrame.Size = UDim2.new(1, -8, 0, 60)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+    SliderFrame.BorderSizePixel = 0
+    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0,8)
+
+    local Texto = Instance.new("TextLabel", SliderFrame)
+    Texto.Size = UDim2.new(1, -50, 0, 20)
+    Texto.Position = UDim2.new(0, 10, 0, 5)
+    Texto.BackgroundTransparency = 1
+    Texto.Text = texto
+    Texto.TextColor3 = Color3.new(1,1,1)
+    Texto.Font = Enum.Font.Gotham
+    Texto.TextSize = 13
+    Texto.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Valor = Instance.new("TextLabel", SliderFrame)
+    Valor.Size = UDim2.new(0, 40, 0, 20)
+    Valor.Position = UDim2.new(1, -45, 0, 5)
+    Valor.BackgroundTransparency = 1
+    Valor.Text = tostring(padrao)
+    Valor.TextColor3 = Color3.new(1,1,1)
+    Valor.Font = Enum.Font.GothamBold
+    Valor.TextSize = 13
+    Valor.TextXAlignment = Enum.TextXAlignment.Right
+
+    local BarraFundo = Instance.new("Frame", SliderFrame)
+    BarraFundo.Size = UDim2.new(1, -20, 0, 10)
+    BarraFundo.Position = UDim2.new(0, 10, 1, -20)
+    BarraFundo.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    BarraFundo.BorderSizePixel = 0
+    BarraFundo.ZIndex = 2
+    Instance.new("UICorner", BarraFundo).CornerRadius = UDim.new(1,0)
+
+    local porcentagemInicial = (padrao - min) / (max - min)
+    local BarraCheia = Instance.new("Frame", BarraFundo)
+    BarraCheia.Size = UDim2.new(porcentagemInicial, 0, 1, 0)
+    BarraCheia.BackgroundColor3 = Color3.new(1,1,1)
+    BarraCheia.BorderSizePixel = 0
+    BarraCheia.ZIndex = 3
+    Instance.new("UICorner", BarraCheia).CornerRadius = UDim.new(1,0)
+
+    local arrastando = false
+    local function AtualizarSlider(posicaoTela)
+        local posX = posicaoTela.X - BarraFundo.AbsolutePosition.X
+        local tamanho = BarraFundo.AbsoluteSize.X
+        local porcentagem = math.clamp(posX / tamanho, 0, 1)
+        local valor = math.floor(min + (max - min) * porcentagem + 0.5)
+        BarraCheia.Size = UDim2.new(porcentagem, 0, 1, 0)
+        Valor.Text = tostring(valor)
+        funcao(valor)
+    end
+
+    BarraFundo.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            arrastando = true
+            AtualizarSlider(input.Position)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            arrastando = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if arrastando and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            AtualizarSlider(input.Position)
+        end
+    end)
+
+    return SliderFrame
 end
 
 -- =========================
@@ -324,167 +451,30 @@ end
 -- ABA MAIN
 -- ===========================================
 local AbaMain = pages["Main"]
--- COLOQUE AQUI TODO O CONTEÚDO DA ABA MAIN
-
 
 -- ===========================================
 -- ABA ESP
 -- ===========================================
 local AbaESP = pages["ESP"]
--- COLOQUE AQUI TODO O CONTEÚDO DA ABA ESP
-
 
 -- ===========================================
 -- ABA LOCAL PLAYER
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
- -- 🚀 VELOCIDADE | SLIDER 16 ~ 50
- local VelocidadePadrao = 16
- CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadePadrao, function(valor)
-     if player.Character and player.Character:FindFirstChild("Humanoid") then
-         player.Character.Humanoid.WalkSpeed = valor
-     end
- end)
+local VelocidadePadrao = 16
+CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadePadrao, function(valor)
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = valor
+    end
+end)
 
 -- ===========================================
 -- ABA TELEPORTE
 -- ===========================================
 local AbaTeleporte = pages["Teleporte"]
--- COLOQUE AQUI TODO O CONTEÚDO DA ABA TELEPORTE
-
 
 -- =========================
--- FUNÇÕES DE CRIAÇÃO UI
--- =========================
-local function CriarToggleAnimado(texto, pai, funcao)
-    local ToggleFrame = Instance.new("Frame", pai)
-    ToggleFrame.Size = UDim2.new(1, -8, 0, 36)
-    ToggleFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
-    ToggleFrame.BorderSizePixel = 0
-    Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0,8)
-
-    local Texto = Instance.new("TextLabel", ToggleFrame)
-    Texto.Size = UDim2.new(1, -60, 1, 0)
-    Texto.Position = UDim2.new(0, 12, 0, 0)
-    Texto.BackgroundTransparency = 1
-    Texto.Text = texto
-    Texto.TextColor3 = Color3.new(1,1,1)
-    Texto.Font = Enum.Font.Gotham
-    Texto.TextSize = 14
-    Texto.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Botao = Instance.new("TextButton", ToggleFrame)
-    Botao.Size = UDim2.new(0, 46, 0, 24)
-    Botao.Position = UDim2.new(1, -54, 0.5, -12)
-    Botao.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    Botao.BorderSizePixel = 0
-    Botao.Text = ""
-    Botao.AutoButtonColor = false
-    Botao.ZIndex = 5
-    Instance.new("UICorner", Botao).CornerRadius = UDim.new(1, 0)
-
-    local Bolinha = Instance.new("Frame", Botao)
-    Bolinha.Size = UDim2.new(0, 18, 0, 18)
-    Bolinha.Position = UDim2.new(0, 3, 0.5, -9)
-    Bolinha.BackgroundColor3 = Color3.new(1,1,1)
-    Bolinha.BorderSizePixel = 0
-    Bolinha.ZIndex = 6
-    Instance.new("UICorner", Bolinha).CornerRadius = UDim.new(1, 0)
-
-    local Ativado = false
-    local tween = TweenInfo.new(0.25, Enum.EasingStyle.Quad)
-
-    Botao.MouseButton1Click:Connect(function()
-        Ativado = not Ativado
-        TocarSomGlobal(Ativado and "Ativado" or "Desligado")
-        if Ativado then
-            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.new(1,1,1)}):Play()
-            TweenService:Create(Bolinha, tween, {Position = UDim2.new(1, -21, 0.5, -9), BackgroundColor3 = Color3.fromRGB(20,20,20)}):Play()
-        else
-            TweenService:Create(Botao, tween, {BackgroundColor3 = Color3.fromRGB(30,30,30)}):Play()
-            TweenService:Create(Bolinha, tween, {Position = UDim2.new(0, 3, 0.5, -9), BackgroundColor3 = Color3.new(1,1,1)}):Play()
-        end
-        funcao(Ativado)
-    end)
-    return ToggleFrame
-end
-
-local function CriarSlider(texto, pai, min, max, padrao, funcao)
-    local SliderFrame = Instance.new("Frame", pai)
-    SliderFrame.Size = UDim2.new(1, -8, 0, 60)
-    SliderFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
-    SliderFrame.BorderSizePixel = 0
-    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0,8)
-
-    local Texto = Instance.new("TextLabel", SliderFrame)
-    Texto.Size = UDim2.new(1, -50, 0, 20)
-    Texto.Position = UDim2.new(0, 10, 0, 5)
-    Texto.BackgroundTransparency = 1
-    Texto.Text = texto
-    Texto.TextColor3 = Color3.new(1,1,1)
-    Texto.Font = Enum.Font.Gotham
-    Texto.TextSize = 13
-    Texto.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Valor = Instance.new("TextLabel", SliderFrame)
-    Valor.Size = UDim2.new(0, 40, 0, 20)
-    Valor.Position = UDim2.new(1, -45, 0, 5)
-    Valor.BackgroundTransparency = 1
-    Valor.Text = tostring(padrao)
-    Valor.TextColor3 = Color3.new(1,1,1)
-    Valor.Font = Enum.Font.GothamBold
-    Valor.TextSize = 13
-    Valor.TextXAlignment = Enum.TextXAlignment.Right
-
-    local BarraFundo = Instance.new("Frame", SliderFrame)
-    BarraFundo.Size = UDim2.new(1, -20, 0, 10)
-    BarraFundo.Position = UDim2.new(0, 10, 1, -20)
-    BarraFundo.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    BarraFundo.BorderSizePixel = 0
-    BarraFundo.ZIndex = 2
-    Instance.new("UICorner", BarraFundo).CornerRadius = UDim.new(1,0)
-
-    local porcentagemInicial = (padrao - min) / (max - min)
-    local BarraCheia = Instance.new("Frame", BarraFundo)
-    BarraCheia.Size = UDim2.new(porcentagemInicial, 0, 1, 0)
-    BarraCheia.BackgroundColor3 = Color3.new(1,1,1)
-    BarraCheia.BorderSizePixel = 0
-    BarraCheia.ZIndex = 3
-    Instance.new("UICorner", BarraCheia).CornerRadius = UDim.new(1,0)
-
-    local arrastando = false
-    local function AtualizarSlider(posicaoTela)
-        local posX = posicaoTela.X - BarraFundo.AbsolutePosition.X
-        local tamanho = BarraFundo.AbsoluteSize.X
-        local porcentagem = math.clamp(posX / tamanho, 0, 1)
-        local valor = math.floor(min + (max - min) * porcentagem + 0.5)
-        BarraCheia.Size = UDim2.new(porcentagem, 0, 1, 0)
-        Valor.Text = tostring(valor)
-        funcao(valor)
-    end
-
-    BarraFundo.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            arrastando = true
-            AtualizarSlider(input.Position)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            arrastando = false
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if arrastando and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            AtualizarSlider(input.Position)
-        end
-    end)
-
-    return SliderFrame
-end
-
--- =========================
--- NAVEGAÇÃO
+-- 🎯 MARCAÇÃO DAS ABAS (EXATA COMO NA IMAGEM)
 -- =========================
 local function selectTab(name)
 	for tabName, dados in pairs(tabButtons) do
