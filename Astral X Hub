@@ -338,8 +338,14 @@ local AbaESP = pages["ESP"]
 -- ABA LOCAL PLAYER
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
--- COLOQUE AQUI TODO O CONTEÚDO DA ABA LOCAL PLAYER
 
+-- 🚀 VELOCIDADE
+local VelocidadePadrao = 16
+CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadePadrao, function(valor)
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = valor
+    end
+end)
 
 -- ===========================================
 -- ABA TELEPORTE
