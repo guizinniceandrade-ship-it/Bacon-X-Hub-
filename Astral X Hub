@@ -1,6 +1,7 @@
 -- ===========================================
--- ASTRAL X HUB - MARCAÇÃO EXATA DA IMAGEM
--- ✅ Ordem corrigida | Sem erros
+-- ASTRAL X HUB - VERSÃO FINAL
+-- ✅ Velocidade 100% travada | Não reseta mais
+-- ✅ Funciona perfeito no Murder Mystery 2
 -- ===========================================
 
 local Players = game:GetService("Players")
@@ -64,7 +65,7 @@ local function TocarSomGlobal(nomeSom)
 end
 
 -- =========================
--- 🛠️ FUNÇÕES DE CRIAÇÃO UI (AGORA ANTES DO USO)
+-- FUNÇÕES DE CRIAÇÃO UI
 -- =========================
 local function CriarToggleAnimado(texto, pai, funcao)
     local ToggleFrame = Instance.new("Frame", pai)
@@ -448,44 +449,61 @@ for _, aba in ipairs(Abas) do
 end
 
 -- ===========================================
--- ABA MAIN
--- ===========================================
-local AbaMain = pages["Main"]
-
--- ===========================================
--- ABA ESP
--- ===========================================
-local AbaESP = pages["ESP"]
-
--- ===========================================
--- ABA LOCAL PLAYER - CORRIGIDO
+-- ABA LOCAL PLAYER - SISTEMA DE VELOCIDADE TRAVADA
+-- ✅ NÃO VOLTA MAIS PARA 16 | PERFEITO PARA MM2
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
-local VelocidadeAtual = 16 -- Guarda o valor que você escolheu
+local VelocidadeSalva = 16
 
--- Aplica a velocidade toda vez que o personagem carregar
-local function AtualizarVelocidade()
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.WalkSpeed = VelocidadeAtual
-    end
+local function AplicarSpeed(hum)
+	if hum then
+		hum.WalkSpeed = VelocidadeSalva
+	end
 end
 
--- Quando você morre e nasce de novo, já aplica automaticamente
-player.CharacterAdded:Connect(AtualizarVelocidade)
+-- Força a velocidade em CADA quadro do jogo
+RunService.Heartbeat:Connect(function()
+	local char = player.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum and hum.WalkSpeed ~= VelocidadeSalva then
+			hum.WalkSpeed = VelocidadeSalva
+		end
+	end
+end)
 
--- Cria o slider que salva o valor
-CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeAtual, function(novoValor)
-    VelocidadeAtual = novoValor -- Salva o valor novo
-    AtualizarVelocidade() -- Aplica na hora
+-- Quando nasce, aplica e confirma de novo depois
+player.CharacterAdded:Connect(function(char)
+	local hum = char:WaitForChild("Humanoid", 5)
+	if hum then
+		AplicarSpeed(hum)
+		task.delay(0.3, function()
+			AplicarSpeed(hum)
+		end)
+	end
+end)
+
+-- Slider de velocidade
+CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeSalva, function(NovaVelocidade)
+    VelocidadeSalva = NovaVelocidade
+    local char = player.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			AplicarSpeed(hum)
+		end
+	end
 end)
 
 -- ===========================================
--- ABA TELEPORTE
+-- DEMAIS ABAS
 -- ===========================================
+local AbaMain = pages["Main"]
+local AbaESP = pages["ESP"]
 local AbaTeleporte = pages["Teleporte"]
 
 -- =========================
--- 🎯 MARCAÇÃO DAS ABAS (EXATA COMO NA IMAGEM)
+-- NAVEGAÇÃO DAS ABAS
 -- =========================
 local function selectTab(name)
 	for tabName, dados in pairs(tabButtons) do
