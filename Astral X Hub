@@ -1,7 +1,7 @@
 -- ===========================================
--- ASTRAL X HUB - VERSÃO FINAL
--- ✅ Velocidade 100% travada | Não reseta mais
--- ✅ Funciona perfeito no Murder Mystery 2
+-- ASTRAL X HUB - NOCLIP CORRIGIDO E OTIMIZADO
+-- ✅ ATRAVESSA TUDO: PAREDES, TETOS, PARTES INVISÍVEIS
+-- ✅ Funciona MM2 + CELULAR
 -- ===========================================
 
 local Players = game:GetService("Players")
@@ -449,111 +449,84 @@ for _, aba in ipairs(Abas) do
 end
 
 -- ===========================================
--- ABA LOCAL PLAYER - 100% OTIMIZADO PARA MM2
--- ✅ NÃO FUNCIONOU ANTES PORQUE O MM2 USA JumpHeight
+-- ABA LOCAL PLAYER - NOCLIP CORRIGIDO
 -- ===========================================
 local AbaLocalPlayer = pages["Local Player"]
 local VelocidadeSalva = 16
 local ForcaPuloSalva = 50
 local PuloInfinitoAtivo = false
 local NoclipAtivo = false
-local AntiFlingAtivo = false
 local HumanoidAtual = nil
 
--- Aplica os valores corretos do MM2
-local function AplicarValores(hum)
-	if hum then
-		hum.UseJumpPower = false -- OBRIGATÓRIO NO MM2
-		hum.WalkSpeed = VelocidadeSalva
-		hum.JumpHeight = ForcaPuloSalva
-	end
+-- PULO INFINITO
+local function ConfigurarInfiniteJump(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	HumanoidAtual = humanoid
+	humanoid:GetPropertyChangedSignal("Jump"):Connect(function()
+		if PuloInfinitoAtivo and humanoid.Jump then
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+	end)
 end
 
--- FORÇA TUDO A CADA QUADRO
+if player.Character then ConfigurarInfiniteJump(player.Character) end
+player.CharacterAdded:Connect(ConfigurarInfiniteJump)
+
+-- ✅ NOCLIP CORRIGIDO E EFICIENTE
 RunService.Heartbeat:Connect(function()
 	local char = player.Character
-	if char then
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if hum then
-			HumanoidAtual = hum
-			
-			-- Velocidade e Pulo
-			if hum.WalkSpeed ~= VelocidadeSalva then hum.WalkSpeed = VelocidadeSalva end
-			if hum.UseJumpPower then hum.UseJumpPower = false end
-			if hum.JumpHeight ~= ForcaPuloSalva then hum.JumpHeight = ForcaPuloSalva end
+	if not char then return end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
 
-			-- PULO INFINITO FUNCIONAL
-			if PuloInfinitoAtivo then
-				if UserInputService:IsKeyDown(Enum.KeyCode.Space) and hum.FloorMaterial ~= Enum.Material.Air then
-					hum.Jump = true
-				end
-			end
-			
-			-- NOCLIP SEGURO (não cai fora do mapa)
-			if NoclipAtivo then
-				for _, parte in pairs(char:GetDescendants()) do
-					if parte:IsA("BasePart") and parte.Name ~= "HumanoidRootPart" then
-						parte.CanCollide = false
-					end
-				end
-			end
+	hum.UseJumpPower = false
+	hum.WalkSpeed = VelocidadeSalva
+	hum.JumpHeight = ForcaPuloSalva
 
-			-- ANTI-FLING CORRIGIDO
-			if AntiFlingAtivo then
-				for _, outro in pairs(Players:GetPlayers()) do
-					if outro ~= player and outro.Character and outro.Character:FindFirstChild("HumanoidRootPart") then
-						outro.Character.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, -9999, 0)
-						task.delay(0.02, function()
-							if outro.Character and outro.Character:FindFirstChild("HumanoidRootPart") then
-								outro.Character.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 9999, 0)
-							end
-						end)
-					end
-				end
+	-- Se o noclip estiver ativado, desliga a colisão de todas as partes do personagem
+	if NoclipAtivo then
+		for _, Parte in pairs(char:GetDescendants()) do
+			if Parte:IsA("BasePart") and Parte.CanCollide then
+				Parte.CanCollide = false
 			end
 		end
 	end
 end)
 
--- AO NASCER: Dupla proteção contra o reset do MM2
 player.CharacterAdded:Connect(function(char)
 	local hum = char:WaitForChild("Humanoid", 5)
 	if hum then
-		AplicarValores(hum)
-		task.delay(0.5, function() AplicarValores(hum) end)
+		task.wait(0.3)
+		hum.UseJumpPower = false
+		hum.WalkSpeed = VelocidadeSalva
+		hum.JumpHeight = ForcaPuloSalva
+		task.delay(0.6, function()
+			if hum then
+				hum.UseJumpPower = false
+				hum.WalkSpeed = VelocidadeSalva
+				hum.JumpHeight = ForcaPuloSalva
+			end
+		end)
 	end
 end)
 
--- SLIDERS
+-- CONTROLES
 CriarSlider("Velocidade", AbaLocalPlayer, 16, 50, VelocidadeSalva, function(NovaVel)
     VelocidadeSalva = NovaVel
-    if HumanoidAtual then AplicarValores(HumanoidAtual) end
+    if HumanoidAtual then HumanoidAtual.WalkSpeed = NovaVel end
 end)
 
 CriarSlider("Força do Pulo", AbaLocalPlayer, 5, 120, ForcaPuloSalva, function(NovoPulo)
     ForcaPuloSalva = NovoPulo
-    if HumanoidAtual then AplicarValores(HumanoidAtual) end
+    if HumanoidAtual then HumanoidAtual.JumpHeight = NovoPulo end
 end)
 
--- BOTÕES TOGGLE
 CriarToggleAnimado("Pulo Infinito", AbaLocalPlayer, function(ligado)
 	PuloInfinitoAtivo = ligado
 end)
 
 CriarToggleAnimado("Noclip", AbaLocalPlayer, function(ligado)
 	NoclipAtivo = ligado
-	if not ligado then -- Volta colisão normal ao desligar
-		local char = player.Character
-		if char then
-			for _, parte in pairs(char:GetDescendants()) do
-				if parte:IsA("BasePart") then parte.CanCollide = true end
-			end
-		end
-	end
-end)
-
-CriarToggleAnimado("Anti-Fling / Não Empurrar", AbaLocalPlayer, function(ligado)
-	AntiFlingAtivo = ligado
 end)
 
 -- ===========================================
@@ -592,7 +565,7 @@ end
 selectTab("Main")
 
 -- =========================
--- ANIMAÇÃO DE ABRIR/FECHAR
+-- ABRIR/FECHAR
 -- =========================
 local ToggleSound = Instance.new("Sound")
 ToggleSound.SoundId = "rbxassetid://140207837688369"
@@ -618,7 +591,7 @@ ToggleButton.MouseButton1Click:Connect(function()
 		local tweenFechar = TweenService:Create(MainFrame, animTweenInfo, {Position = UDim2.new(0.5, -275, 1.5, -175)})
 		tweenFechar:Play()
 		tweenFechar.Completed:Connect(function()
-            MainFrame.Visible = false
-        end)
+			MainFrame.Visible = false
+		end)
 	end
 end)
