@@ -1,1 +1,232 @@
+-- ===========================================
+-- ASTRAL X HUB - MM2 (ABAS LIMPAR, SOMENTE STATUS COMPLETO)
+-- ===========================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+if playerGui:FindFirstChild("AstralX_Hub") then playerGui.AstralX_Hub:Destroy() end
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "AstralX_Hub"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = playerGui
+
+-- ===========================================
+-- BOTÃO FLUTUANTE E ESTRUTURA DO MENU
+-- ===========================================
+local BotaoAbrir = Instance.new("TextButton")
+BotaoAbrir.Size = UDim2.new(0, 50, 0, 50)
+BotaoAbrir.Position = UDim2.new(0, 20, 0.4, 0)
+BotaoAbrir.BackgroundColor3 = Color3.fromRGB(15, 35, 15)
+BotaoAbrir.Text = "🟢"
+BotaoAbrir.TextSize = 22
+BotaoAbrir.Active = true
+BotaoAbrir.Draggable = true
+BotaoAbrir.Parent = Gui
+Instance.new("UICorner", BotaoAbrir).CornerRadius = UDim.new(1, 0)
+local StrokeAbrir = Instance.new("UIStroke", BotaoAbrir)
+StrokeAbrir.Color = Color3.fromRGB(50, 255, 50)
+StrokeAbrir.Thickness = 2
+
+local Painel = Instance.new("Frame")
+Painel.Size = UDim2.new(0, 360, 0, 250)
+Painel.Position = UDim2.new(0.5, -180, 0.5, -125)
+Painel.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+Painel.Active = true
+Painel.Draggable = true
+Painel.Visible = false
+Painel.Parent = Gui
+Instance.new("UICorner", Painel).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", Painel).Color = Color3.fromRGB(50, 50, 50)
+
+local Titulo = Instance.new("TextLabel")
+Titulo.Size = UDim2.new(1, -90, 0, 35)
+Titulo.Position = UDim2.new(0, 15, 0, 5)
+Titulo.BackgroundTransparency = 1
+Titulo.Text = "🟢 ASTRAL X HUB · MM2"
+Titulo.TextColor3 = Color3.new(1, 1, 1)
+Titulo.Font = Enum.Font.GothamBold
+Titulo.TextSize = 14
+Titulo.TextXAlignment = Enum.TextXAlignment.Left
+Titulo.Parent = Painel
+
+local Fechar = Instance.new("TextButton")
+Fechar.Size = UDim2.new(0, 35, 0, 35)
+Fechar.Position = UDim2.new(1, -40, 0, 5)
+Fechar.BackgroundTransparency = 1
+Fechar.Text = "✕"
+Fechar.TextColor3 = Color3.new(1, 1, 1)
+Fechar.Font = Enum.Font.GothamBold
+Fechar.TextSize = 16
+Fechar.Parent = Painel
+
+local function CriarBotaoAba(posicaoX, largura, texto)
+    local btn = Instance.new("TextButton", Painel)
+    btn.Size = UDim2.new(0, largura, 0, 28)
+    btn.Position = UDim2.new(0, posicaoX, 0, 42)
+    btn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    btn.Text = texto
+    btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    return btn
+end
+local AbaStatsBtn = CriarBotaoAba(10, 80, "📊 Status")
+local AbaFuncoesBtn = CriarBotaoAba(94, 85, "⚙️ Funções")
+local AbaPlayerBtn = CriarBotaoAba(183, 80, "👤 Player")
+local AbaEspBtn = CriarBotaoAba(267, 83, "👁️ ESP")
+
+local function CriarContainer()
+    local c = Instance.new("Frame", Painel)
+    c.Size = UDim2.new(1, 0, 1, -80)
+    c.Position = UDim2.new(0, 0, 0, 78)
+    c.BackgroundTransparency = 1
+    c.Visible = false
+    return c
+end
+local ContainerStats = CriarContainer()
+local ContainerFuncoes = CriarContainer()
+local ContainerPlayer = CriarContainer()
+local ContainerEsp = CriarContainer()
+ContainerStats.Visible = true
+
+local function MudarAba(abaAtiva)
+    ContainerStats.Visible = (abaAtiva == 1)
+    ContainerFuncoes.Visible = (abaAtiva == 2)
+    ContainerPlayer.Visible = (abaAtiva == 3)
+    ContainerEsp.Visible = (abaAtiva == 4)
+    local abas = { {AbaStatsBtn, 1}, {AbaFuncoesBtn, 2}, {AbaPlayerBtn, 3}, {AbaEspBtn, 4} }
+    for _, info in ipairs(abas) do
+        local btn = info[1]
+        local idx = info[2]
+        btn.BackgroundColor3 = (abaAtiva == idx) and Color3.fromRGB(30, 30, 30) or Color3.fromRGB(18, 18, 18)
+        btn.TextColor3 = (abaAtiva == idx) and Color3.new(1, 1, 1) or Color3.fromRGB(150, 150, 150)
+    end
+end
+AbaStatsBtn.MouseButton1Click:Connect(function() MudarAba(1) end)
+AbaFuncoesBtn.MouseButton1Click:Connect(function() MudarAba(2) end)
+AbaPlayerBtn.MouseButton1Click:Connect(function() MudarAba(3) end)
+AbaEspBtn.MouseButton1Click:Connect(function() MudarAba(4) end)
+BotaoAbrir.MouseButton1Click:Connect(function() Painel.Visible = not Painel.Visible end)
+Fechar.MouseButton1Click:Connect(function() Painel.Visible = false end)
+
+-- =======================
+-- ABA STATUS (COMPLETA)
+-- =======================
+local CabPing = Instance.new("TextLabel", ContainerStats)
+CabPing.Size = UDim2.new(0, 95, 0, 15)
+CabPing.Position = UDim2.new(0, 10, 0, 15)
+CabPing.BackgroundTransparency = 1
+CabPing.Text = "PING"
+CabPing.TextColor3 = Color3.fromRGB(180, 180, 180)
+CabPing.Font = Enum.Font.Gotham
+CabPing.TextSize = 11
+CabPing.TextXAlignment = Enum.TextXAlignment.Center
+
+local CabFPS = Instance.new("TextLabel", ContainerStats)
+CabFPS.Size = UDim2.new(0, 95, 0, 15)
+CabFPS.Position = UDim2.new(0.5, -47, 0, 15)
+CabFPS.BackgroundTransparency = 1
+CabFPS.Text = "FPS"
+CabFPS.TextColor3 = Color3.fromRGB(180, 180, 180)
+CabFPS.Font = Enum.Font.Gotham
+CabFPS.TextSize = 11
+CabFPS.TextXAlignment = Enum.TextXAlignment.Center
+
+local CabTempo = Instance.new("TextLabel", ContainerStats)
+CabTempo.Size = UDim2.new(0, 95, 0, 15)
+CabTempo.Position = UDim2.new(1, -105, 0, 15)
+CabTempo.BackgroundTransparency = 1
+CabTempo.Text = "TEMPO"
+CabTempo.TextColor3 = Color3.fromRGB(180, 180, 180)
+CabTempo.Font = Enum.Font.Gotham
+CabTempo.TextSize = 11
+CabTempo.TextXAlignment = Enum.TextXAlignment.Center
+
+local ValPing = Instance.new("TextLabel", ContainerStats)
+ValPing.Size = UDim2.new(0, 95, 0, 30)
+ValPing.Position = UDim2.new(0, 10, 0, 35)
+ValPing.BackgroundTransparency = 1
+ValPing.Text = "--"
+ValPing.TextColor3 = Color3.new(1, 1, 1)
+ValPing.Font = Enum.Font.GothamBold
+ValPing.TextSize = 16
+ValPing.TextXAlignment = Enum.TextXAlignment.Center
+
+local ValFPS = Instance.new("TextLabel", ContainerStats)
+ValFPS.Size = UDim2.new(0, 95, 0, 30)
+ValFPS.Position = UDim2.new(0.5, -47, 0, 35)
+ValFPS.BackgroundTransparency = 1
+ValFPS.Text = "--"
+ValFPS.TextColor3 = Color3.new(1, 1, 1)
+ValFPS.Font = Enum.Font.GothamBold
+ValFPS.TextSize = 16
+ValFPS.TextXAlignment = Enum.TextXAlignment.Center
+
+local ValTempo = Instance.new("TextLabel", ContainerStats)
+ValTempo.Size = UDim2.new(0, 95, 0, 30)
+ValTempo.Position = UDim2.new(1, -105, 0, 35)
+ValTempo.BackgroundTransparency = 1
+ValTempo.Text = "00:00"
+ValTempo.TextColor3 = Color3.new(1, 1, 1)
+ValTempo.Font = Enum.Font.GothamBold
+ValTempo.TextSize = 16
+ValTempo.TextXAlignment = Enum.TextXAlignment.Center
+
+local RodapeStats = Instance.new("TextLabel", ContainerStats)
+RodapeStats.Size = UDim2.new(1, 0, 0, 20)
+RodapeStats.Position = UDim2.new(0, 0, 1, -25)
+RodapeStats.BackgroundTransparency = 1
+RodapeStats.Text = "Astral X · MM2 Utils"
+RodapeStats.TextColor3 = Color3.fromRGB(120, 120, 120)
+RodapeStats.Font = Enum.Font.Gotham
+RodapeStats.TextSize = 11
+RodapeStats.TextXAlignment = Enum.TextXAlignment.Center
+
+-- ========================
+-- ABAS: FUNÇÕES / PLAYER / ESP
+-- TODAS VAZIAS E LIMPAR
+-- ========================
+
+-- ===========================================
+-- ATUALIZAÇÃO AUTOMÁTICA DO STATUS
+-- ===========================================
+local FPS = 0
+local PingVal = 0
+local TempoInicio = os.time()
+
+RunService.RenderStepped:Connect(function(delta)
+    if delta > 0 then FPS = math.floor(1 / delta + 0.5) end
+end)
+
+task.spawn(function()
+    while Gui.Parent do
+        pcall(function()
+            local network = Stats:FindFirstChild("Network")
+            if network and network:FindFirstChild("ServerStatsItem") then
+                local pingItem = network.ServerStatsItem:FindFirstChild("Data Ping")
+                if pingItem then PingVal = math.floor(pingItem:GetValue()) end
+            end
+            if (not PingVal or PingVal == 0) and Stats.NetworkStats and Stats.NetworkStats.ServerPing then
+                PingVal = math.floor(Stats.NetworkStats.ServerPing)
+            end
+        end)
+        task.wait(1)
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    local Passado = os.time() - TempoInicio
+    local H = math.floor(Passado / 3600)
+    local M = math.floor((Passado % 3600) / 60)
+    local S = Passado % 60
+    ValPing.Text = tostring(PingVal) .. "ms"
+    ValFPS.Text = tostring(FPS)
+    ValTempo.Text = H > 0 and string.format("%02d:%02d:%02d", H, M, S) or string.format("%02d:%02d", M, S)
+end)
 
