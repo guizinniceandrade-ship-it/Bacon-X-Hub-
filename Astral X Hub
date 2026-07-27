@@ -182,32 +182,73 @@ local function AtualizarArmas()
 end
 
 -- ==========================
--- FUNÇÕES DE TELEPORTE
+-- FUNÇÕES DE TELEPORTE (PERFEITO PARA MM2)
 -- ==========================
-local function IrParaLobby()
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+-- Retorna o HumanoidRootPart
+local function HRP()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
 
-    local Lobby = workspace:FindFirstChild("Lobby", true)
-    if Lobby then
-        local Alvo = Lobby:IsA("Model") and (Lobby.PrimaryPart or Lobby:FindFirstChildWhichIsA("BasePart")) or Lobby
-        if Alvo and Alvo:IsA("BasePart") then
-            root.CFrame = Alvo.CFrame + Vector3.new(0, 3, 0)
+-- Detecta o mapa atual da partida
+local function GetMapa()
+    for _,v in ipairs(workspace:GetChildren()) do
+        if v:IsA("Model") then
+            if v:FindFirstChild("Spawns", true)
+            and v.Name ~= "Lobby"
+            and not string.find(v.Name:lower(),"lobby") then
+                return v
+            end
         end
     end
 end
 
-local function IrParaSpawn()
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+-- Detecta o lobby
+local function GetLobby()
+    for _,v in ipairs(workspace:GetChildren()) do
+        if v:IsA("Model") then
+            local n = v.Name:lower()
+            if string.find(n,"lobby") then
+                return v
+            end
+        end
+    end
+end
 
-    local Spawn = workspace:FindFirstChild("Spawn", true)
-    if Spawn and Spawn:IsA("BasePart") then
-        root.CFrame = Spawn.CFrame + Vector3.new(0, 3, 0)
+-- Procura um BasePart dentro de um modelo
+local function GetBasePart(model)
+    if not model then return end
+    if model.PrimaryPart then return model.PrimaryPart end
+    return model:FindFirstChildWhichIsA("BasePart", true)
+end
+
+-- Teleporta para o mapa
+local function IrPartida()
+    local mapa = GetMapa()
+    if mapa then
+        local spawn = mapa:FindFirstChild("Spawns", true) or mapa:FindFirstChild("PlayerSpawns", true)
+        if spawn then
+            local part = spawn:FindFirstChildWhichIsA("BasePart", true)
+            if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+        end
+        local part = GetBasePart(mapa)
+        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+    end
+    -- Última tentativa: vai para outro jogador vivo
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            HRP().CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,3)
+            return
+        end
+    end
+end
+
+-- Teleporta para o lobby
+local function IrLobby()
+    local lobby = GetLobby()
+    if lobby then
+        local part = GetBasePart(lobby)
+        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
     end
 end
 
