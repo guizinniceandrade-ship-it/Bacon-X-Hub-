@@ -193,6 +193,109 @@ RodapeStats.TextXAlignment = Enum.TextXAlignment.Center
 -- TODAS VAZIAS E LIMPAR
 -- ========================
 
+
+-- ========================
+-- ABA ESP (COMPLETO)
+-- ========================
+local _, GetEspAssassino = CriarToggleDeslizante(ContainerEsp, 10, "🔴 Ver Assassino")
+local _, GetEspXerife = CriarToggleDeslizante(ContainerEsp, 54, "🔵 Ver Xerife / Herói")
+local _, GetEspInocentes = CriarToggleDeslizante(ContainerEsp, 98, "🟢 Ver Inocentes")
+local _, GetEspArma = CriarToggleDeslizante(ContainerEsp, 142, "🟡 Ver Arma Perdida")
+
+local objetosESP = {}
+
+local function TemItem(jogador, nomeItem)
+    local m = jogador:FindFirstChild("Backpack")
+    local c = jogador.Character
+    return (m and m:FindFirstChild(nomeItem)) or (c and c:FindFirstChild(nomeItem))
+end
+
+local function LimparESP()
+    for _,v in pairs(objetosESP) do if v then v:Destroy() end end
+    table.clear(objetosESP)
+end
+
+local function CriarESP(jogador, cor, texto)
+    if not jogador.Character then return end
+    local r = jogador.Character:FindFirstChild("HumanoidRootPart")
+    if not r then return end
+
+    local h = Instance.new("Highlight")
+    h.FillTransparency = 1
+    h.OutlineColor = cor
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Parent = jogador.Character
+    table.insert(objetosESP, h)
+
+    local b = Instance.new("BillboardGui")
+    b.Size = UDim2.new(0,120,0,40)
+    b.StudsOffset = Vector3.new(0,3,0)
+    b.AlwaysOnTop = true
+    b.Adornee = r
+    b.Parent = jogador.Character
+    table.insert(objetosESP, b)
+
+    local t = Instance.new("TextLabel")
+    t.Size = UDim2.new(1,0,1,0)
+    t.BackgroundTransparency = 1
+    t.TextColor3 = cor
+    t.TextStrokeTransparency = 0
+    t.Font = Enum.Font.GothamBold
+    t.TextScaled = true
+    t.Text = texto
+    t.Parent = b
+end
+
+task.spawn(function()
+    while Gui.Parent do
+        LimparESP()
+        for _,j in pairs(Players:GetPlayers()) do
+            if j==player or not j.Character then continue end
+            local faca = TemItem(j, "Knife")
+            local arma = TemItem(j, "Gun")
+
+            if faca and GetEspAssassino() then
+                CriarESP(j, Color3.fromRGB(255,40,40), "🔴 Assassino")
+            elseif arma and GetEspXerife() then
+                CriarESP(j, Color3.fromRGB(40,120,255), "🔵 Xerife / Herói")
+            elseif not faca and not arma and GetEspInocentes() then
+                CriarESP(j, Color3.fromRGB(50,255,120), "🟢 Inocente")
+            end
+        end
+
+        if GetEspArma() then
+            for _,v in pairs(workspace:GetDescendants()) do
+                if v.Name=="GunDrop" and v:IsA("BasePart") and not v:FindFirstChild("ESP_Arma") then
+                    local h = Instance.new("Highlight")
+                    h.Name = "ESP_Arma"
+                    h.FillTransparency = 1
+                    h.OutlineColor = Color3.fromRGB(255,255,0)
+                    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    h.Parent = v
+                    local b = Instance.new("BillboardGui")
+                    b.Size = UDim2.new(0,150,0,40)
+                    b.StudsOffset = Vector3.new(0,2,0)
+                    b.AlwaysOnTop = true
+                    b.Adornee = v
+                    b.Parent = v
+                    local t = Instance.new("TextLabel")
+                    t.Size = UDim2.new(1,0,1,0)
+                    t.BackgroundTransparency = 1
+                    t.TextScaled = true
+                    t.Text = "🔫 Arma do Xerife"
+                    t.TextColor3 = Color3.fromRGB(255,255,0)
+                    t.Parent = b
+                end
+            end
+        else
+            for _,v in pairs(workspace:GetDescendants()) do
+                if v:FindFirstChild("ESP_Arma") then v:FindFirstChild("ESP_Arma"):Destroy() end
+            end
+        end
+        task.wait(0.7)
+    end
+end)
+
 -- ===========================================
 -- ATUALIZAÇÃO AUTOMÁTICA DO STATUS
 -- ===========================================
