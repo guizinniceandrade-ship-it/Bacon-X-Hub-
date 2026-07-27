@@ -1,8 +1,7 @@
 -- ===========================================
 -- ASTRAL X HUB - MM2 COMPLETO (FILTRO ANTI-ROUBO DE MOEDAS)
--- ✅ Ignora moedas já coletadas por outros jogadores
--- ✅ Alvo dinâmico, anti-repetição e parada correta em 40 moedas
 -- ===========================================
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Stats = game:GetService("Stats")
