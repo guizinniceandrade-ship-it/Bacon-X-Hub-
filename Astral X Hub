@@ -127,6 +127,51 @@ Value={Min=20, Max=300, Default=50},
 Callback=function(v) flySpeed = v end
 })
 
+Sec_Jogador:Section({Title="Sistema de Empurrar"})
+
+Sec_Jogador:Dropdown({
+Title = "Escolher Jogador",
+Values = {"Carregando..."},
+Callback = function(v)
+selectedPlayer = v and Players:FindFirstChild(v) or nil
+end
+})
+
+Sec_Jogador:Button({
+Title="Empurrar Xerife",
+Callback=function()
+local sheriff = findSheriff()
+if sheriff then walkFling(sheriff) end
+end
+})
+
+Sec_Jogador:Button({
+Title="Empurrar Assassino",
+Callback=function()
+local murderer = findMurderer()
+if murderer then walkFling(murderer) end
+end
+})
+
+Sec_Jogador:Button({
+Title="Empurrar Selecionado",
+Callback=function()
+if selectedPlayer then walkFling(selectedPlayer) end
+end
+})
+
+Sec_Jogador:Toggle({
+Title="Empurrar ao Tocar",
+Default=false,
+Callback=function(s) touchKick = s end
+})
+
+Sec_Jogador:Toggle({
+Title="Empurrar Todos",
+Default=false,
+Callback=function(s) flingAll = s end
+})
+
 -- =========================
 -- ABA TELEPORTE
 -- =========================
