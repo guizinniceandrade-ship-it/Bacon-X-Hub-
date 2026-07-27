@@ -195,6 +195,43 @@ RunService.Stepped:Connect(function()
     end
 end)
 
+-- =======================
+-- ESP
+-- =======================
+
+local function Criar_Destaque_Jogador(Jogador)
+    if not Jogador or not Jogador.Character or Destaques_Jogadores[Jogador] then return end
+    local hl = Instance.new("Highlight")
+    hl.Adornee = Jogador.Character
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.OutlineTransparency = 0
+    hl.Enabled = false
+    hl.Parent = Jogador.Character
+    Destaques_Jogadores[Jogador] = hl
+end
+
+local function Criar_Destaque_Arma(Item)
+    if not Item or not Item:IsA("BasePart") or Destaques_Armas[Item] then return end
+    local hl = Instance.new("Highlight")
+    hl.Adornee = Item
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.OutlineTransparency = 0
+    hl.Enabled = false
+    hl.Parent = Item
+    Destaques_Armas[Item] = hl
+end
+
+local function Esta_Vivo(Jogador, Dados)
+    return Dados and Dados[Jogador.Name] and not Dados[Jogador.Name].Dead and not Dados[Jogador.Name].Killed
+end
+
+local function Limpar_ESP()
+    for _,v in pairs(Destaques_Jogadores) do if v then v:Destroy() end end
+    for _,v in pairs(Destaques_Armas) do if v then v:Destroy() end end
+    Destaques_Jogadores = {}
+    Destaques_Armas = {}
+end
+
 -- =========================
 -- SISTEMA FLING / EMPURRAR
 -- =========================
