@@ -121,21 +121,11 @@ Callback=function(v) flySpeed = v end
 -- =========================
 -- ABA TELEPORTE
 -- =========================
--- =========================
--- ABA TELEPORTE
--- =========================
 local Aba_Teleporte = Window:Tab({Title="Teleporte"})
-local Sec_Tele = Aba_Teleporte:Section({Title = "Locais Rápidos"})
+local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
 
-Sec_Tele:Button({
-    Title = "Ir para o Lobby",
-    Callback = IrParaLobby
-})
-
-Sec_Tele:Button({
-    Title = "Ir para Spawn do Mapa",
-    Callback = IrParaSpawn
-})
+Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
+Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
 -- ==========================
 -- FUNÇÕES DO ESP
