@@ -64,8 +64,8 @@ local Aba_Xerife = Window:Tab({Title="Xerife"})
 local Aba_ESP = Window:Tab({Title="ESP"})
 local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
 
-Sec_ESP:Toggle({Title = "👤 Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
-Sec_ESP:Toggle({Title = "🔫 Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
+Sec_ESP:Toggle({Title = "Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
+Sec_ESP:Toggle({Title = "Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
 
 
 -- =========================
@@ -121,9 +121,21 @@ Callback=function(v) flySpeed = v end
 -- =========================
 -- ABA TELEPORTE
 -- =========================
+-- =========================
+-- ABA TELEPORTE
+-- =========================
 local Aba_Teleporte = Window:Tab({Title="Teleporte"})
--- ✅ COLOQUE FUNÇÕES AQUI DEPOIS
+local Sec_Tele = Aba_Teleporte:Section({Title = "Locais Rápidos"})
 
+Sec_Tele:Button({
+    Title = "Ir para o Lobby",
+    Callback = IrParaLobby
+})
+
+Sec_Tele:Button({
+    Title = "Ir para Spawn do Mapa",
+    Callback = IrParaSpawn
+})
 
 -- ==========================
 -- FUNÇÕES DO ESP
