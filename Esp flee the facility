@@ -8,6 +8,7 @@ local Stats = game:GetService("Stats")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -455,5 +456,156 @@ task.spawn(function()
 end)
 
 -- ===========================================
--- ESP DE JOGADORES (MM2 ROLES) & MOVIMENTAÇÃO
+-- ESP DE JOGADORES + MOVIMENTAÇÃO / PING / FPS
 -- ===========================================
+local FPS = 0
+local PingVal = 0
+local TempoInicio = os.time()
+local LP = Players.LocalPlayer
+local Murder, Sheriff, Hero = nil, nil, nil
+
+-- Funções do ESP
+local function CreateHighlight(jogador)
+    if not jogador.Character then return end
+    if not jogador.Character:FindFirstChild("Highlight") then
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight"
+        hl.Adornee = jogador.Character
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineTransparency = 0
+        hl.Parent = jogador.Character
+    end
+end
+
+local function IsAlive(Player, listaCargos)
+    if not listaCargos or not listaCargos[Player.Name] then return false end
+    local dados = listaCargos[Player.Name]
+    return not dados.Killed and not dados.Dead
+end
+
+local function UpdateHighlights(listaCargos)
+    for _, jogador in pairs(Players:GetPlayers()) do
+        if jogador == LP then continue end
+        CreateHighlight(jogador)
+        local hl = jogador.Character:FindFirstChild("Highlight")
+        if not hl then continue end
+
+        if not GetEspAtivo() or not listaCargos then
+            hl.Enabled = false
+            continue
+        end
+
+        if jogador.Name == Murder and IsAlive(jogador, listaCargos) then
+            hl.FillColor = Color3.fromRGB(255, 40, 40)
+            hl.OutlineColor = Color3.fromRGB(255, 80, 80)
+        elseif jogador.Name == Sheriff and IsAlive(jogador, listaCargos) then
+            hl.FillColor = Color3.fromRGB(40, 120, 255)
+            hl.OutlineColor = Color3.fromRGB(80, 150, 255)
+        elseif jogador.Name == Hero and IsAlive(jogador, listaCargos) and not IsAlive(Players[Sheriff or ""], listaCargos) then
+            hl.FillColor = Color3.fromRGB(255, 215, 0)
+            hl.OutlineColor = Color3.fromRGB(255, 230, 50)
+        else
+            hl.FillColor = Color3.fromRGB(50, 255, 50)
+            hl.OutlineColor = Color3.fromRGB(80, 255, 80)
+        end
+        hl.Enabled = true
+    end
+end
+
+-- Loop principal de atualização
+RunService.RenderStepped:Connect(function(delta)
+    if delta > 0 then FPS = math.floor(1 / delta + 0.5) end
+
+    -- Movimento e Noclip
+    pcall(function()
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = speedAtivo end
+
+            if GetNoclip() then
+                for _, p in pairs(char:GetDescendants()) do
+                    if p:IsA("BasePart") then p.CanCollide = false end
+                end
+            end
+        end
+    end)
+
+    -- ESP
+    pcall(function()
+        if GetEspAtivo() then
+            local GetPlayerData = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+            if not GetPlayerData then return end
+
+            local listaCargos = GetPlayerData:InvokeServer()
+            if not listaCargos then return end
+
+            Murder, Sheriff, Hero = nil, nil, nil
+            for nome, dados in pairs(listaCargos) do
+                if dados.Role == "Murderer" then Murder = nome
+                elseif dados.Role == "Sheriff" then Sheriff = nome
+                elseif dados.Role == "Hero" then Hero = nome end
+            end
+
+            UpdateHighlights(listaCargos)
+        else
+            for _, jogador in pairs(Players:GetPlayers()) do
+                if jogador.Character and jogador.Character:FindFirstChild("Highlight") then
+                    jogador.Character.Highlight.Enabled = false
+                end
+            end
+        end
+    end)
+end)
+
+-- Pulo Infinito
+UserInputService.JumpRequest:Connect(function()
+    if GetPuloInfinito() then
+        pcall(function()
+            local char = player.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+            end
+        end)
+    end
+end)
+
+-- Pegar Ping
+task.spawn(function()
+    while Gui.Parent do
+        pcall(function()
+            local network = Stats:FindFirstChild("Network")
+            if network and network:FindFirstChild("ServerStatsItem") then
+                local pingItem = network.ServerStatsItem:FindFirstChild("Data Ping")
+                if pingItem then PingVal = math.floor(pingItem:GetValue()) end
+            end
+            if (not PingVal or PingVal == 0) and Stats.NetworkStats and Stats.NetworkStats.ServerPing then
+                PingVal = math.floor(Stats.NetworkStats.ServerPing)
+            end
+        end)
+        task.wait(1)
+    end
+end)
+
+-- Atualizar Status na Tela
+RunService.Heartbeat:Connect(function()
+    local Passado = os.time() - TempoInicio
+    local H = math.floor(Passado / 3600)
+    local M = math.floor((Passado % 3600) / 60)
+    local S = Passado % 60
+    ValPing.Text = tostring(PingVal) .. "ms"
+    ValFPS.Text = tostring(FPS)
+    ValTempo.Text = H > 0 and string.format("%02d:%02d:%02d", H, M, S) or string.format("%02d:%02d", M, S)
+end)
+
+-- Corrigir captura de controle
+task.spawn(function()
+    while Gui.Parent do
+        pcall(function()
+            UserInputService:CaptureController()
+            UserInputService:ReleaseController()
+        end)
+        task.wait(20)
+    end
+end)
