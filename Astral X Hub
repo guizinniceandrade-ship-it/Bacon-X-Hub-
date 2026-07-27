@@ -72,8 +72,6 @@ Title="Farm"
 -- ✅ COLOQUE AS FUNÇÕES DAQUI DEPOIS
 
 
-
-
 -- =========================
 -- ABA DIVERSÃO
 -- =========================
@@ -82,8 +80,43 @@ Title="Diversão"
 })
 -- ✅ COLOQUE AS FUNÇÕES DAQUI DEPOIS
 
+local Sec_Jogador = Aba_Diversao:Section({Title="Controle do Jogador"})
 
+Sec_Jogador:Slider({
+Title="Velocidade de Andar",
+Value={Min=16, Max=250, Default=16},
+Callback=function(v) walkSpeed = v end
+})
 
+Sec_Jogador:Slider({
+Title="Força do Pulo",
+Value={Min=50, Max=250, Default=50},
+Callback=function(v) jumpPower = v end
+})
+
+Sec_Jogador:Toggle({
+Title="Pulo Infinito",
+Default=false,
+Callback=function(s) infJump = s end
+})
+
+Sec_Jogador:Toggle({
+Title="Atravessar Paredes (Noclip)",
+Default=false,
+Callback=function(s) noclip = s end
+})
+
+Sec_Jogador:Toggle({
+Title="Modo Voo",
+Default=false,
+Callback=function(s) fly = s end
+})
+
+Sec_Jogador:Slider({
+Title="Velocidade do Voo",
+Value={Min=20, Max=300, Default=50},
+Callback=function(v) flySpeed = v end
+})
 
 -- =========================
 -- ABA TELEPORTE
