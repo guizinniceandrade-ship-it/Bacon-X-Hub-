@@ -19,6 +19,21 @@ local fly = false
 local flySpeed = 50
 
 -- =========================
+-- VARIAVEIS DA ABA ESP
+-- =========================
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ESP_ATIVO = false
+local ESP_Murderer = true
+local ESP_Xerife = true
+local ESP_Heroi = true
+local ESP_Inocente = true
+local ESP_Arma = true
+local Destaques_Jogadores = {}
+local Destaques_Armas = {}
+local UltimoMapa = nil
+
+-- =========================
 -- JANELA PRINCIPAL
 -- =========================
 local Window = WindUI:CreateWindow({
