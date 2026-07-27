@@ -1,15 +1,17 @@
 -- ===========================================
--- ASTRAL X HUB - ESTRUTURA COMPLETA
--- Apenas interface, sem nenhuma função ativa
+-- ASTRAL X HUB - VERSÃO FINAL COMPLETA
 -- ===========================================
 local WindUI = loadstring(game:HttpGet(
 "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
 ))()
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 -- =========================
--- VARIÁVEIS DA ABA DIVERSÃO 
+-- VARIÁVEIS GERAIS
 -- =========================
 local walkSpeed = 16
 local jumpPower = 50
@@ -18,77 +20,11 @@ local noclip = false
 local fly = false
 local flySpeed = 50
 
--- =========================
--- ABA ESP
--- =========================
-    pcall(function()
-        local MapaAtual = workspace:FindFirstChildWhichIsA("Model", true)
-        if MapaAtual and MapaAtual ~= UltimoMapa then
-            UltimoMapa = MapaAtual
-            Murder, Sheriff, Hero = nil, nil, nil
-        end
-
-        -- Se desligado: apaga todos os brilhos
-        if not ESP_ATIVO then
-            for _,J in pairs(Players:GetPlayers()) do
-                if J.Character and J.Character:FindFirstChild("Highlight") then
-                    J.Character.Highlight.Enabled = false
-                end
-            end
-            Murder, Sheriff, Hero = nil, nil, nil
-        else
-            -- Pega os dados do jogo
-            local PegarDados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
-            if not PegarDados then return end
-            local listaCargos = PegarDados:InvokeServer()
-            if not listaCargos then return end
-
-            -- Define quem é quem
-            Murder, Sheriff, Hero = nil, nil, nil
-            for Nome, DadosJogador in pairs(listaCargos) do
-                if DadosJogador.Role == "Murderer" then Murder = Nome
-                elseif DadosJogador.Role == "Sheriff" then Sheriff = Nome
-                elseif DadosJogador.Role == "Hero" then Hero = Nome end
-            end
-
-            -- Marca cada jogador com a cor certa
-            for _,J in pairs(Players:GetPlayers()) do
-                if J == player then continue end
-                CriarBrilho(J)
-                local hl = J.Character:FindFirstChild("Highlight")
-                if not hl then continue end
-
-                if J.Name == Murder and EstaVivo(J, listaCargos) then
-                    hl.FillColor = Color3.fromRGB(255, 40, 40)
-                    hl.OutlineColor = Color3.fromRGB(255, 80, 80)
-                elseif J.Name == Sheriff and EstaVivo(J, listaCargos) then
-                    hl.FillColor = Color3.fromRGB(40, 120, 255)
-                    hl.OutlineColor = Color3.fromRGB(80, 150, 255)
-                elseif J.Name == Hero and EstaVivo(J, listaCargos) and Sheriff and not EstaVivo(Players[Sheriff], listaCargos) then
-                    hl.FillColor = Color3.fromRGB(255, 215, 0)
-                    hl.OutlineColor = Color3.fromRGB(255, 230, 50)
-                else
-                    hl.FillColor = Color3.fromRGB(50, 255, 50)
-                    hl.OutlineColor = Color3.fromRGB(80, 255, 80)
-                end
-
-                hl.Enabled = true
-            end
-        end
-
-        -- Marca armas (do script que você pediu)
-        AtualizarArmas()
-    end)
-
--- =========================
--- VARIAVEIS DA ABA ESP
--- =========================
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- VARIAVEIS DO ESP
 local ESP_ATIVO = false
 local ESP_Arma = true
 local UltimoMapa = nil
 local Murder, Sheriff, Hero = nil, nil, nil
-
 
 -- =========================
 -- JANELA PRINCIPAL
@@ -111,52 +47,38 @@ ScrollBarEnabled = false,
 -- =========================
 -- ABA ASSASSINO
 -- =========================
-local Aba_Assassino = Window:Tab({
-Title="Assassino"
-})
--- ✅ COLOQUE AS FUNÇÕES DAQUI DEPOIS
-
-
+local Aba_Assassino = Window:Tab({Title="Assassino"})
+-- ✅ COLOQUE FUNÇÕES AQUI DEPOIS
 
 
 -- =========================
 -- ABA XERIFE
 -- =========================
-local Aba_Xerife = Window:Tab({
-Title="Xerife"
-})
--- ✅ COLOQUE AS FUNÇÕES DAQUI DEPOIS
-
-
+local Aba_Xerife = Window:Tab({Title="Xerife"})
+-- ✅ COLOQUE FUNÇÕES AQUI DEPOIS
 
 
 -- =========================
 -- ABA ESP
 -- =========================
-
 local Aba_ESP = Window:Tab({Title="ESP"})
 local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
 
 Sec_ESP:Toggle({Title = "👤 Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
 Sec_ESP:Toggle({Title = "🔫 Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
 
+
 -- =========================
 -- ABA FARM
 -- =========================
-local Aba_Farm = Window:Tab({
-Title="Farm"
-})
--- ✅ COLOQUE AS FUNÇÕES DAQUI DEPOIS
+local Aba_Farm = Window:Tab({Title="Farm"})
+-- ✅ COLOQUE FUNÇÕES AQUI DEPOIS
 
 
 -- =========================
 -- ABA DIVERSÃO
 -- =========================
-local Aba_Diversao = Window:Tab({
-Title="Diversão"
-})
--- ✅ COLOQUE AS FUNÇÕES DAQUI DEPOIS
-
+local Aba_Diversao = Window:Tab({Title="Diversão"})
 local Sec_Jogador = Aba_Diversao:Section({Title="Controle do Jogador"})
 
 Sec_Jogador:Slider({
@@ -195,22 +117,62 @@ Value={Min=20, Max=300, Default=50},
 Callback=function(v) flySpeed = v end
 })
 
+
 -- =========================
 -- ABA TELEPORTE
 -- =========================
-local Aba_Teleporte = Window:Tab({
-Title="Teleporte"
-})
--- ✅ COLOQUE AS FUNÇÕES DAQUI DEPOIS
+local Aba_Teleporte = Window:Tab({Title="Teleporte"})
+-- ✅ COLOQUE FUNÇÕES AQUI DEPOIS
+
 
 -- ==========================
--- FUNÇÕES GERAIS
+-- FUNÇÕES DO ESP
 -- ==========================
+local function CriarBrilho(Jogador)
+    if not Jogador or not Jogador.Character then return end
+    if not Jogador.Character:FindFirstChild("Highlight") then
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight"
+        hl.Adornee = Jogador.Character
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineTransparency = 0
+        hl.Enabled = false
+        hl.Parent = Jogador.Character
+    end
+end
 
--- SISTEMA MOVIMENTO, NOCLIP E VOO
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local function EstaVivo(Jogador, listaCargos)
+    if not listaCargos or not listaCargos[Jogador.Name] then return false end
+    local Info = listaCargos[Jogador.Name]
+    return not Info.Killed and not Info.Dead
+end
 
+local function AtualizarArmas()
+    for _,Obj in pairs(workspace:GetDescendants()) do
+        if Obj.Name == "GunDrop" and Obj:IsA("BasePart") then
+            if ESP_Arma then
+                if not Obj:FindFirstChild("MarcaArma") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "MarcaArma"
+                    hl.FillTransparency = 1
+                    hl.OutlineColor = Color3.fromRGB(255,255,0)
+                    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    hl.Parent = Obj
+                end
+                Obj.MarcaArma.Enabled = true
+            else
+                if Obj:FindFirstChild("MarcaArma") then
+                    Obj.MarcaArma.Enabled = false
+                end
+            end
+        end
+    end
+end
+
+
+-- ==========================
+-- SISTEMA GERAL DE MOVIMENTO E ESP
+-- ==========================
 UIS.JumpRequest:Connect(function()
     if infJump and player.Character then
         local hum = player.Character:FindFirstChild("Humanoid")
@@ -261,52 +223,66 @@ RunService.Stepped:Connect(function()
     if fly then
         hum.PlatformStand = true
     end
-end)
 
--- =======================
--- ESP
--- =======================
-local function CriarBrilho(Jogador)
-    if not Jogador or not Jogador.Character then return end
-    if not Jogador.Character:FindFirstChild("Highlight") then
-        local hl = Instance.new("Highlight")
-        hl.Name = "Highlight"
-        hl.Adornee = Jogador.Character
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.OutlineTransparency = 0
-        hl.Enabled = false
-        hl.Parent = Jogador.Character
-    end
-end
+    -- ==========================================
+    -- ATUALIZAÇÃO DO ESP
+    -- ==========================================
+    pcall(function()
+        local MapaAtual = workspace:FindFirstChildWhichIsA("Model", true)
+        if MapaAtual and MapaAtual ~= UltimoMapa then
+            UltimoMapa = MapaAtual
+            Murder, Sheriff, Hero = nil, nil, nil
+        end
 
-local function EstaVivo(Jogador, listaCargos)
-    if not listaCargos or not listaCargos[Jogador.Name] then return false end
-    local Info = listaCargos[Jogador.Name]
-    return not Info.Killed and not Info.Dead
-end
-
-local function AtualizarArmas()
-    for _,Obj in pairs(workspace:GetDescendants()) do
-        if Obj.Name == "GunDrop" and Obj:IsA("BasePart") then
-            if ESP_Arma then
-                if not Obj:FindFirstChild("MarcaArma") then
-                    local hl = Instance.new("Highlight")
-                    hl.Name = "MarcaArma"
-                    hl.FillTransparency = 1
-                    hl.OutlineColor = Color3.fromRGB(255,255,0)
-                    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    hl.Parent = Obj
-                end
-                Obj.MarcaArma.Enabled = true
-            else
-                if Obj:FindFirstChild("MarcaArma") then
-                    Obj.MarcaArma.Enabled = false
+        if not ESP_ATIVO then
+            for _,J in pairs(Players:GetPlayers()) do
+                if J.Character and J.Character:FindFirstChild("Highlight") then
+                    J.Character.Highlight.Enabled = false
                 end
             end
+            Murder, Sheriff, Hero = nil, nil, nil
+        else
+            local PegarDados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+            if not PegarDados then return end
+            local listaCargos = PegarDados:InvokeServer()
+            if not listaCargos then return end
+
+            Murder, Sheriff, Hero = nil, nil, nil
+            for Nome, DadosJogador in pairs(listaCargos) do
+                if DadosJogador.Role == "Murderer" then Murder = Nome
+                elseif DadosJogador.Role == "Sheriff" then Sheriff = Nome
+                elseif DadosJogador.Role == "Hero" then Hero = Nome end
+            end
+
+            for _,J in pairs(Players:GetPlayers()) do
+                if J == player then continue end
+                CriarBrilho(J)
+                local hl = J.Character:FindFirstChild("Highlight")
+                if not hl then continue end
+
+                if J.Name == Murder and EstaVivo(J, listaCargos) then
+                    hl.FillColor = Color3.fromRGB(255, 40, 40)
+                    hl.OutlineColor = Color3.fromRGB(255, 80, 80)
+                elseif J.Name == Sheriff and EstaVivo(J, listaCargos) then
+                    hl.FillColor = Color3.fromRGB(40, 120, 255)
+                    hl.OutlineColor = Color3.fromRGB(80, 150, 255)
+                elseif J.Name == Hero and EstaVivo(J, listaCargos) and Sheriff and not EstaVivo(Players[Sheriff], listaCargos) then
+                    hl.FillColor = Color3.fromRGB(255, 215, 0)
+                    hl.OutlineColor = Color3.fromRGB(255, 230, 50)
+                else
+                    hl.FillColor = Color3.fromRGB(50, 255, 50)
+                    hl.OutlineColor = Color3.fromRGB(80, 255, 80)
+                end
+
+                hl.Enabled = true
+            end
         end
-    end
-end
+
+        AtualizarArmas()
+    end)
+end)
 
 -- =========================
 -- SISTEMA FLING / EMPURRAR
 -- =========================
+-- ✅ COLOQUE FUNÇÕES AQUI DEPOIS
