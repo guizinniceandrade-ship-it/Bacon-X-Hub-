@@ -187,9 +187,8 @@ Callback=function(v) flySpeed = v end
 -- =========================
 local Aba_Teleporte = Window:Tab({Title="Teleporte"})
 local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
-
-Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
-Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
+Sec_Tele:Button({Title = "🏠 Ir para o Lobby", Callback = IrLobby})
+Sec_Tele:Button({Title = "📍 Ir para a Partida", Callback = IrPartida})
 
 -- ==========================
 -- FUNÇÕES DO ESP
