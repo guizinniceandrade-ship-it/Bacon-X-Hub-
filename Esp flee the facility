@@ -1,214 +1,577 @@
--- player fling gui
-
+-- ===========================================
+-- ASTRAL X HUB - MM2 COMPLETO (FILTRO ANTI-ROUBO DE MOEDAS)
+-- ✅ Ignora moedas já coletadas por outros jogadores
+-- ✅ Alvo dinâmico, anti-repetição e parada correta em 40 moedas
+-- ===========================================
 local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local TextBox = Instance.new("TextBox")
-local TextButton = Instance.new("TextButton")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-ScreenGui.Parent = Player:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false
+if playerGui:FindFirstChild("AstralX_Hub") then playerGui.AstralX_Hub:Destroy() end
 
-Frame.Parent = ScreenGui
-Frame.BackgroundColor3 = Color3.fromRGB(33, 33, 33)
-Frame.Position = UDim2.new(0.5, -100, 0.5, -50)
-Frame.Size = UDim2.new(0, 200, 0, 100)
-Frame.Active = true
-Frame.Draggable = true
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "AstralX_Hub"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = playerGui
 
-TextBox.Parent = Frame
-TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TextBox.Position = UDim2.new(0.1, 0, 0.2, 0)
-TextBox.Size = UDim2.new(0.8, 0, 0.2, 0)
-TextBox.Font = Enum.Font.SourceSans
-TextBox.PlaceholderText = "Enter username"
-TextBox.Text = ""
-TextBox.TextColor3 = Color3.fromRGB(0, 0, 0)
-TextBox.TextSize = 14
+-- ===========================================
+-- BOTÃO FLUTUANTE (ABRE/FECHA)
+-- ===========================================
+local BotaoAbrir = Instance.new("TextButton")
+BotaoAbrir.Size = UDim2.new(0, 50, 0, 50)
+BotaoAbrir.Position = UDim2.new(0, 20, 0.4, 0)
+BotaoAbrir.BackgroundColor3 = Color3.fromRGB(15, 35, 15)
+BotaoAbrir.Text = "🟢"
+BotaoAbrir.TextSize = 22
+BotaoAbrir.Active = true
+BotaoAbrir.Draggable = true
+BotaoAbrir.Parent = Gui
 
-TextButton.Parent = Frame
-TextButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-TextButton.Position = UDim2.new(0.1, 0, 0.5, 0)
-TextButton.Size = UDim2.new(0.8, 0, 0.4, 0)
-TextButton.Font = Enum.Font.SourceSans
-TextButton.Text = "FLING!"
-TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-TextButton.TextSize = 20
+Instance.new("UICorner", BotaoAbrir).CornerRadius = UDim.new(1, 0)
+local StrokeAbrir = Instance.new("UIStroke", BotaoAbrir)
+StrokeAbrir.Color = Color3.fromRGB(50, 255, 50)
+StrokeAbrir.Thickness = 2
 
-local function GetPlayer(Name)
-    Name = Name:lower()
-    for _, x in next, Players:GetPlayers() do
-        if x ~= Player then
-            if x.Name:lower():match("^" .. Name) or x.DisplayName:lower():match("^" .. Name) then
-                return x
-            end
+-- ===========================================
+-- PAINEL PRINCIPAL
+-- ===========================================
+local Painel = Instance.new("Frame")
+Painel.Size = UDim2.new(0, 360, 0, 250)
+Painel.Position = UDim2.new(0.5, -180, 0.5, -125)
+Painel.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+Painel.Active = true
+Painel.Draggable = true
+Painel.Visible = false
+Painel.Parent = Gui
+
+Instance.new("UICorner", Painel).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", Painel).Color = Color3.fromRGB(50, 50, 50)
+
+-- TÍTULO
+local Titulo = Instance.new("TextLabel")
+Titulo.Size = UDim2.new(1, -90, 0, 35)
+Titulo.Position = UDim2.new(0, 15, 0, 5)
+Titulo.BackgroundTransparency = 1
+Titulo.Text = "🟢 ASTRAL X HUB · MM2"
+Titulo.TextColor3 = Color3.new(1, 1, 1)
+Titulo.Font = Enum.Font.GothamBold
+Titulo.TextSize = 14
+Titulo.TextXAlignment = Enum.TextXAlignment.Left
+Titulo.Parent = Painel
+
+-- BOTÃO FECHAR (X)
+local Fechar = Instance.new("TextButton")
+Fechar.Size = UDim2.new(0, 35, 0, 35)
+Fechar.Position = UDim2.new(1, -40, 0, 5)
+Fechar.BackgroundTransparency = 1
+Fechar.Text = "✕"
+Fechar.TextColor3 = Color3.new(1, 1, 1)
+Fechar.Font = Enum.Font.GothamBold
+Fechar.TextSize = 16
+Fechar.Parent = Painel
+
+-- ===========================================
+-- SISTEMA DE ABAS
+-- ===========================================
+local function CriarBotaoAba(posicaoX, largura, texto)
+    local btn = Instance.new("TextButton", Painel)
+    btn.Size = UDim2.new(0, largura, 0, 28)
+    btn.Position = UDim2.new(0, posicaoX, 0, 42)
+    btn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    btn.Text = texto
+    btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    return btn
+end
+
+local AbaStatsBtn = CriarBotaoAba(10, 80, "📊 Status")
+local AbaFuncoesBtn = CriarBotaoAba(94, 85, "⚙️ Funções")
+local AbaPlayerBtn = CriarBotaoAba(183, 80, "👤 Player")
+local AbaEspBtn = CriarBotaoAba(267, 83, "👁️ ESP")
+
+local function CriarContainer()
+    local c = Instance.new("Frame", Painel)
+    c.Size = UDim2.new(1, 0, 1, -80)
+    c.Position = UDim2.new(0, 0, 0, 78)
+    c.BackgroundTransparency = 1
+    c.Visible = false
+    return c
+end
+
+local ContainerStats = CriarContainer()
+local ContainerFuncoes = CriarContainer()
+local ContainerPlayer = CriarContainer()
+local ContainerEsp = CriarContainer()
+ContainerStats.Visible = true
+
+-- ===========================================
+-- ABA 1: STATUS
+-- ===========================================
+local CabPing = Instance.new("TextLabel", ContainerStats)
+CabPing.Size = UDim2.new(0, 95, 0, 15)
+CabPing.Position = UDim2.new(0, 10, 0, 15)
+CabPing.BackgroundTransparency = 1
+CabPing.Text = "PING"
+CabPing.TextColor3 = Color3.fromRGB(180, 180, 180)
+CabPing.Font = Enum.Font.Gotham
+CabPing.TextSize = 11
+CabPing.TextXAlignment = Enum.TextXAlignment.Center
+
+local CabFPS = Instance.new("TextLabel", ContainerStats)
+CabFPS.Size = UDim2.new(0, 95, 0, 15)
+CabFPS.Position = UDim2.new(0.5, -47, 0, 15)
+CabFPS.BackgroundTransparency = 1
+CabFPS.Text = "FPS"
+CabFPS.TextColor3 = Color3.fromRGB(180, 180, 180)
+CabFPS.Font = Enum.Font.Gotham
+CabFPS.TextSize = 11
+CabFPS.TextXAlignment = Enum.TextXAlignment.Center
+
+local CabTempo = Instance.new("TextLabel", ContainerStats)
+CabTempo.Size = UDim2.new(0, 95, 0, 15)
+CabTempo.Position = UDim2.new(1, -105, 0, 15)
+CabTempo.BackgroundTransparency = 1
+CabTempo.Text = "TEMPO"
+CabTempo.TextColor3 = Color3.fromRGB(180, 180, 180)
+CabTempo.Font = Enum.Font.Gotham
+CabTempo.TextSize = 11
+CabTempo.TextXAlignment = Enum.TextXAlignment.Center
+
+local ValPing = Instance.new("TextLabel", ContainerStats)
+ValPing.Size = UDim2.new(0, 95, 0, 30)
+ValPing.Position = UDim2.new(0, 10, 0, 35)
+ValPing.BackgroundTransparency = 1
+ValPing.Text = "--"
+ValPing.TextColor3 = Color3.new(1, 1, 1)
+ValPing.Font = Enum.Font.GothamBold
+ValPing.TextSize = 16
+ValPing.TextXAlignment = Enum.TextXAlignment.Center
+
+local ValFPS = Instance.new("TextLabel", ContainerStats)
+ValFPS.Size = UDim2.new(0, 95, 0, 30)
+ValFPS.Position = UDim2.new(0.5, -47, 0, 35)
+ValFPS.BackgroundTransparency = 1
+ValFPS.Text = "--"
+ValFPS.TextColor3 = Color3.new(1, 1, 1)
+ValFPS.Font = Enum.Font.GothamBold
+ValFPS.TextSize = 16
+ValFPS.TextXAlignment = Enum.TextXAlignment.Center
+
+local ValTempo = Instance.new("TextLabel", ContainerStats)
+ValTempo.Size = UDim2.new(0, 95, 0, 30)
+ValTempo.Position = UDim2.new(1, -105, 0, 35)
+ValTempo.BackgroundTransparency = 1
+ValTempo.Text = "00:00"
+ValTempo.TextColor3 = Color3.new(1, 1, 1)
+ValTempo.Font = Enum.Font.GothamBold
+ValTempo.TextSize = 16
+ValTempo.TextXAlignment = Enum.TextXAlignment.Center
+
+local RodapeStats = Instance.new("TextLabel", ContainerStats)
+RodapeStats.Size = UDim2.new(1, 0, 0, 20)
+RodapeStats.Position = UDim2.new(0, 0, 1, -25)
+RodapeStats.BackgroundTransparency = 1
+RodapeStats.Text = "Astral X · MM2 Utils"
+RodapeStats.TextColor3 = Color3.fromRGB(120, 120, 120)
+RodapeStats.Font = Enum.Font.Gotham
+RodapeStats.TextSize = 11
+RodapeStats.TextXAlignment = Enum.TextXAlignment.Center
+
+-- ===========================================
+-- FUNÇÃO TOGGLE DESLIZANTE
+-- ===========================================
+local function CriarToggleDeslizante(pai, posY, texto)
+    local Botao = Instance.new("TextButton", pai)
+    Botao.Size = UDim2.new(1, -30, 0, 36)
+    Botao.Position = UDim2.new(0, 15, 0, posY)
+    Botao.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    Botao.Text = "   " .. texto
+    Botao.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Botao.Font = Enum.Font.GothamBold
+    Botao.TextSize = 12
+    Botao.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", Botao).CornerRadius = UDim.new(0, 8)
+    local stroke = Instance.new("UIStroke", Botao)
+    stroke.Color = Color3.fromRGB(45, 45, 45)
+    stroke.Thickness = 1.5
+
+    local SwitchFundo = Instance.new("Frame", Botao)
+    SwitchFundo.Size = UDim2.new(0, 42, 0, 22)
+    SwitchFundo.Position = UDim2.new(1, -48, 0.5, -11)
+    SwitchFundo.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Instance.new("UICorner", SwitchFundo).CornerRadius = UDim.new(1, 0)
+
+    local Bolinha = Instance.new("Frame", SwitchFundo)
+    Bolinha.Size = UDim2.new(0, 18, 0, 18)
+    Bolinha.Position = UDim2.new(0, 2, 0.5, -9)
+    Bolinha.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    Instance.new("UICorner", Bolinha).CornerRadius = UDim.new(1, 0)
+
+    local ligado = false
+    local atualizarVisual = function() end
+
+    Botao.MouseButton1Click:Connect(function()
+        ligado = not ligado
+        atualizarVisual()
+    end)
+
+    atualizarVisual = function()
+        local info = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        if ligado then
+            TweenService:Create(SwitchFundo, info, {BackgroundColor3 = Color3.fromRGB(50, 255, 50)}):Play()
+            TweenService:Create(Bolinha, info, {Position = UDim2.new(1, -20, 0.5, -9), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+            stroke.Color = Color3.fromRGB(50, 255, 50)
+            Botao.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            TweenService:Create(SwitchFundo, info, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
+            TweenService:Create(Bolinha, info, {Position = UDim2.new(0, 2, 0.5, -9), BackgroundColor3 = Color3.fromRGB(200, 200, 200)}):Play()
+            stroke.Color = Color3.fromRGB(45, 45, 45)
+            Botao.TextColor3 = Color3.fromRGB(200, 200, 200)
         end
     end
-    return nil
+
+    return Botao, function() return ligado end, function(estado) ligado = estado atualizarVisual() end
 end
 
-local function Message(_Title, _Text, Time)
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title = _Title, Text = _Text, Duration = Time})
+-- ===========================================
+-- ABAS: FUNÇÕES, PLAYER, ESP
+-- ===========================================
+local _, GetAutoFarm, SetAutoFarm = CriarToggleDeslizante(ContainerFuncoes, 10, "Auto Farm (Anti-Roubo / Para em 40)")
+local _, GetAutoReset = CriarToggleDeslizante(ContainerFuncoes, 54, "Auto Resetar (A cada 40 Moedas)")
+
+local SpeedLabel = Instance.new("TextLabel", ContainerPlayer)
+SpeedLabel.Size = UDim2.new(1, -30, 0, 18)
+SpeedLabel.Position = UDim2.new(0, 15, 0, 5)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "Velocidade (Speed): 16"
+SpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+SpeedLabel.Font = Enum.Font.GothamBold
+SpeedLabel.TextSize = 12
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local SliderFundo = Instance.new("Frame", ContainerPlayer)
+SliderFundo.Size = UDim2.new(1, -30, 0, 10)
+SliderFundo.Position = UDim2.new(0, 15, 0, 26)
+SliderFundo.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", SliderFundo).CornerRadius = UDim.new(1, 0)
+local SliderFill = Instance.new("Frame", SliderFundo)
+SliderFill.Size = UDim2.new(0, 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+
+local SliderBtn = Instance.new("TextButton", SliderFundo)
+SliderBtn.Size = UDim2.new(1, 0, 1, 10)
+SliderBtn.Position = UDim2.new(0, 0, 0, -5)
+SliderBtn.BackgroundTransparency = 1
+SliderBtn.Text = ""
+
+local speedAtivo = 16
+local arrastandoSlider = false
+
+local function AtualizarSpeed(input)
+    local posRelativa = math.clamp((input.Position.X - SliderFundo.AbsolutePosition.X) / SliderFundo.AbsoluteSize.X, 0, 1)
+    SliderFill.Size = UDim2.new(posRelativa, 0, 1, 0)
+    speedAtivo = math.floor(16 + (posRelativa * (50 - 16)))
+    SpeedLabel.Text = "Velocidade (Speed): " .. speedAtivo
 end
 
-local function SkidFling(TargetPlayer)
-    local Character = Player.Character
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-    local RootPart = Humanoid and Humanoid.RootPart
+SliderBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        arrastandoSlider = true
+        AtualizarSpeed(input)
+    end
+end)
 
-    local TCharacter = TargetPlayer.Character
-    local THumanoid = TCharacter and TCharacter:FindFirstChildOfClass("Humanoid")
-    local TRootPart = THumanoid and THumanoid.RootPart
-    local THead = TCharacter and TCharacter:FindFirstChild("Head")
-    local Accessory = TCharacter and TCharacter:FindFirstChildOfClass("Accessory")
-    local Handle = Accessory and Accessory:FindFirstChild("Handle")
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        arrastandoSlider = false
+    end
+end)
 
-    if Character and Humanoid and RootPart then
-        if RootPart.Velocity.Magnitude < 50 then
-            getgenv().OldPos = RootPart.CFrame
-        end
-        if THumanoid and THumanoid.Sit then
-            return Message("Error Occurred", "Target is sitting", 5)
-        end
-        if THead then
-            workspace.CurrentCamera.CameraSubject = THead
-        elseif Handle then
-            workspace.CurrentCamera.CameraSubject = Handle
-        else
-            workspace.CurrentCamera.CameraSubject = THumanoid
-        end
-        if not TCharacter:FindFirstChildWhichIsA("BasePart") then
-            return
-        end
-        
-        local function FPos(BasePart, Pos, Ang)
-            RootPart.CFrame = CFrame.new(BasePart.Position) * Pos * Ang
-            Character:SetPrimaryPartCFrame(CFrame.new(BasePart.Position) * Pos * Ang)
-            RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
-            RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
-        end
-        
-        local function SFBasePart(BasePart)
-            local TimeToWait = 2
-            local Time = tick()
-            local Angle = 0
+UserInputService.InputChanged:Connect(function(input)
+    if arrastandoSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        AtualizarSpeed(input)
+    end
+end)
 
-            repeat
-                if RootPart and THumanoid then
-                    if BasePart.Velocity.Magnitude < 50 then
-                        Angle = Angle + 100
+local _, GetPuloInfinito = CriarToggleDeslizante(ContainerPlayer, 50, "Pulo Infinito")
+local _, GetNoclip = CriarToggleDeslizante(ContainerPlayer, 94, "Noclip")
+local _, GetEspAtivo = CriarToggleDeslizante(ContainerEsp, 10, "ESP Jogadores (MM2)")
 
-                        FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle),0 ,0))
-                        task.wait()
+local function MudarAba(abaAtiva)
+    ContainerStats.Visible = (abaAtiva == 1)
+    ContainerFuncoes.Visible = (abaAtiva == 2)
+    ContainerPlayer.Visible = (abaAtiva == 3)
+    ContainerEsp.Visible = (abaAtiva == 4)
 
-                        FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
-                        task.wait()
+    local abas = { {AbaStatsBtn, 1}, {AbaFuncoesBtn, 2}, {AbaPlayerBtn, 3}, {AbaEspBtn, 4} }
+    for _, info in ipairs(abas) do
+        local btn = info[1]
+        local idx = info[2]
+        btn.BackgroundColor3 = (abaAtiva == idx) and Color3.fromRGB(30, 30, 30) or Color3.fromRGB(18, 18, 18)
+        btn.TextColor3 = (abaAtiva == idx) and Color3.new(1, 1, 1) or Color3.fromRGB(150, 150, 150)
+    end
+end
 
-                        FPos(BasePart, CFrame.new(2.25, 1.5, -2.25) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
-                        task.wait()
+AbaStatsBtn.MouseButton1Click:Connect(function() MudarAba(1) end)
+AbaFuncoesBtn.MouseButton1Click:Connect(function() MudarAba(2) end)
+AbaPlayerBtn.MouseButton1Click:Connect(function() MudarAba(3) end)
+AbaEspBtn.MouseButton1Click:Connect(function() MudarAba(4) end)
 
-                        FPos(BasePart, CFrame.new(-2.25, -1.5, 2.25) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
-                        task.wait()
+BotaoAbrir.MouseButton1Click:Connect(function() Painel.Visible = not Painel.Visible end)
+Fechar.MouseButton1Click:Connect(function() Painel.Visible = false end)
 
-                        FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection,CFrame.Angles(math.rad(Angle), 0, 0))
-                        task.wait()
+-- ===========================================
+-- LÓGICA DO AUTO FARM (PAUSA EM 40 SEM SUMIR COM O VISUAL)
+-- ===========================================
+local rt = {}
+rt.walkspeed = 24
+rt.limite = 40
+local moedasPegas = {}
 
-                        FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection,CFrame.Angles(math.rad(Angle), 0, 0))
-                        task.wait()
-                    else
-                        FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
+local function QuantidadeMochila()
+    local ok, n = pcall(function()
+        local g = player.PlayerGui:WaitForChild("MainGUI", 3)
+        return tonumber(g.Game.CoinBags.Container.SnowToken.CurrencyFrame.Icon.Coins.Text) or 0
+    end)
+    return ok and n or 0
+end
 
-                        FPos(BasePart, CFrame.new(0, -1.5, -THumanoid.WalkSpeed), CFrame.Angles(0, 0, 0))
-                        task.wait()
-
-                        FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
-                        
-                        FPos(BasePart, CFrame.new(0, 1.5, TRootPart.Velocity.Magnitude / 1.25), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
-
-                        FPos(BasePart, CFrame.new(0, -1.5, -TRootPart.Velocity.Magnitude / 1.25), CFrame.Angles(0, 0, 0))
-                        task.wait()
-
-                        FPos(BasePart, CFrame.new(0, 1.5, TRootPart.Velocity.Magnitude / 1.25), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
-
-                        FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
-
-                        FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))
-                        task.wait()
-
-                        FPos(BasePart, CFrame.new(0, -1.5 ,0), CFrame.Angles(math.rad(-90), 0, 0))
-                        task.wait()
-
-                        FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))
-                        task.wait()
-                    end
-                else
-                    break
-                end
-            until BasePart.Velocity.Magnitude > 500 or BasePart.Parent ~= TargetPlayer.Character or TargetPlayer.Parent ~= Players or not TargetPlayer.Character == TCharacter or THumanoid.Sit or Humanoid.Health <= 0 or tick() > Time + TimeToWait
-        end
-        
-        workspace.FallenPartsDestroyHeight = 0/0
-        
-        local BV = Instance.new("BodyVelocity")
-        BV.Name = "EpixVel"
-        BV.Parent = RootPart
-        BV.Velocity = Vector3.new(9e8, 9e8, 9e8)
-        BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
-        
-        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-        
-        if TRootPart and THead then
-            if (TRootPart.CFrame.p - THead.CFrame.p).Magnitude > 5 then
-                SFBasePart(THead)
+task.spawn(function()
+    while Gui.Parent do
+        if GetAutoFarm() then
+            if QuantidadeMochila() >= rt.limite then
+                task.wait(1)
             else
-                SFBasePart(TRootPart)
+                local container = nil
+                repeat
+                    for _, v in pairs(Workspace:GetDescendants()) do
+                        if v.Name == "CoinContainer" then container = v break end
+                    end
+                    if not container then task.wait(0.5) end
+                until container or not GetAutoFarm()
+
+                if container and GetAutoFarm() then
+                    table.clear(moedasPegas)
+
+                    while GetAutoFarm() do
+                        if QuantidadeMochila() >= rt.limite then
+                            break
+                        end
+
+                        local c = player.Character
+                        if not c or not c.PrimaryPart then task.wait(0.5) continue end
+
+                        local melhorMoeda = nil
+                        local menorDistancia = math.huge
+                        local minhaPos = c.PrimaryPart.Position
+
+                        for _, v in pairs(container:GetDescendants()) do
+                            if v:IsA("TouchTransmitter") then
+                                local m = v.Parent
+                                if m and m:IsA("BasePart") and m.Parent and not moedasPegas[m] then
+                                    local dist = (minhaPos - m.Position).Magnitude
+                                    if dist < menorDistancia then
+                                        menorDistancia = dist
+                                        melhorMoeda = m
+                                    end
+                                end
+                            end
+                        end
+
+                        if melhorMoeda then
+                            moedasPegas[melhorMoeda] = true
+                            
+                            local ini = c.PrimaryPart.Position
+                            local destino = melhorMoeda.Position
+                            local distTotal = (ini - destino).Magnitude
+                            local tempo = distTotal / rt.walkspeed
+                            local tIni = os.clock()
+
+                            while GetAutoFarm() and c and c.PrimaryPart and melhorMoeda.Parent and melhorMoeda:FindFirstChildOfClass("TouchTransmitter") do
+                                if QuantidadeMochila() >= rt.limite then break end
+
+                                local posAtual = c.PrimaryPart.Position
+                                local novaMelhor = nil
+                                local novaMenorDist = (posAtual - destino).Magnitude
+
+                                for _, v in pairs(container:GetDescendants()) do
+                                    if v:IsA("TouchTransmitter") then
+                                        local m = v.Parent
+                                        if m and m:IsA("BasePart") and m.Parent and not moedasPegas[m] then
+                                            local d = (posAtual - m.Position).Magnitude
+                                            if d < novaMenorDist then
+                                                novaMenorDist = d
+                                                novaMelhor = m
+                                            end
+                                        end
+                                    end
+                                end
+
+                                if novaMelhor then
+                                    moedasPegas[novaMelhor] = true
+                                    break
+                                end
+
+                                local progresso = math.min((os.clock() - tIni) / tempo, 1)
+                                c:PivotTo(CFrame.new(ini:Lerp(destino, progresso)))
+                                if progresso >= 1 then break end
+                                task.wait()
+                            end
+                        else
+                            table.clear(moedasPegas)
+                            task.wait(0.3)
+                        end
+                    end
+                end
             end
-        elseif TRootPart and not THead then
-            SFBasePart(TRootPart)
-        elseif not TRootPart and THead then
-            SFBasePart(THead)
-        elseif not TRootPart and not THead and Accessory and Handle then
-            SFBasePart(Handle)
-        else
-            return Message("Error Occurred", "Target is missing everything", 5)
         end
-        
-        BV:Destroy()
-        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-        workspace.CurrentCamera.CameraSubject = Humanoid
-        
-        repeat
-            RootPart.CFrame = getgenv().OldPos * CFrame.new(0, .5, 0)
-            Character:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, .5, 0))
-            Humanoid:ChangeState("GettingUp")
-            table.foreach(Character:GetChildren(), function(_, x)
-                if x:IsA("BasePart") then
-                    x.Velocity, x.RotVelocity = Vector3.new(), Vector3.new()
+        task.wait(0.3)
+    end
+end)
+
+task.spawn(function()
+    while Gui.Parent do
+        if GetAutoReset() and QuantidadeMochila() >= rt.limite then
+            pcall(function()
+                local char = player.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    char.Humanoid.Health = 0
+                    table.clear(moedasPegas)
                 end
             end)
-            task.wait()
-        until (RootPart.Position - getgenv().OldPos.p).Magnitude < 25
-        workspace.FallenPartsDestroyHeight = workspace.FallenPartsDestroyHeight
-        getgenv().OldPos = nil
+            task.wait(3)
+        end
+        task.wait(1)
+    end
+end)
+
+-- ===========================================
+-- ESP DE JOGADORES (MM2 ROLES) & MOVIMENTAÇÃO
+-- ===========================================
+local DesenhosESP = {}
+local Camera = Workspace.CurrentCamera
+
+local function PegarPapelECor(jogador)
+    local char = jogador.Character
+    local backpack = jogador:FindFirstChildOfClass("Backpack")
+    local temFaca = (char and (char:FindFirstChild("Knife") or char:FindFirstChild("DisplayRefKnife"))) or (backpack and (backpack:FindFirstChild("Knife") or backpack:FindFirstChild("DisplayRefKnife")))
+    local temArma = (char and (char:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or char:FindFirstChild("DisplayRefGun"))) or (backpack and (backpack:FindFirstChild("Gun") or backpack:FindFirstChild("Revolver") or backpack:FindFirstChild("DisplayRefGun")))
+
+    if jogador:GetAttribute("Murderer") or temFaca then
+        return "🔪 Assassino", Color3.fromRGB(255, 40, 40)
+    elseif jogador:GetAttribute("Sheriff") or temArma then
+        return "🔫 Xerife", Color3.fromRGB(40, 120, 255)
     else
-        return Message("Error Occurred", "Random error", 5)
+        return "🧍 Inocente", Color3.fromRGB(50, 255, 50)
     end
 end
 
-TextButton.MouseButton1Click:Connect(function()
-    local targetName = TextBox.Text
-    local targetPlayer = GetPlayer(targetName)
+RunService.RenderStepped:Connect(function(delta)
+    if delta > 0 then FPS = math.floor(1 / delta + 0.5) end
 
-    if targetPlayer then
-        SkidFling(targetPlayer)
+    pcall(function()
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = speedAtivo end
+
+            if GetNoclip() then
+                for _, p in pairs(char:GetDescendants()) do
+                    if p:IsA("BasePart") then p.CanCollide = false end
+                end
+            end
+        end
+    end)
+
+    if GetEspAtivo() then
+        for _, jogador in pairs(Players:GetPlayers()) do
+            if jogador ~= player then
+                local char = jogador.Character
+                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+                    local papel, cor = PegarPapelECor(jogador)
+                    local posTela, visivel = Camera:WorldToViewportPoint(char.HumanoidRootPart.Position)
+
+                    if not DesenhosESP[jogador.UserId] then
+                        local hl = Instance.new("Highlight")
+                        hl.Adornee = char
+                        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        hl.Parent = Gui
+                        DesenhosESP[jogador.UserId] = hl
+                    end
+
+                    local hl = DesenhosESP[jogador.UserId]
+                    hl.Enabled = visivel
+                    hl.FillColor = cor
+                    hl.OutlineColor = cor
+                else
+                    if DesenhosESP[jogador.UserId] then
+                        DesenhosESP[jogador.UserId].Enabled = false
+                    end
+                end
+            end
+        end
     else
-        Message("Error Occurred", "Invalid username", 5)
+        for _, hl in pairs(DesenhosESP) do
+            hl.Enabled = false
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if GetPuloInfinito() then
+        pcall(function()
+            local char = player.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+            end
+        end)
+    end
+end)
+
+task.spawn(function()
+    while Gui.Parent do
+        pcall(function()
+            local network = Stats:FindFirstChild("Network")
+            if network and network:FindFirstChild("ServerStatsItem") then
+                local pingItem = network.ServerStatsItem:FindFirstChild("Data Ping")
+                if pingItem then PingVal = math.floor(pingItem:GetValue()) end
+            end
+            if (not PingVal or PingVal == 0) and Stats.NetworkStats and Stats.NetworkStats.ServerPing then
+                PingVal = math.floor(Stats.NetworkStats.ServerPing)
+            end
+        end)
+        task.wait(1)
+    end
+end)
+
+local TempoInicio = os.time()
+RunService.Heartbeat:Connect(function()
+    local Passado = os.time() - TempoInicio
+    local H = math.floor(Passado / 3600)
+    local M = math.floor((Passado % 3600) / 60)
+    local S = Passado % 60
+    ValPing.Text = tostring(PingVal) .. "ms"
+    ValFPS.Text = tostring(FPS)
+    ValTempo.Text = H > 0 and string.format("%02d:%02d:%02d", H, M, S) or string.format("%02d:%02d", M, S)
+end)
+
+task.spawn(function()
+    while Gui.Parent do
+        pcall(function()
+            UserInputService:CaptureController()
+            UserInputService:ReleaseController()
+        end)
+        task.wait(20)
     end
 end)
