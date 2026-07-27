@@ -61,13 +61,16 @@ Title="Xerife"
 -- =========================
 -- ABA ESP
 -- =========================
-local Aba_ESP = Window:Tab({
-Title="ESP"
-})
--- ✅ COLOQUE AS FUNÇÕES DAQUI DEPOIS
+local Aba_ESP = Window:Tab({Title="ESP"})
 
-
-
+-- ✅ COLOCA ESSE SEU CÓDIGO AQUI EXATAMENTE:
+local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
+Sec_ESP:Toggle({Title = "Ativar ESP", Default = false, Callback = function(s) ESP_ATIVO = s end})
+Sec_ESP:Toggle({Title = "🔪 Murderer", Default = true, Callback = function(s) ESP_Murderer = s end})
+Sec_ESP:Toggle({Title = "🔫 Xerife", Default = true, Callback = function(s) ESP_Xerife = s end})
+Sec_ESP:Toggle({Title = "🦸 Herói", Default = true, Callback = function(s) ESP_Heroi = s end})
+Sec_ESP:Toggle({Title = "👤 Inocente", Default = true, Callback = function(s) ESP_Inocente = s end})
+Sec_ESP:Toggle({Title = "🔫 Armas", Default = true, Callback = function(s) ESP_Arma = s end})
 
 -- =========================
 -- ABA FARM
