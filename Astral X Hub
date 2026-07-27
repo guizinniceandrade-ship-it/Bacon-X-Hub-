@@ -134,6 +134,12 @@ Title="Xerife"
 -- ABA ESP
 -- =========================
 
+local Aba_ESP = Window:Tab({Title="ESP"})
+local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
+
+Sec_ESP:Toggle({Title = "👤 Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
+Sec_ESP:Toggle({Title = "🔫 Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
+
 -- =========================
 -- ABA FARM
 -- =========================
@@ -260,8 +266,46 @@ end)
 -- =======================
 -- ESP
 -- =======================
+local function CriarBrilho(Jogador)
+    if not Jogador or not Jogador.Character then return end
+    if not Jogador.Character:FindFirstChild("Highlight") then
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight"
+        hl.Adornee = Jogador.Character
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineTransparency = 0
+        hl.Enabled = false
+        hl.Parent = Jogador.Character
+    end
+end
 
+local function EstaVivo(Jogador, listaCargos)
+    if not listaCargos or not listaCargos[Jogador.Name] then return false end
+    local Info = listaCargos[Jogador.Name]
+    return not Info.Killed and not Info.Dead
+end
 
+local function AtualizarArmas()
+    for _,Obj in pairs(workspace:GetDescendants()) do
+        if Obj.Name == "GunDrop" and Obj:IsA("BasePart") then
+            if ESP_Arma then
+                if not Obj:FindFirstChild("MarcaArma") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "MarcaArma"
+                    hl.FillTransparency = 1
+                    hl.OutlineColor = Color3.fromRGB(255,255,0)
+                    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    hl.Parent = Obj
+                end
+                Obj.MarcaArma.Enabled = true
+            else
+                if Obj:FindFirstChild("MarcaArma") then
+                    Obj.MarcaArma.Enabled = false
+                end
+            end
+        end
+    end
+end
 
 -- =========================
 -- SISTEMA FLING / EMPURRAR
