@@ -1,0 +1,288 @@
+-- ===========================================
+-- ASTRAL X HUB - VERSÃO LEVE E RÁPIDA
+-- ✅ Sem lag | Dados pedidos só uma vez
+-- ===========================================
+local WindUI = loadstring(game:HttpGet(
+"https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
+))()
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+-- =========================
+-- FUNÇÕES DE TELEPORTE
+-- =========================
+local function HRP()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
+
+local function GetMapa()
+    for _,v in ipairs(workspace:GetChildren()) do
+        if v:IsA("Model") then
+            if v:FindFirstChild("Spawns", true)
+            and v.Name ~= "Lobby"
+            and not string.find(v.Name:lower(),"lobby") then
+                return v
+            end
+        end
+    end
+end
+
+local function GetLobby()
+    for _,v in ipairs(workspace:GetChildren()) do
+        if v:IsA("Model") then
+            local n = v.Name:lower()
+            if string.find(n,"lobby") then
+                return v
+            end
+        end
+    end
+end
+
+local function GetBasePart(model)
+    if not model then return end
+    if model.PrimaryPart then return model.PrimaryPart end
+    return model:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function IrPartida()
+    local mapa = GetMapa()
+    if mapa then
+        local spawn = mapa:FindFirstChild("Spawns", true) or mapa:FindFirstChild("PlayerSpawns", true)
+        if spawn then
+            local part = spawn:FindFirstChildWhichIsA("BasePart", true)
+            if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+        end
+        local part = GetBasePart(mapa)
+        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+    end
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            HRP().CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,3)
+            return
+        end
+    end
+end
+
+local function IrLobby()
+    local lobby = GetLobby()
+    if lobby then
+        local part = GetBasePart(lobby)
+        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+    end
+end
+
+-- =========================
+-- VARIÁVEIS GERAIS
+-- =========================
+local walkSpeed = 16
+local jumpPower = 50
+local infJump = false
+local noclip = false
+local fly = false
+local flySpeed = 50
+
+local ESP_ATIVO = false
+local ESP_Arma = true
+local UltimoMapa = nil
+local Murder, Sheriff, Hero = nil, nil, nil
+local listaCargos = nil -- ✅ Guarda os dados para não pedir toda hora
+
+-- =========================
+-- JANELA PRINCIPAL
+-- =========================
+local Window = WindUI:CreateWindow({
+Title = "ASTRAL X Hub",
+Folder = "AstralX",
+Size = UDim2.fromOffset(580,460),
+MinSize = Vector2.new(560,350),
+MaxSize = Vector2.new(850,560),
+Transparent = true,
+Theme = "Dark",
+Resizable = true,
+SideBarWidth = 200,
+BackgroundImageTransparency = 0.42,
+HideSearchBar = true,
+ScrollBarEnabled = false,
+})
+
+-- =========================
+-- ABAS
+-- =========================
+local Aba_Assassino = Window:Tab({Title="Assassino"})
+local Aba_Xerife = Window:Tab({Title="Xerife"})
+
+local Aba_ESP = Window:Tab({Title="ESP"})
+local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
+Sec_ESP:Toggle({Title = "Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
+Sec_ESP:Toggle({Title = "Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
+
+local Aba_Farm = Window:Tab({Title="Farm"})
+
+local Aba_Diversao = Window:Tab({Title="Diversão"})
+local Sec_Jogador = Aba_Diversao:Section({Title="Controle do Jogador"})
+Sec_Jogador:Slider({Title="Velocidade de Andar", Value={Min=16, Max=250, Default=16}, Callback=function(v) walkSpeed = v end})
+Sec_Jogador:Slider({Title="Força do Pulo", Value={Min=50, Max=250, Default=50}, Callback=function(v) jumpPower = v end})
+Sec_Jogador:Toggle({Title="Pulo Infinito", Default=false, Callback=function(s) infJump = s end})
+Sec_Jogador:Toggle({Title="Atravessar Paredes (Noclip)", Default=false, Callback=function(s) noclip = s end})
+Sec_Jogador:Toggle({Title="Modo Voo", Default=false, Callback=function(s) fly = s end})
+Sec_Jogador:Slider({Title="Velocidade do Voo", Value={Min=20, Max=300, Default=50}, Callback=function(v) flySpeed = v end})
+
+local Aba_Teleporte = Window:Tab({Title="Teleporte"})
+local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
+Sec_Tele:Button({Title = "🏠 Ir para o Lobby", Callback = IrLobby})
+Sec_Tele:Button({Title = "📍 Ir para a Partida", Callback = IrPartida})
+
+-- ==========================
+-- FUNÇÕES AUXILIARES
+-- ==========================
+local function CriarBrilho(Jogador)
+    if not Jogador or not Jogador.Character then return end
+    if not Jogador.Character:FindFirstChild("Highlight") then
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight"
+        hl.Adornee = Jogador.Character
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineTransparency = 0
+        hl.Enabled = false
+        hl.Parent = Jogador.Character
+    end
+end
+
+local function EstaVivo(Jogador, lista)
+    if not lista or not lista[Jogador.Name] then return false end
+    local Info = lista[Jogador.Name]
+    return not Info.Killed and not Info.Dead
+end
+
+local function AtualizarArmas()
+    for _,Obj in pairs(workspace:GetDescendants()) do
+        if Obj.Name == "GunDrop" and Obj:IsA("BasePart") then
+            if ESP_Arma then
+                if not Obj:FindFirstChild("MarcaArma") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "MarcaArma"
+                    hl.FillTransparency = 1
+                    hl.OutlineColor = Color3.fromRGB(255,255,0)
+                    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    hl.Parent = Obj
+                end
+                Obj.MarcaArma.Enabled = true
+            else
+                if Obj:FindFirstChild("MarcaArma") then
+                    Obj.MarcaArma.Enabled = false
+                end
+            end
+        end
+    end
+end
+
+-- ==========================
+-- SISTEMA GERAL OTIMIZADO
+-- ==========================
+UIS.JumpRequest:Connect(function()
+    if infJump and player.Character then
+        local hum = player.Character:FindFirstChild("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+UIS.InputChanged:Connect(function(entrada, processado)
+    if processado or not fly then return end
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChild("Humanoid")
+    if not root or not hum then return end
+
+    local dir = Vector3.new()
+    if UIS:IsKeyDown(Enum.KeyCode.W) then dir += workspace.CurrentCamera.CFrame.LookVector end
+    if UIS:IsKeyDown(Enum.KeyCode.S) then dir -= workspace.CurrentCamera.CFrame.LookVector end
+    if UIS:IsKeyDown(Enum.KeyCode.A) then dir -= workspace.CurrentCamera.CFrame.RightVector end
+    if UIS:IsKeyDown(Enum.KeyCode.D) then dir += workspace.CurrentCamera.CFrame.RightVector end
+    if UIS:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
+    if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then dir += Vector3.new(0,-1,0) end
+
+    if dir.Magnitude > 0 then dir = dir.Unit end
+    root.Velocity = dir * flySpeed
+    hum.PlatformStand = true
+end)
+
+RunService.Stepped:Connect(function()
+    local char = player.Character
+    if not char then return end
+    local hum = char:FindFirstChild("Humanoid")
+    if not hum then return end
+
+    hum.WalkSpeed = walkSpeed
+    hum.JumpPower = jumpPower
+
+    if noclip then
+        for _,p in pairs(char:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = false end
+        end
+    else
+        for _,p in pairs(char:GetDescendants()) do
+            if p:IsA("BasePart") then p.CanCollide = true end
+        end
+    end
+
+    if fly then hum.PlatformStand = true end
+
+    -- ✅ ESP OTIMIZADO: SÓ PEDE DADOS QUANDO TROCA MAPA
+    pcall(function()
+        local MapaAtual = workspace:FindFirstChildWhichIsA("Model", true)
+        if MapaAtual and MapaAtual ~= UltimoMapa then
+            UltimoMapa = MapaAtual
+            Murder, Sheriff, Hero = nil, nil, nil
+            listaCargos = nil
+            local PegarDados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+            if PegarDados then listaCargos = PegarDados:InvokeServer() end
+        end
+
+        if not ESP_ATIVO or not listaCargos then
+            for _,J in pairs(Players:GetPlayers()) do
+                if J.Character and J.Character:FindFirstChild("Highlight") then
+                    J.Character.Highlight.Enabled = false
+                end
+            end
+            Murder, Sheriff, Hero = nil, nil, nil
+            return
+        end
+
+        Murder, Sheriff, Hero = nil, nil, nil
+        for Nome, DadosJogador in pairs(listaCargos) do
+            if DadosJogador.Role == "Murderer" then Murder = Nome
+            elseif DadosJogador.Role == "Sheriff" then Sheriff = Nome
+            elseif DadosJogador.Role == "Hero" then Hero = Nome end
+        end
+
+        for _,J in pairs(Players:GetPlayers()) do
+            if J == player then continue end
+            CriarBrilho(J)
+            local hl = J.Character:FindFirstChild("Highlight")
+            if not hl then continue end
+
+            if J.Name == Murder and EstaVivo(J, listaCargos) then
+                hl.FillColor = Color3.fromRGB(255, 40, 40)
+                hl.OutlineColor = Color3.fromRGB(255, 80, 80)
+            elseif J.Name == Sheriff and EstaVivo(J, listaCargos) then
+                hl.FillColor = Color3.fromRGB(40, 120, 255)
+                hl.OutlineColor = Color3.fromRGB(80, 150, 255)
+            elseif J.Name == Hero and EstaVivo(J, listaCargos) and Sheriff and not EstaVivo(Players[Sheriff], listaCargos) then
+                hl.FillColor = Color3.fromRGB(255, 215, 0)
+                hl.OutlineColor = Color3.fromRGB(255, 230, 50)
+            else
+                hl.FillColor = Color3.fromRGB(50, 255, 50)
+                hl.OutlineColor = Color3.fromRGB(80, 255, 80)
+            end
+
+            hl.Enabled = true
+        end
+
+        AtualizarArmas()
+    end)
+end)
