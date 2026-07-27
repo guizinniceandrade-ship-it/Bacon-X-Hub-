@@ -169,6 +169,35 @@ local function AtualizarArmas()
     end
 end
 
+-- ==========================
+-- FUNÇÕES DE TELEPORTE
+-- ==========================
+local function IrParaLobby()
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local Lobby = workspace:FindFirstChild("Lobby", true)
+    if Lobby then
+        local Alvo = Lobby:IsA("Model") and (Lobby.PrimaryPart or Lobby:FindFirstChildWhichIsA("BasePart")) or Lobby
+        if Alvo and Alvo:IsA("BasePart") then
+            root.CFrame = Alvo.CFrame + Vector3.new(0, 3, 0)
+        end
+    end
+end
+
+local function IrParaSpawn()
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local Spawn = workspace:FindFirstChild("Spawn", true)
+    if Spawn and Spawn:IsA("BasePart") then
+        root.CFrame = Spawn.CFrame + Vector3.new(0, 3, 0)
+    end
+end
 
 -- ==========================
 -- SISTEMA GERAL DE MOVIMENTO E ESP
