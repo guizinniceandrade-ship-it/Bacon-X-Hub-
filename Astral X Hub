@@ -159,6 +159,16 @@ local Aba_Farm = Window:Tab({Title="Farm"})
 local Sec_Farm = Aba_Farm:Section({Title = "Auto Farm MM2"})
 Sec_Farm:Toggle({Title = "Ativar Auto Farm", Default = false, Callback = function(s) AutoFarmAtivo = s end})
 
+-- ✅ BOTÃO ANTI-AFK PARA ABA FARM
+Sec_Farm:Button({
+    Title = "Ativar Anti-AFK",
+    Callback = function()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn", true))()
+        end)
+    end
+})
+
 -- =========================
 -- ABA LOCAL PLAYER / DIVERSÃO
 -- =========================
