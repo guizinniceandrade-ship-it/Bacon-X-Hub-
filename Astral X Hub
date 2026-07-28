@@ -1,11 +1,5 @@
 -- ===========================================
 -- ASTRAL X HUB - VERSÃO FINAL ESCOLHIDA
--- ✅ TUDO ORGANIZADO COM TÍTULOS CLAROS
--- ✅ ABA MARCADAS EXATAMENTE COMO PEDIU
--- ✅ MOVIMENTO LERP SUAVE | SEM TELEPORTE
--- ✅ AUTO FARM ATÉ 40 MOEDAS
--- ✅ ESP SÓ GUNDROP + GUN
--- ✅ SLIDERS FUNCIONANDO
 -- ===========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
