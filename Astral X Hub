@@ -178,8 +178,41 @@ Sec_Jogador:Toggle({
  Callback=function(s) infJump = s end
  })
 
- -- ✅ ADICIONE AQUI A NOVA SEÇÃO DA CÂMERA
+-- ✅ NOVA SEÇÃO: CONTROLE DA CÂMERA
+local Sec_Camera = Aba_Diversao:Section({Title="Controle da Câmera"})
 
+Sec_Camera:Toggle({
+Title="🔭 Zoom Infinito",
+Default=false,
+Callback=function(s) ZoomInfinito = s end
+})
+
+Sec_Camera:Toggle({
+Title="👁️ Câmera Atravessa Parede",
+Default=false,
+Callback=function(s) CameraAtravessaParede = s end
+})
+
+Sec_Camera:Slider({
+Title="📐 Campo de Visão (FOV)",
+Value={Min=70, Max=150, Default=70},
+Callback=function(v)
+    FOV_Atual = v
+    workspace.CurrentCamera.FieldOfView = v
+end
+})
+
+Sec_Camera:Slider({
+Title="🔍 Zoom Mínimo",
+Value={Min=0.5, Max=10, Default=0.5},
+Callback=function(v) player.CameraMinZoomDistance = v end
+})
+
+Sec_Camera:Slider({
+Title="🔎 Zoom Máximo",
+Value={Min=50, Max=500, Default=128},
+Callback=function(v) player.CameraMaxZoomDistance = v end
+})
 
 -- =========================
 -- ABA TELEPORTE
@@ -452,6 +485,27 @@ RunService.Stepped:Connect(function()
 end)
 
 -- ===========================================
- -- SISTEMA QUE FAZ A CÂMERA FUNCIONAR
- -- ===========================================
- 
+-- SISTEMA DA CÂMERA 100% FUNCIONAL
+-- ===========================================
+RunService.RenderStepped:Connect(function()
+    local Cam = workspace.CurrentCamera
+
+    -- ✅ ZOOM INFINITO
+    if ZoomInfinito then
+        player.CameraMaxZoomDistance = 1000000
+    else
+        player.CameraMaxZoomDistance = ZoomMax_Padrao
+    end
+
+    -- ✅ CÂMERA ATRAVESSA PAREDE
+    if CameraAtravessaParede then
+        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
+    else
+        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
+    end
+
+    -- ✅ TRAVA O FOV ESCOLHIDO
+    if Cam.FieldOfView ~= FOV_Atual then
+        Cam.FieldOfView = FOV_Atual
+    end
+end)
