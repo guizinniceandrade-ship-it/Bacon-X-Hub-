@@ -88,6 +88,10 @@ local UltimoMapa = nil
 local UltimoCargos = {}
 local Murder, Sheriff, Hero = nil, nil, nil
 
+local CameraSemLimite = false
+ local CameraNoclip = false
+ local FOV_Atual = 70
+
 -- ===========================================
 -- VARIÁVEIS EXCLUSIVAS DO AUTO FARM
 -- ===========================================
