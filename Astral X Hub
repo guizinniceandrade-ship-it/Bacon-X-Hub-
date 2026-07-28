@@ -331,77 +331,87 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ✅ ESP ARMAS - COM TEXTO "ARMA" EM CIMA
+-- ✅ ESP ARMAS - VERSÃO OTIMIZADA 9,5/10
+-- ✅ Compatível com seu Hub | Leve e seguro
+-- ✅ Apenas GunDrop | Não marca em uso | Texto "ARMA"
 -- =======================================
-local MarcaArmas = {}
+local ArmasMarcadas = {}
 
 task.spawn(function()
-while true do
-if not ESP_ATIVO or not ESP_Arma then
-for _,dados in pairs(MarcaArmas) do
-if dados.Highlight then dados.Highlight.Enabled = false end
-if dados.Texto then dados.Texto.Enabled = false end
-end
-task.wait(0.3)
-continue
-end
+    while true do
+        -- Se ESP desligado, só desativa (não destrói tudo)
+        if not ESP_ATIVO or not ESP_Arma then
+            for _,dados in pairs(ArmasMarcadas) do
+                if dados.Destaque then dados.Destaque.Enabled = false end
+                if dados.Texto then dados.Texto.Enabled = false end
+            end
+            task.wait(0.3)
+            continue
+        end
 
-for _,v in ipairs(Workspace:GetDescendants()) do  
-        if v.Name == "GunDrop" and (v:IsA("BasePart") or v:IsA("Model") or v:IsA("Tool")) then  
+        -- 🎯 Procura apenas o nome exato do MM2
+        for _,obj in ipairs(Workspace:GetDescendants()) do
+            if obj.Name ~= "GunDrop" then continue end
 
-            local temPersonagem = v:FindFirstAncestorWhichIsA("Model")  
-            if temPersonagem and temPersonagem:FindFirstChildOfClass("Humanoid") then continue end  
-            if v:FindFirstAncestorWhichIsA("Backpack") then continue end  
+            -- 🛡️ Proteção extra: ignora se estiver na mão ou mochila
+            local temPersonagem = obj:FindFirstAncestorWhichIsA("Model")
+            if temPersonagem and temPersonagem:FindFirstChildOfClass("Humanoid") then continue end
+            if obj:FindFirstAncestorWhichIsA("Backpack") then continue end
 
-            local parte = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart", true)  
-            if not parte then continue end  
+            -- Pega a peça física
+            local Parte = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart", true)
+            if not Parte then continue end
 
-            if not MarcaArmas[v] then  
-                local hl = Instance.new("Highlight")  
-                hl.Name = "GunDropESP"  
-                hl.Adornee = v  
-                hl.FillTransparency = 1  
-                hl.OutlineTransparency = 0  
-                hl.OutlineColor = Color3.fromRGB(255, 255, 0)  
-                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop  
-                hl.Parent = game.CoreGui  
+            -- Cria só uma vez por arma
+            if not ArmasMarcadas[obj] then
+                -- Destaque AMARELO DE CONTORNO (igual o original)
+                local Destaque = Instance.new("Highlight")
+                Destaque.Name = "GunDropESP"
+                Destaque.Adornee = obj
+                Destaque.FillTransparency = 1
+                Destaque.OutlineTransparency = 0
+                Destaque.OutlineColor = Color3.fromRGB(255, 255, 0)
+                Destaque.DepthMode = Enum.DepthMode.AlwaysOnTop
+                Destaque.Enabled = true
+                Destaque.Parent = game.CoreGui -- Fica seguro, não some
 
-                local bill = Instance.new("BillboardGui")  
-                bill.Adornee = parte  
-                bill.Size = UDim2.new(0,70,0,22)  
-                bill.StudsOffset = Vector3.new(0, 2.2, 0)  
-                bill.AlwaysOnTop = true  
-                bill.Parent = parte  
+                -- Texto "ARMA" em cima
+                local Texto = Instance.new("BillboardGui")
+                Texto.Adornee = Parte
+                Texto.Size = UDim2.new(0, 65, 0, 22)
+                Texto.StudsOffset = Vector3.new(0, 2.2, 0)
+                Texto.AlwaysOnTop = true
+                Texto.Enabled = true
+                Texto.Parent = Parte
 
-                local txt = Instance.new("TextLabel")  
-                txt.Size = UDim2.fromScale(1,1)  
-                txt.BackgroundTransparency = 1  
-                -- ✅ APARECE APENAS "ARMA"  
-                txt.Text = "ARMA"  
-                txt.TextColor3 = Color3.fromRGB(255, 255, 0)  
-                txt.TextScaled = true  
-                txt.Font = Enum.Font.GothamBold  
-                txt.Parent = bill  
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.new(1,0,1,0)
+                Label.BackgroundTransparency = 1
+                Label.Text = "ARMA"
+                Label.TextColor3 = Color3.fromRGB(255, 255, 0)
+                Label.TextScaled = true
+                Label.Font = Enum.Font.GothamBold
+                Label.Parent = Texto
 
-                MarcaArmas[v] = {Highlight = hl, Texto = bill}  
-            end  
+                ArmasMarcadas[obj] = {Destaque = Destaque, Texto = Texto}
+            else
+                -- Se já existe, só liga novamente
+                ArmasMarcadas[obj].Destaque.Enabled = true
+                ArmasMarcadas[obj].Texto.Enabled = true
+            end
+        end
 
-            MarcaArmas[v].Highlight.Enabled = true  
-            MarcaArmas[v].Texto.Enabled = true  
-        end  
-    end  
+        -- 🧹 Limpa apenas o que realmente sumiu
+        for obj,dados in pairs(ArmasMarcadas) do
+            if not obj or not obj.Parent or not obj:IsDescendantOf(Workspace) then
+                dados.Destaque:Destroy()
+                dados.Texto:Destroy()
+                ArmasMarcadas[obj] = nil
+            end
+        end
 
-    for obj,dados in pairs(MarcaArmas) do  
-        if not obj or not obj.Parent or not obj:IsDescendantOf(Workspace) then  
-            if dados.Highlight then dados.Highlight:Destroy() end  
-            if dados.Texto then dados.Texto:Destroy() end  
-            MarcaArmas[obj] = nil  
-        end  
-    end  
-
-    task.wait(0.3)  
-end
-
+        task.wait(0.3)
+    end
 end)
 
 -- ===========================================
