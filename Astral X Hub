@@ -467,3 +467,28 @@ RunService.Stepped:Connect(function()
     hum.WalkSpeed = walkSpeed
     hum.JumpPower = jumpPower
 end)
+
+-- ===========================================
+ -- SISTEMA QUE FAZ A CÂMERA FUNCIONAR
+ -- ===========================================
+ RunService.RenderStepped:Connect(function()
+     local Cam = workspace.CurrentCamera
+     -- Câmera Sem Limite
+     if CameraSemLimite then
+         Cam.CameraType = Enum.CameraType.Scriptable
+         Cam.CameraSubject = player.Character
+         local ok, sc = pcall(function() return Cam:FindFirstChild("CameraScript", true) end)
+         if ok and sc then sc.Rotate = Vector2.new(math.huge, math.huge) end
+     else
+         Cam.CameraType = Enum.CameraType.Custom
+     end
+     -- Câmera Noclip
+     if CameraNoclip then
+         Cam.CameraSubject = player.Character
+         Cam.CameraType = Enum.CameraType.Custom
+     end
+     -- Mantém o FOV escolhido
+     if Cam.FieldOfView ~= FOV_Atual then
+         Cam.FieldOfView = FOV_Atual
+     end
+ end)
