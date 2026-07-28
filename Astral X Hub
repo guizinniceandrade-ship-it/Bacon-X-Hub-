@@ -136,6 +136,20 @@ local Aba_Xerife = Window:Tab({Title="Xerife"})
 -- =========================
 -- ABA ESP
 -- =========================
+local Aba_ESP = Window:Tab({Title="ESP"})
+local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
+
+Sec_ESP:Toggle({
+    Title = "Mostrar Jogadores",
+    Default = false,
+    Callback = function(s) ESP_ATIVO = s end
+})
+
+Sec_ESP:Toggle({
+    Title = "Marcar Armas",
+    Default = true,
+    Callback = function(s) ESP_Arma = s end
+})
 
 
 -- =========================
