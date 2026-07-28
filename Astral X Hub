@@ -424,6 +424,58 @@ task.spawn(function()
 end)
 
 -- ===========================================
+-- FUNÇÕES DO AUTO FARM - EXATAMENTE COMO O SEU
+-- ===========================================
+local function EmPartida()
+local char = player.Character
+if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then return false end
+for _, p in pairs(Players:GetPlayers()) do
+if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then return true end
+end
+return false
+end
+
+local function QuantidadeMochila()
+local ok, n = pcall(function()
+local g = player:WaitForChild("PlayerGui"):WaitForChild("MainGUI", 2)
+return tonumber(g.Game.CoinBags.Container.SnowToken.CurrencyFrame.Icon.Coins.Text) or 0
+end)
+return ok and n or 0
+end
+
+local function getNearestCoin(minhaPos)
+local melhorMoeda = nil
+local menorDist = math.huge
+local CoinContainer = Workspace:FindFirstChild("CoinContainer", true)
+if not CoinContainer then return nil end
+
+for _, v in ipairs(CoinContainer:GetChildren()) do  
+    if v:IsA("BasePart")  
+    and v.Name == "Coin_Server"  
+    and v:FindFirstChild("TouchInterest")  
+    and v:FindFirstChild("CoinVisual")  
+    and not collectedCoins[v]  
+    and not v:GetAttribute("Collected") then  
+
+        local dist = (minhaPos - v.Position).Magnitude  
+        if dist < CONFIG_FARM.alcance_maximo and dist < menorDist then  
+            menorDist = dist  
+            melhorMoeda = v  
+        end  
+    end  
+end  
+return melhorMoeda
+
+end
+
+local function MoedaValida(moeda)
+return moeda and moeda.Parent and moeda:IsA("BasePart")
+and moeda:FindFirstChild("TouchInterest")
+and moeda:FindFirstChild("CoinVisual")
+and not moeda:GetAttribute("Collected")
+end
+
+-- ===========================================
 -- LOOP PRINCIPAL DO AUTO FARM - EXATO
 -- ===========================================
 task.spawn(function()
