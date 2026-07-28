@@ -228,7 +228,7 @@ Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
 -- ===========================================
--- FUNÇÕES DO ESP - OTIMIZADAS SEM MUDAR LÓGICA
+-- FUNÇÕES DO ESP - SISTEMA COMPLETO CORRIGIDO
 -- ===========================================
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
@@ -250,9 +250,8 @@ local function EstaVivo(Jogador, listaCargos)
 end
 
 -- =================================
--- ✅ PEGA CARGOS APENAS 3X POR SEGUNDO (NÃO 60!)
+-- PEGA CARGOS
 -- =================================
-
 task.spawn(function()
     while true do
         if ESP_ATIVO then
@@ -275,9 +274,8 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ✅ ATUALIZA CORES APENAS 6X POR SEGUNDO
+-- ATUALIZA CORES DOS JOGADORES
 -- =======================================
-
 task.spawn(function()
     while true do
         if not ESP_ATIVO then
@@ -293,13 +291,21 @@ task.spawn(function()
                 local hl = J.Character:FindFirstChild("Highlight")
                 if not hl then continue end
 
+                local XerifeMorto = false
+                if Sheriff then
+                    local XerifePlayer = Players:FindFirstChild(Sheriff)
+                    if XerifePlayer and not EstaVivo(XerifePlayer, UltimoCargos) then
+                        XerifeMorto = true
+                    end
+                end
+
                 if J.Name == Murder and EstaVivo(J, UltimoCargos) then
                     hl.FillColor = Color3.fromRGB(255, 40, 40)
                     hl.OutlineColor = Color3.fromRGB(255, 80, 80)
                 elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
                     hl.FillColor = Color3.fromRGB(40, 120, 255)
                     hl.OutlineColor = Color3.fromRGB(80, 150, 255)
-                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and Sheriff and not EstaVivo(Players[Sheriff], UltimoCargos) then
+                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
                     hl.FillColor = Color3.fromRGB(255, 215, 0)
                     hl.OutlineColor = Color3.fromRGB(255, 230, 50)
                 else
@@ -315,20 +321,25 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ✅ ATUALIZA ARMAS APENAS 2X POR SEGUNDO
+-- ESP DAS ARMAS CORRIGIDO
 -- =======================================
-
 local MarcaArmas = {}
 task.spawn(function()
     while true do
-        for _,obj in pairs(MarcaArmas) do if obj then obj:Destroy() end end
-        table.clear(MarcaArmas)
+        if not ESP_ATIVO or not ESP_Arma then
+            for _,hl in pairs(MarcaArmas) do if hl then hl.Enabled = false end end
+            task.wait(0.5)
+            continue
+        end
 
-        if ESP_ATIVO and ESP_Arma then
-            for _,v in ipairs(Workspace:GetChildren()) do
-                if v:IsA("BasePart") and (v.Name == "GunDrop" or v.Name == "Gun") then
+        for _,v in ipairs(Workspace:GetDescendants()) do
+            if (v:IsA("Model") or v:IsA("Tool")) and (v.Name == "GunDrop" or v.Name == "Gun") then
+                local parte = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart", true)
+                if not parte then continue end
+
+                if not MarcaArmas[v] then
                     local hl = Instance.new("Highlight")
-                    hl.Adornee = v
+                    hl.Adornee = parte
                     hl.FillTransparency = 0.3
                     hl.FillColor = Color3.fromRGB(255,215,0)
                     hl.OutlineColor = Color3.fromRGB(255,255,0)
@@ -336,8 +347,17 @@ task.spawn(function()
                     hl.Parent = game.CoreGui
                     MarcaArmas[v] = hl
                 end
+                MarcaArmas[v].Enabled = true
             end
         end
+
+        for obj,hl in pairs(MarcaArmas) do
+            if not obj or not obj.Parent then
+                hl:Destroy()
+                MarcaArmas[obj] = nil
+            end
+        end
+
         task.wait(0.5)
     end
 end)
