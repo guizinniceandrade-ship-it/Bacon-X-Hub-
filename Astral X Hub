@@ -88,9 +88,11 @@ local UltimoMapa = nil
 local UltimoCargos = {}
 local Murder, Sheriff, Hero = nil, nil, nil
 
-local CameraSemLimite = false
- local CameraNoclip = false
- local FOV_Atual = 70
+local ZoomInfinito = false
+local CameraAtravessaParede = false
+local FOV_Atual = 70
+local ZoomMin_Padrao = 0.5
+local ZoomMax_Padrao = 128
 
 -- ===========================================
 -- VARIÁVEIS EXCLUSIVAS DO AUTO FARM
@@ -178,25 +180,6 @@ Sec_Jogador:Toggle({
 
  -- ✅ ADICIONE AQUI A NOVA SEÇÃO DA CÂMERA
 
- local Sec_Camera = Aba_Diversao:Section({Title="Controle da Câmera"})
- Sec_Camera:Toggle({
- Title="Câmera Sem Limite",
- Default=false,
- Callback=function(s) CameraSemLimite = s end
- })
- Sec_Camera:Toggle({
- Title="Câmera Noclip (Não bate parede)",
- Default=false,
- Callback=function(s) CameraNoclip = s end
- })
- Sec_Camera:Slider({
- Title="Campo de Visão (FOV)",
- Value={Min=70, Max=150, Default=70},
- Callback=function(v)
-     FOV_Atual = v
-     workspace.CurrentCamera.FieldOfView = v
- end
- })
 
 -- =========================
 -- ABA TELEPORTE
@@ -471,24 +454,4 @@ end)
 -- ===========================================
  -- SISTEMA QUE FAZ A CÂMERA FUNCIONAR
  -- ===========================================
- RunService.RenderStepped:Connect(function()
-     local Cam = workspace.CurrentCamera
-     -- Câmera Sem Limite
-     if CameraSemLimite then
-         Cam.CameraType = Enum.CameraType.Scriptable
-         Cam.CameraSubject = player.Character
-         local ok, sc = pcall(function() return Cam:FindFirstChild("CameraScript", true) end)
-         if ok and sc then sc.Rotate = Vector2.new(math.huge, math.huge) end
-     else
-         Cam.CameraType = Enum.CameraType.Custom
-     end
-     -- Câmera Noclip
-     if CameraNoclip then
-         Cam.CameraSubject = player.Character
-         Cam.CameraType = Enum.CameraType.Custom
-     end
-     -- Mantém o FOV escolhido
-     if Cam.FieldOfView ~= FOV_Atual then
-         Cam.FieldOfView = FOV_Atual
-     end
- end)
+ 
