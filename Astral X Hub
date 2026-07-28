@@ -1,8 +1,5 @@
 -- ===========================================
 -- ASTRAL X HUB - OTIMIZADO SEM LAG
--- ✅ TUDO IGUAL O SEU ORIGINAL
--- ✅ SEM MUDAR FUNÇÕES, NOMES OU LÓGICA
--- ✅ APENAS AJUSTADO PARA NÃO CAIR O FPS
 -- ===========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -174,8 +171,8 @@ Callback=function(s) infJump = s end
 -- =========================
 local Aba_Teleporte = Window:Tab({Title="Teleporte"})
 local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
-Sec_Tele:Button({Title = "🏠 Ir para o Lobby", Callback = IrLobby})
-Sec_Tele:Button({Title = "📍 Ir para a Partida", Callback = IrPartida})
+Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
+Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
 -- ===========================================
 -- FUNÇÕES DO ESP - OTIMIZADAS SEM MUDAR LÓGICA
@@ -199,7 +196,10 @@ local function EstaVivo(Jogador, listaCargos)
     return not Info.Killed and not Info.Dead
 end
 
+-- =================================
 -- ✅ PEGA CARGOS APENAS 3X POR SEGUNDO (NÃO 60!)
+-- =================================
+
 task.spawn(function()
     while true do
         if ESP_ATIVO then
@@ -221,7 +221,10 @@ task.spawn(function()
     end
 end)
 
+-- =======================================
 -- ✅ ATUALIZA CORES APENAS 6X POR SEGUNDO
+-- =======================================
+
 task.spawn(function()
     while true do
         if not ESP_ATIVO then
@@ -258,7 +261,10 @@ task.spawn(function()
     end
 end)
 
+-- =======================================
 -- ✅ ATUALIZA ARMAS APENAS 2X POR SEGUNDO
+-- =======================================
+
 local MarcaArmas = {}
 task.spawn(function()
     while true do
