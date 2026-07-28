@@ -136,10 +136,7 @@ local Aba_Xerife = Window:Tab({Title="Xerife"})
 -- =========================
 -- ABA ESP
 -- =========================
-local Aba_ESP = Window:Tab({Title="ESP"})
-local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
-Sec_ESP:Toggle({Title = "Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
-Sec_ESP:Toggle({Title = "Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
+
 
 -- =========================
 -- ABA FARM
@@ -172,29 +169,23 @@ Default=false,
 Callback=function(s) infJump = s end
 })
 
-Sec_Jogador:Toggle({
- Title="Pulo Infinito",
- Default=false,
- Callback=function(s) infJump = s end
- })
-
 -- ✅ NOVA SEÇÃO: CONTROLE DA CÂMERA
 local Sec_Camera = Aba_Diversao:Section({Title="Controle da Câmera"})
 
 Sec_Camera:Toggle({
-Title="🔭 Zoom Infinito",
+Title="Zoom Infinito",
 Default=false,
 Callback=function(s) ZoomInfinito = s end
 })
 
 Sec_Camera:Toggle({
-Title="👁️ Câmera Atravessa Parede",
+Title="Câmera Atravessa Parede",
 Default=false,
 Callback=function(s) CameraAtravessaParede = s end
 })
 
 Sec_Camera:Slider({
-Title="📐 Campo de Visão (FOV)",
+Title="Campo de Visão (FOV)",
 Value={Min=70, Max=150, Default=70},
 Callback=function(v)
     FOV_Atual = v
@@ -203,13 +194,13 @@ end
 })
 
 Sec_Camera:Slider({
-Title="🔍 Zoom Mínimo",
+Title="Zoom Mínimo",
 Value={Min=0.5, Max=10, Default=0.5},
 Callback=function(v) player.CameraMinZoomDistance = v end
 })
 
 Sec_Camera:Slider({
-Title="🔎 Zoom Máximo",
+Title="Zoom Máximo",
 Value={Min=50, Max=500, Default=128},
 Callback=function(v) player.CameraMaxZoomDistance = v end
 })
