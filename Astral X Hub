@@ -228,7 +228,9 @@ Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
 -- ===========================================
--- FUNÇÕES DO ESP - SISTEMA COMPLETO CORRIGIDO
+-- FUNÇÕES DO ESP - CORRIGIDO E SINCRONIZADO
+-- ✅ NÃO APAGA CARGOS SE A LISTA FOR INCOMPLETA
+-- ✅ HIGHLIGHT DAS ARMAS MAIS ESTÁVEL
 -- ===========================================
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
@@ -250,7 +252,7 @@ local function EstaVivo(Jogador, listaCargos)
 end
 
 -- =================================
--- PEGA CARGOS
+-- ✅ PEGA CARGOS - NÃO APAGA SE FALTAR ALGO
 -- =================================
 task.spawn(function()
     while true do
@@ -259,13 +261,21 @@ task.spawn(function()
             if PegarDados then
                 local ok, res = pcall(function() return PegarDados:InvokeServer() end)
                 if ok and type(res) == "table" then
-                    UltimoCargos = res
-                    Murder, Sheriff, Hero = nil, nil, nil
+                    -- Primeiro coleta os novos, SEM apagar os antigos ainda
+                    local novoMurder, novoSheriff, novoHero = nil, nil, nil
                     for Nome,DadosJogador in pairs(res) do
-                        if DadosJogador.Role == "Murderer" then Murder = Nome
-                        elseif DadosJogador.Role == "Sheriff" then Sheriff = Nome
-                        elseif DadosJogador.Role == "Hero" then Hero = Nome end
+                        if DadosJogador.Role == "Murderer" then novoMurder = Nome
+                        elseif DadosJogador.Role == "Sheriff" then novoSheriff = Nome
+                        elseif DadosJogador.Role == "Hero" then novoHero = Nome end
                     end
+
+                    -- Só atualiza se existir o novo, senão MANTÉM o velho
+                    if novoMurder then Murder = novoMurder end
+                    if novoSheriff then Sheriff = novoSheriff end
+                    if novoHero then Hero = novoHero end
+
+                    -- Atualiza a lista completa só quando tiver tudo
+                    UltimoCargos = res
                 end
             end
         end
@@ -321,7 +331,7 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ESP DAS ARMAS CORRIGIDO
+-- ✅ ESP ARMAS - ADORNE NO MODELO/TOOL, NÃO NA PEÇA
 -- =======================================
 local MarcaArmas = {}
 task.spawn(function()
@@ -334,12 +344,10 @@ task.spawn(function()
 
         for _,v in ipairs(Workspace:GetDescendants()) do
             if (v:IsA("Model") or v:IsA("Tool")) and (v.Name == "GunDrop" or v.Name == "Gun") then
-                local parte = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart", true)
-                if not parte then continue end
-
+                -- ✅ Adorne diretamente no objeto, não na parte solta
                 if not MarcaArmas[v] then
                     local hl = Instance.new("Highlight")
-                    hl.Adornee = parte
+                    hl.Adornee = v -- ANTES ERA parte, AGORA É O OBJETO TODO
                     hl.FillTransparency = 0.3
                     hl.FillColor = Color3.fromRGB(255,215,0)
                     hl.OutlineColor = Color3.fromRGB(255,255,0)
@@ -362,56 +370,6 @@ task.spawn(function()
     end
 end)
 
--- ===========================================
--- FUNÇÕES DO AUTO FARM - EXATAMENTE COMO O SEU
--- ===========================================
-local function EmPartida()
-    local char = player.Character
-    if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then return false end
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then return true end
-    end
-    return false
-end
-
-local function QuantidadeMochila()
-    local ok, n = pcall(function()
-        local g = player:WaitForChild("PlayerGui"):WaitForChild("MainGUI", 2)
-        return tonumber(g.Game.CoinBags.Container.SnowToken.CurrencyFrame.Icon.Coins.Text) or 0
-    end)
-    return ok and n or 0
-end
-
-local function getNearestCoin(minhaPos)
-    local melhorMoeda = nil
-    local menorDist = math.huge
-    local CoinContainer = Workspace:FindFirstChild("CoinContainer", true)
-    if not CoinContainer then return nil end
-
-    for _, v in ipairs(CoinContainer:GetChildren()) do
-        if v:IsA("BasePart")
-        and v.Name == "Coin_Server"
-        and v:FindFirstChild("TouchInterest")
-        and v:FindFirstChild("CoinVisual")
-        and not collectedCoins[v]
-        and not v:GetAttribute("Collected") then
-
-            local dist = (minhaPos - v.Position).Magnitude
-            if dist < CONFIG_FARM.alcance_maximo and dist < menorDist then
-                menorDist = dist
-                melhorMoeda = v
-            end
-        end
-    end
-    return melhorMoeda
-end
-
-local function MoedaValida(moeda)
-    return moeda and moeda.Parent and moeda:IsA("BasePart")
-    and moeda:FindFirstChild("TouchInterest")
-    and moeda:FindFirstChild("CoinVisual")
-    and not moeda:GetAttribute("Collected")
-end
 
 -- ===========================================
 -- LOOP PRINCIPAL DO AUTO FARM - EXATO
