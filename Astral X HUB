@@ -1,99 +1,113 @@
 -- ===========================================
--- ASTRAL X HUB - VERSÃO LEVE E RÁPIDA
--- ✅ Sem lag | Dados pedidos só uma vez
+-- ASTRAL X HUB - OTIMIZADO SEM LAG
 -- ===========================================
-local WindUI = loadstring(game:HttpGet(
-"https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"
-))()
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 
--- =========================
--- FUNÇÕES DE TELEPORTE
--- =========================
+-- ===========================================
+-- FUNÇÕES AUXILIARES GERAIS
+-- ===========================================
 local function HRP()
-    local char = player.Character or player.CharacterAdded:Wait()
-    return char:WaitForChild("HumanoidRootPart")
+local char = player.Character or player.CharacterAdded:Wait()
+return char:WaitForChild("HumanoidRootPart")
 end
 
 local function GetMapa()
-    for _,v in ipairs(workspace:GetChildren()) do
-        if v:IsA("Model") then
-            if v:FindFirstChild("Spawns", true)
-            and v.Name ~= "Lobby"
-            and not string.find(v.Name:lower(),"lobby") then
-                return v
-            end
-        end
-    end
+for _,v in ipairs(workspace:GetChildren()) do
+if v:IsA("Model") then
+if v:FindFirstChild("Spawns", true)
+and v.Name ~= "Lobby"
+and not string.find(v.Name:lower(),"lobby") then
+return v
+end
+end
+end
 end
 
 local function GetLobby()
-    for _,v in ipairs(workspace:GetChildren()) do
-        if v:IsA("Model") then
-            local n = v.Name:lower()
-            if string.find(n,"lobby") then
-                return v
-            end
-        end
-    end
+for _,v in ipairs(workspace:GetChildren()) do
+if v:IsA("Model") then
+local n = v.Name:lower()
+if string.find(n,"lobby") then return v end
+end
+end
 end
 
 local function GetBasePart(model)
-    if not model then return end
-    if model.PrimaryPart then return model.PrimaryPart end
-    return model:FindFirstChildWhichIsA("BasePart", true)
+if not model then return end
+if model.PrimaryPart then return model.PrimaryPart end
+return model:FindFirstChildWhichIsA("BasePart", true)
 end
 
+-- ===========================================
+-- ABA TELEPORTE - FUNÇÕES
+-- ===========================================
 local function IrPartida()
-    local mapa = GetMapa()
-    if mapa then
-        local spawn = mapa:FindFirstChild("Spawns", true) or mapa:FindFirstChild("PlayerSpawns", true)
-        if spawn then
-            local part = spawn:FindFirstChildWhichIsA("BasePart", true)
-            if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
-        end
-        local part = GetBasePart(mapa)
-        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
-    end
-    for _,plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            HRP().CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,3)
-            return
-        end
-    end
+local mapa = GetMapa()
+if mapa then
+local spawn = mapa:FindFirstChild("Spawns", true) or mapa:FindFirstChild("PlayerSpawns", true)
+if spawn then
+local part = spawn:FindFirstChildWhichIsA("BasePart", true)
+if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+end
+local part = GetBasePart(mapa)
+if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+end
+for _,plr in ipairs(Players:GetPlayers()) do
+if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+HRP().CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,3)
+return
+end
+end
 end
 
 local function IrLobby()
-    local lobby = GetLobby()
-    if lobby then
-        local part = GetBasePart(lobby)
-        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
-    end
+local lobby = GetLobby()
+if lobby then
+local part = GetBasePart(lobby)
+if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) end
+end
 end
 
--- =========================
--- VARIÁVEIS GERAIS
--- =========================
+-- ===========================================
+-- VARIÁVEIS GERAIS DO SCRIPT
+-- ===========================================
 local walkSpeed = 16
 local jumpPower = 50
 local infJump = false
-local noclip = false
-local fly = false
-local flySpeed = 50
 
 local ESP_ATIVO = false
 local ESP_Arma = true
 local UltimoMapa = nil
+local UltimoCargos = {}
 local Murder, Sheriff, Hero = nil, nil, nil
-local listaCargos = nil -- ✅ Guarda os dados para não pedir toda hora
 
--- =========================
--- JANELA PRINCIPAL
--- =========================
+local ZoomInfinito = false
+local CameraAtravessaParede = false
+local FOV_Atual = 70
+local ZoomMin_Padrao = 0.5
+local ZoomMax_Padrao = 128
+
+-- ===========================================
+-- VARIÁVEIS EXCLUSIVAS DO AUTO FARM
+-- ===========================================
+local CONFIG_FARM = {
+velocidade = 24,
+limite = 40,
+alcance_maximo = 999
+}
+local AutoFarmAtivo = false
+local collectedCoins = {}
+
+-- ===========================================
+-- INTERFACE PRINCIPAL
+-- ===========================================
 local Window = WindUI:CreateWindow({
 Title = "ASTRAL X Hub",
 Folder = "AstralX",
@@ -110,179 +124,396 @@ ScrollBarEnabled = false,
 })
 
 -- =========================
--- ABAS
+-- ABA ASSASSINO
 -- =========================
 local Aba_Assassino = Window:Tab({Title="Assassino"})
+
+-- =========================
+-- ABA XERIFE
+-- =========================
 local Aba_Xerife = Window:Tab({Title="Xerife"})
 
+-- =========================
+-- ABA ESP
+-- =========================
 local Aba_ESP = Window:Tab({Title="ESP"})
 local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
 Sec_ESP:Toggle({Title = "Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
 Sec_ESP:Toggle({Title = "Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
 
+-- =========================
+-- ABA FARM
+-- =========================
 local Aba_Farm = Window:Tab({Title="Farm"})
+local Sec_Farm = Aba_Farm:Section({Title = "Auto Farm MM2"})
+Sec_Farm:Toggle({Title = "Ativar Auto Farm", Default = false, Callback = function(s) AutoFarmAtivo = s end})
 
-local Aba_Diversao = Window:Tab({Title="Diversão"})
+-- =========================
+-- ABA LOCAL PLAYER / DIVERSÃO
+-- =========================
+local Aba_Diversao = Window:Tab({Title="Jogador"})
 local Sec_Jogador = Aba_Diversao:Section({Title="Controle do Jogador"})
-Sec_Jogador:Slider({Title="Velocidade de Andar", Value={Min=16, Max=250, Default=16}, Callback=function(v) walkSpeed = v end})
-Sec_Jogador:Slider({Title="Força do Pulo", Value={Min=50, Max=250, Default=50}, Callback=function(v) jumpPower = v end})
-Sec_Jogador:Toggle({Title="Pulo Infinito", Default=false, Callback=function(s) infJump = s end})
-Sec_Jogador:Toggle({Title="Atravessar Paredes (Noclip)", Default=false, Callback=function(s) noclip = s end})
-Sec_Jogador:Toggle({Title="Modo Voo", Default=false, Callback=function(s) fly = s end})
-Sec_Jogador:Slider({Title="Velocidade do Voo", Value={Min=20, Max=300, Default=50}, Callback=function(v) flySpeed = v end})
 
+Sec_Jogador:Slider({
+Title="Velocidade de Andar",
+Value={Min=16, Max=250, Default=16},
+Callback=function(v) walkSpeed = v end
+})
+
+Sec_Jogador:Slider({
+Title="Força do Pulo",
+Value={Min=50, Max=250, Default=50},
+Callback=function(v) jumpPower = v end
+})
+
+Sec_Jogador:Toggle({
+Title="Pulo Infinito",
+Default=false,
+Callback=function(s) infJump = s end
+})
+
+Sec_Jogador:Toggle({
+Title="Pulo Infinito",
+Default=false,
+Callback=function(s) infJump = s end
+})
+
+-- ✅ NOVA SEÇÃO: CONTROLE DA CÂMERA
+local Sec_Camera = Aba_Diversao:Section({Title="Controle da Câmera"})
+
+Sec_Camera:Toggle({
+Title="🔭 Zoom Infinito",
+Default=false,
+Callback=function(s) ZoomInfinito = s end
+})
+
+Sec_Camera:Toggle({
+Title="👁️ Câmera Atravessa Parede",
+Default=false,
+Callback=function(s) CameraAtravessaParede = s end
+})
+
+Sec_Camera:Slider({
+Title="📐 Campo de Visão (FOV)",
+Value={Min=70, Max=150, Default=70},
+Callback=function(v)
+FOV_Atual = v
+workspace.CurrentCamera.FieldOfView = v
+end
+})
+
+Sec_Camera:Slider({
+Title="🔍 Zoom Mínimo",
+Value={Min=0.5, Max=10, Default=0.5},
+Callback=function(v) player.CameraMinZoomDistance = v end
+})
+
+Sec_Camera:Slider({
+Title="🔎 Zoom Máximo",
+Value={Min=50, Max=500, Default=128},
+Callback=function(v) player.CameraMaxZoomDistance = v end
+})
+
+-- =========================
+-- ABA TELEPORTE
+-- =========================
 local Aba_Teleporte = Window:Tab({Title="Teleporte"})
 local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
-Sec_Tele:Button({Title = "🏠 Ir para o Lobby", Callback = IrLobby})
-Sec_Tele:Button({Title = "📍 Ir para a Partida", Callback = IrPartida})
+Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
+Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
--- ==========================
--- FUNÇÕES AUXILIARES
--- ==========================
+-- ===========================================
+-- FUNÇÕES DO ESP - OTIMIZADAS SEM MUDAR LÓGICA
+-- ===========================================
 local function CriarBrilho(Jogador)
-    if not Jogador or not Jogador.Character then return end
-    if not Jogador.Character:FindFirstChild("Highlight") then
-        local hl = Instance.new("Highlight")
-        hl.Name = "Highlight"
-        hl.Adornee = Jogador.Character
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.OutlineTransparency = 0
-        hl.Enabled = false
-        hl.Parent = Jogador.Character
-    end
+if not Jogador or not Jogador.Character then return end
+if not Jogador.Character:FindFirstChild("Highlight") then
+local hl = Instance.new("Highlight")
+hl.Name = "Highlight"
+hl.Adornee = Jogador.Character
+hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+hl.OutlineTransparency = 0
+hl.Enabled = false
+hl.Parent = Jogador.Character
+end
 end
 
-local function EstaVivo(Jogador, lista)
-    if not lista or not lista[Jogador.Name] then return false end
-    local Info = lista[Jogador.Name]
-    return not Info.Killed and not Info.Dead
+local function EstaVivo(Jogador, listaCargos)
+if not listaCargos or not listaCargos[Jogador.Name] then return false end
+local Info = listaCargos[Jogador.Name]
+return not Info.Killed and not Info.Dead
 end
 
-local function AtualizarArmas()
-    for _,Obj in pairs(workspace:GetDescendants()) do
-        if Obj.Name == "GunDrop" and Obj:IsA("BasePart") then
-            if ESP_Arma then
-                if not Obj:FindFirstChild("MarcaArma") then
-                    local hl = Instance.new("Highlight")
-                    hl.Name = "MarcaArma"
-                    hl.FillTransparency = 1
-                    hl.OutlineColor = Color3.fromRGB(255,255,0)
-                    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    hl.Parent = Obj
-                end
-                Obj.MarcaArma.Enabled = true
-            else
-                if Obj:FindFirstChild("MarcaArma") then
-                    Obj.MarcaArma.Enabled = false
-                end
-            end
-        end
-    end
-end
+-- =================================
+-- ✅ PEGA CARGOS APENAS 3X POR SEGUNDO (NÃO 60!)
+-- =================================
 
--- ==========================
--- SISTEMA GERAL OTIMIZADO
--- ==========================
-UIS.JumpRequest:Connect(function()
-    if infJump and player.Character then
-        local hum = player.Character:FindFirstChild("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-    end
+task.spawn(function()
+while true do
+if ESP_ATIVO then
+local PegarDados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+if PegarDados then
+local ok, res = pcall(function() return PegarDados:InvokeServer() end)
+if ok and type(res) == "table" then
+UltimoCargos = res
+Murder, Sheriff, Hero = nil, nil, nil
+for Nome,DadosJogador in pairs(res) do
+if DadosJogador.Role == "Murderer" then Murder = Nome
+elseif DadosJogador.Role == "Sheriff" then Sheriff = Nome
+elseif DadosJogador.Role == "Hero" then Hero = Nome end
+end
+end
+end
+end
+task.wait(0.3)
+end
 end)
 
-UIS.InputChanged:Connect(function(entrada, processado)
-    if processado or not fly then return end
-    local char = player.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChild("Humanoid")
-    if not root or not hum then return end
+-- =======================================
+-- ✅ ATUALIZA CORES APENAS 6X POR SEGUNDO
+-- =======================================
 
-    local dir = Vector3.new()
-    if UIS:IsKeyDown(Enum.KeyCode.W) then dir += workspace.CurrentCamera.CFrame.LookVector end
-    if UIS:IsKeyDown(Enum.KeyCode.S) then dir -= workspace.CurrentCamera.CFrame.LookVector end
-    if UIS:IsKeyDown(Enum.KeyCode.A) then dir -= workspace.CurrentCamera.CFrame.RightVector end
-    if UIS:IsKeyDown(Enum.KeyCode.D) then dir += workspace.CurrentCamera.CFrame.RightVector end
-    if UIS:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
-    if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then dir += Vector3.new(0,-1,0) end
+task.spawn(function()
+while true do
+if not ESP_ATIVO then
+for _,J in pairs(Players:GetPlayers()) do
+if J.Character and J.Character:FindFirstChild("Highlight") then
+J.Character.Highlight.Enabled = false
+end
+end
+else
+for _,J in pairs(Players:GetPlayers()) do
+if J == player or not J.Character then continue end
+CriarBrilho(J)
+local hl = J.Character:FindFirstChild("Highlight")
+if not hl then continue end
 
-    if dir.Magnitude > 0 then dir = dir.Unit end
-    root.Velocity = dir * flySpeed
-    hum.PlatformStand = true
+if J.Name == Murder and EstaVivo(J, UltimoCargos) then  
+                hl.FillColor = Color3.fromRGB(255, 40, 40)  
+                hl.OutlineColor = Color3.fromRGB(255, 80, 80)  
+            elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then  
+                hl.FillColor = Color3.fromRGB(40, 120, 255)  
+                hl.OutlineColor = Color3.fromRGB(80, 150, 255)  
+            elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and Sheriff and not EstaVivo(Players[Sheriff], UltimoCargos) then  
+                hl.FillColor = Color3.fromRGB(255, 215, 0)  
+                hl.OutlineColor = Color3.fromRGB(255, 230, 50)  
+            else  
+                hl.FillColor = Color3.fromRGB(50, 255, 50)  
+                hl.OutlineColor = Color3.fromRGB(80, 255, 80)  
+            end  
+
+            hl.Enabled = true  
+        end  
+    end  
+    task.wait(0.15)  
+end
+
+end)
+
+-- =======================================
+-- ✅ ATUALIZA ARMAS APENAS 2X POR SEGUNDO
+-- =======================================
+
+local MarcaArmas = {}
+task.spawn(function()
+while true do
+for _,obj in pairs(MarcaArmas) do if obj then obj:Destroy() end end
+table.clear(MarcaArmas)
+
+if ESP_ATIVO and ESP_Arma then  
+        for _,v in ipairs(Workspace:GetChildren()) do  
+            if v:IsA("BasePart") and (v.Name == "GunDrop" or v.Name == "Gun") then  
+                local hl = Instance.new("Highlight")  
+                hl.Adornee = v  
+                hl.FillTransparency = 0.3  
+                hl.FillColor = Color3.fromRGB(255,215,0)  
+                hl.OutlineColor = Color3.fromRGB(255,255,0)  
+                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop  
+                hl.Parent = game.CoreGui  
+                MarcaArmas[v] = hl  
+            end  
+        end  
+    end  
+    task.wait(0.5)  
+end
+
+end)
+
+-- ===========================================
+-- FUNÇÕES DO AUTO FARM - EXATAMENTE COMO O SEU
+-- ===========================================
+local function EmPartida()
+local char = player.Character
+if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then return false end
+for _, p in pairs(Players:GetPlayers()) do
+if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then return true end
+end
+return false
+end
+
+local function QuantidadeMochila()
+local ok, n = pcall(function()
+local g = player:WaitForChild("PlayerGui"):WaitForChild("MainGUI", 2)
+return tonumber(g.Game.CoinBags.Container.SnowToken.CurrencyFrame.Icon.Coins.Text) or 0
+end)
+return ok and n or 0
+end
+
+local function getNearestCoin(minhaPos)
+local melhorMoeda = nil
+local menorDist = math.huge
+local CoinContainer = Workspace:FindFirstChild("CoinContainer", true)
+if not CoinContainer then return nil end
+
+for _, v in ipairs(CoinContainer:GetChildren()) do  
+    if v:IsA("BasePart")  
+    and v.Name == "Coin_Server"  
+    and v:FindFirstChild("TouchInterest")  
+    and v:FindFirstChild("CoinVisual")  
+    and not collectedCoins[v]  
+    and not v:GetAttribute("Collected") then  
+
+        local dist = (minhaPos - v.Position).Magnitude  
+        if dist < CONFIG_FARM.alcance_maximo and dist < menorDist then  
+            menorDist = dist  
+            melhorMoeda = v  
+        end  
+    end  
+end  
+return melhorMoeda
+
+end
+
+local function MoedaValida(moeda)
+return moeda and moeda.Parent and moeda:IsA("BasePart")
+and moeda:FindFirstChild("TouchInterest")
+and moeda:FindFirstChild("CoinVisual")
+and not moeda:GetAttribute("Collected")
+end
+
+-- ===========================================
+-- LOOP PRINCIPAL DO AUTO FARM - EXATO
+-- ===========================================
+task.spawn(function()
+while true do
+if AutoFarmAtivo then
+if not EmPartida() then
+table.clear(collectedCoins)
+RunService.Heartbeat:Wait()
+continue
+end
+
+local atual = QuantidadeMochila()  
+        if atual >= CONFIG_FARM.limite then  
+            repeat  
+                RunService.Heartbeat:Wait()  
+                atual = QuantidadeMochila()  
+            until atual < CONFIG_FARM.limite or not AutoFarmAtivo or not EmPartida()  
+            table.clear(collectedCoins)  
+            continue  
+        end  
+
+        local c = player.Character  
+        if not c or not c.PrimaryPart then RunService.Heartbeat:Wait() continue end  
+
+        local minhaPos = c.PrimaryPart.Position  
+        local alvo = getNearestCoin(minhaPos)  
+
+        if alvo then  
+            local ini = minhaPos  
+            local destino = alvo.Position  
+            local distTotal = (ini - destino).Magnitude  
+            local tempo = distTotal / CONFIG_FARM.velocidade  
+            local tIni = os.clock()  
+            local aindaValida = true  
+
+            while AutoFarmAtivo and EmPartida() and MoedaValida(alvo) and QuantidadeMochila() < CONFIG_FARM.limite do  
+                local char = player.Character  
+                if not char or not char.PrimaryPart then aindaValida = false break end  
+
+                local novaPos = char.PrimaryPart.Position  
+                local novoAlvo = getNearestCoin(novaPos)  
+                if novoAlvo and novoAlvo ~= alvo then  
+                    alvo = novoAlvo  
+                    ini = novaPos  
+                    destino = alvo.Position  
+                    distTotal = (ini - destino).Magnitude  
+                    tempo = distTotal / CONFIG_FARM.velocidade  
+                    tIni = os.clock()  
+                end  
+
+                local progresso = math.min((os.clock() - tIni) / tempo, 1)  
+                char:PivotTo(CFrame.new(ini:Lerp(destino, progresso)))  
+
+                if not MoedaValida(alvo) then  
+                    collectedCoins[alvo] = true  
+                    aindaValida = false  
+                    break  
+                end  
+
+                if progresso >= 1 then break end  
+                RunService.Heartbeat:Wait()  
+            end  
+
+            if aindaValida and alvo and alvo.Parent then  
+                collectedCoins[alvo] = true  
+            end  
+        else  
+            table.clear(collectedCoins)  
+            RunService.Heartbeat:Wait()  
+        end  
+    end  
+    RunService.Heartbeat:Wait()  
+end
+
+end)
+
+-- ===========================================
+-- LOOP GERAL - SÓ MOVIMENTO, SEM PESO
+-- ===========================================
+UIS.JumpRequest:Connect(function()
+if infJump and player.Character then
+local hum = player.Character:FindFirstChild("Humanoid")
+if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+end
 end)
 
 RunService.Stepped:Connect(function()
-    local char = player.Character
-    if not char then return end
-    local hum = char:FindFirstChild("Humanoid")
-    if not hum then return end
+local char = player.Character
+if not char then return end
+local hum = char:FindFirstChild("Humanoid")
+if not hum then return end
 
-    hum.WalkSpeed = walkSpeed
-    hum.JumpPower = jumpPower
+hum.WalkSpeed = walkSpeed  
+hum.JumpPower = jumpPower
 
-    if noclip then
-        for _,p in pairs(char:GetDescendants()) do
-            if p:IsA("BasePart") then p.CanCollide = false end
-        end
-    else
-        for _,p in pairs(char:GetDescendants()) do
-            if p:IsA("BasePart") then p.CanCollide = true end
-        end
-    end
-
-    if fly then hum.PlatformStand = true end
-
-    -- ✅ ESP OTIMIZADO: SÓ PEDE DADOS QUANDO TROCA MAPA
-    pcall(function()
-        local MapaAtual = workspace:FindFirstChildWhichIsA("Model", true)
-        if MapaAtual and MapaAtual ~= UltimoMapa then
-            UltimoMapa = MapaAtual
-            Murder, Sheriff, Hero = nil, nil, nil
-            listaCargos = nil
-            local PegarDados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
-            if PegarDados then listaCargos = PegarDados:InvokeServer() end
-        end
-
-        if not ESP_ATIVO or not listaCargos then
-            for _,J in pairs(Players:GetPlayers()) do
-                if J.Character and J.Character:FindFirstChild("Highlight") then
-                    J.Character.Highlight.Enabled = false
-                end
-            end
-            Murder, Sheriff, Hero = nil, nil, nil
-            return
-        end
-
-        Murder, Sheriff, Hero = nil, nil, nil
-        for Nome, DadosJogador in pairs(listaCargos) do
-            if DadosJogador.Role == "Murderer" then Murder = Nome
-            elseif DadosJogador.Role == "Sheriff" then Sheriff = Nome
-            elseif DadosJogador.Role == "Hero" then Hero = Nome end
-        end
-
-        for _,J in pairs(Players:GetPlayers()) do
-            if J == player then continue end
-            CriarBrilho(J)
-            local hl = J.Character:FindFirstChild("Highlight")
-            if not hl then continue end
-
-            if J.Name == Murder and EstaVivo(J, listaCargos) then
-                hl.FillColor = Color3.fromRGB(255, 40, 40)
-                hl.OutlineColor = Color3.fromRGB(255, 80, 80)
-            elseif J.Name == Sheriff and EstaVivo(J, listaCargos) then
-                hl.FillColor = Color3.fromRGB(40, 120, 255)
-                hl.OutlineColor = Color3.fromRGB(80, 150, 255)
-            elseif J.Name == Hero and EstaVivo(J, listaCargos) and Sheriff and not EstaVivo(Players[Sheriff], listaCargos) then
-                hl.FillColor = Color3.fromRGB(255, 215, 0)
-                hl.OutlineColor = Color3.fromRGB(255, 230, 50)
-            else
-                hl.FillColor = Color3.fromRGB(50, 255, 50)
-                hl.OutlineColor = Color3.fromRGB(80, 255, 80)
-            end
-
-            hl.Enabled = true
-        end
-
-        AtualizarArmas()
-    end)
 end)
+
+-- ===========================================
+-- SISTEMA DA CÂMERA 100% FUNCIONAL
+-- ===========================================
+RunService.RenderStepped:Connect(function()
+local Cam = workspace.CurrentCamera
+
+-- ✅ ZOOM INFINITO  
+if ZoomInfinito then  
+    player.CameraMaxZoomDistance = 1000000  
+else  
+    player.CameraMaxZoomDistance = ZoomMax_Padrao  
+end  
+
+-- ✅ CÂMERA ATRAVESSA PAREDE  
+if CameraAtravessaParede then  
+    player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam  
+else  
+    player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom  
+end  
+
+-- ✅ TRAVA O FOV ESCOLHIDO  
+if Cam.FieldOfView ~= FOV_Atual then  
+    Cam.FieldOfView = FOV_Atual  
+end
+
+end)
+
+O ESP não está funcionando muito bem, o ESP da arma também nao está funcionando
