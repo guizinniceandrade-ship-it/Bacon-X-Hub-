@@ -331,37 +331,79 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ✅ ESP ARMAS - ADORNE NO MODELO/TOOL, NÃO NA PEÇA
+-- ✅ ESP ARMAS COMPLETO COM TEXTO
+-- ✅ DESTAQUE AMARELO + TEXTO "ARMA"
+-- ✅ IGNORA ENFEITES E VITRINES
 -- =======================================
 local MarcaArmas = {}
 task.spawn(function()
     while true do
         if not ESP_ATIVO or not ESP_Arma then
-            for _,hl in pairs(MarcaArmas) do if hl then hl.Enabled = false end end
+            for _,obj in pairs(MarcaArmas) do
+                if obj and obj.Highlight then obj.Highlight.Enabled = false end
+                if obj and obj.Texto then obj.Texto.Enabled = false end
+            end
             task.wait(0.5)
             continue
         end
 
+        local mapa = GetMapa()
+
         for _,v in ipairs(Workspace:GetDescendants()) do
-            if (v:IsA("Model") or v:IsA("Tool")) and (v.Name == "GunDrop" or v.Name == "Gun") then
-                -- ✅ Adorne diretamente no objeto, não na parte solta
+            if (v.Name == "GunDrop" or v.Name == "Gun")
+            and (v:IsA("Model") or v:IsA("Tool"))
+            and v:FindFirstChildWhichIsA("BasePart") then
+
+                if mapa and v:IsDescendantOf(mapa) then continue end
+
+                local parte = v:FindFirstChildWhichIsA("BasePart", true)
+                if not parte then continue end
+
+                -- Cria tudo só uma vez
                 if not MarcaArmas[v] then
                     local hl = Instance.new("Highlight")
-                    hl.Adornee = v -- ANTES ERA parte, AGORA É O OBJETO TODO
+                    hl.Adornee = v
                     hl.FillTransparency = 0.3
                     hl.FillColor = Color3.fromRGB(255,215,0)
                     hl.OutlineColor = Color3.fromRGB(255,255,0)
                     hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                     hl.Parent = game.CoreGui
-                    MarcaArmas[v] = hl
+
+                    local bill = Instance.new("BillboardGui")
+                    bill.Name = "NomeArmaESP"
+                    bill.Adornee = parte
+                    bill.Size = UDim2.new(0,100,0,30)
+                    bill.StudsOffset = Vector3.new(0, 2.5, 0)
+                    bill.AlwaysOnTop = true
+                    bill.Parent = parte
+
+                    local txt = Instance.new("TextLabel")
+                    txt.Size = UDim2.fromScale(1,1)
+                    txt.BackgroundTransparency = 1
+                    txt.Text = "🔫 ARMA"
+                    txt.TextColor3 = Color3.fromRGB(255,215,0)
+                    txt.TextStrokeTransparency = 0
+                    txt.TextScaled = true
+                    txt.Font = Enum.Font.GothamBold
+                    txt.Parent = bill
+
+                    MarcaArmas[v] = {
+                        Highlight = hl,
+                        Texto = bill
+                    }
                 end
-                MarcaArmas[v].Enabled = true
+
+                -- Liga tudo
+                MarcaArmas[v].Highlight.Enabled = true
+                MarcaArmas[v].Texto.Enabled = true
             end
         end
 
-        for obj,hl in pairs(MarcaArmas) do
+        -- Limpa o que sumiu
+        for obj,dados in pairs(MarcaArmas) do
             if not obj or not obj.Parent then
-                hl:Destroy()
+                if dados.Highlight then dados.Highlight:Destroy() end
+                if dados.Texto then dados.Texto:Destroy() end
                 MarcaArmas[obj] = nil
             end
         end
@@ -369,7 +411,6 @@ task.spawn(function()
         task.wait(0.5)
     end
 end)
-
 
 -- ===========================================
 -- LOOP PRINCIPAL DO AUTO FARM - EXATO
