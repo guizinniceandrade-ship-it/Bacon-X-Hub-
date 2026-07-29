@@ -241,31 +241,40 @@ local Aba_Teleporte = Window:Tab({Title="Teleporte"})
 local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
 Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
--- ===========================================
--- FUNÇÕES DO ESP - VERSÃO FINAL COMPLETA
--- ✅ JOGADORES: SEM PISCAR, CORES CERTAS
--- ✅ ARMAS: TOTALMENTE SEPARADAS, BOTÃO FUNCIONA
--- ✅ OTIMIZADO PARA CELULAR
--- ===========================================
 
--- CRIA BRILHO SEM FLASH DE COR PADRÃO
+
+-- ===========================================
+-- CÓDIGO ORIGINAL CORRIGIDO | SEM PISCAR
+-- ✅ Destaque SÓ NO CORPO, NÃO PEGA ARMA
+-- ✅ Só muda cor quando o cargo REALMENTE mudar
+-- ✅ Funciona perfeitamente ao renascer
+-- ===========================================
+local UltimoCargo = {} -- Guarda o último cargo para não repetir
+local Destaques = {} -- Guarda os destaques criados
+
+-- ✅ CRIA DESTAQUE SÓ NO HumanoidRootPart (NÃO PEGA ARMA)
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
-    -- Apaga velho antes de criar novo
-    if Jogador.Character:FindFirstChild("Highlight") then
-        Jogador.Character.Highlight:Destroy()
-    end
+    if Destaques[Jogador] then return end -- Já tem, não cria outro
+
+    local hrp = Jogador.Character:WaitForChild("HumanoidRootPart")
     local hl = Instance.new("Highlight")
     hl.Name = "Highlight"
-    hl.Adornee = Jogador.Character
+    hl.Adornee = hrp -- ✅ AQUI É A MUDANÇA PRINCIPAL: só na raiz, não em todo o personagem
     hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     hl.OutlineTransparency = 0
-    hl.FillTransparency = 0.5
-    -- Já define cor padrão na criação
-    hl.FillColor = Color3.fromRGB(50, 255, 50)
-    hl.OutlineColor = Color3.fromRGB(80, 255, 80)
     hl.Enabled = false
-    hl.Parent = Jogador.Character
+    hl.Parent = hrp
+
+    Destaques[Jogador] = hl
+
+    -- ✅ TRATA RENASCIMENTO AUTOMÁTICO
+    Jogador.CharacterAdded:Connect(function(novoChar)
+        task.wait(0.05)
+        Destaques[Jogador] = nil
+        UltimoCargo[Jogador] = nil
+        CriarBrilho(Jogador)
+    end)
 end
 
 local function EstaVivo(Jogador, listaCargos)
@@ -274,9 +283,7 @@ local function EstaVivo(Jogador, listaCargos)
     return not Info.Killed and not Info.Dead
 end
 
--- =================================
--- PEGA CARGOS - MANTIDO E ESTÁVEL
--- =================================
+-- ✅ PEGA CARGOS - MANTÉM SUA LÓGICA DE NÃO APAGAR ANTES DE TEMPO
 task.spawn(function()
     while true do
         if ESP_ATIVO then
@@ -290,9 +297,11 @@ task.spawn(function()
                         elseif DadosJogador.Role == "Sheriff" then novoSheriff = Nome
                         elseif DadosJogador.Role == "Hero" then novoHero = Nome end
                     end
+
                     if novoMurder then Murder = novoMurder end
                     if novoSheriff then Sheriff = novoSheriff end
                     if novoHero then Hero = novoHero end
+
                     UltimoCargos = res
                 end
             end
@@ -301,24 +310,18 @@ task.spawn(function()
     end
 end)
 
--- =======================================
--- ESP JOGADORES - SEM PISCAR
--- =======================================
+-- ✅ ATUALIZA CORES - SÓ MUDA SE O CARGO FOR DIFERENTE
 task.spawn(function()
-    local UltimoEstado = {} -- Guarda estado para não reescrever igual
     while true do
         if not ESP_ATIVO then
             for _,J in pairs(Players:GetPlayers()) do
-                if J.Character and J.Character:FindFirstChild("Highlight") then
-                    J.Character.Highlight.Enabled = false
-                    UltimoEstado[J] = nil
-                end
+                if Destaques[J] then Destaques[J].Enabled = false end
             end
         else
             for _,J in pairs(Players:GetPlayers()) do
-                if J == player or not J.Character then continue end
+                if J == player then continue end
                 CriarBrilho(J)
-                local hl = J.Character:FindFirstChild("Highlight")
+                local hl = Destaques[J]
                 if not hl then continue end
 
                 local XerifeMorto = false
@@ -329,39 +332,34 @@ task.spawn(function()
                     end
                 end
 
-                -- Define cor correta
-                local NovaCorPreenchimento, NovaCorContorno
-                if J.Name == Murder and EstaVivo(J, UltimoCargos) then
-                    NovaCorPreenchimento = Color3.fromRGB(255, 40, 40)
-                    NovaCorContorno = Color3.fromRGB(255, 80, 80)
-                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
-                    NovaCorPreenchimento = Color3.fromRGB(40, 120, 255)
-                    NovaCorContorno = Color3.fromRGB(80, 150, 255)
-                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
-                    NovaCorPreenchimento = Color3.fromRGB(255, 215, 0)
-                    NovaCorContorno = Color3.fromRGB(255, 230, 50)
-                else
-                    NovaCorPreenchimento = Color3.fromRGB(50, 255, 50)
-                    NovaCorContorno = Color3.fromRGB(80, 255, 80)
+                -- Define o cargo atual
+                local CargoAtual = "Inocente"
+                if J.Name == Murder and EstaVivo(J, UltimoCargos) then CargoAtual = "Assassino"
+                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then CargoAtual = "Xerife"
+                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then CargoAtual = "Heroi" end
+
+                -- ✅ SÓ MUDA A COR SE FOR DIFERENTE DA ÚLTIMA
+                if UltimoCargo[J] ~= CargoAtual then
+                    UltimoCargo[J] = CargoAtual
+                    if CargoAtual == "Assassino" then
+                        hl.FillColor = Color3.fromRGB(255, 40, 40)
+                        hl.OutlineColor = Color3.fromRGB(255, 80, 80)
+                    elseif CargoAtual == "Xerife" then
+                        hl.FillColor = Color3.fromRGB(40, 120, 255)
+                        hl.OutlineColor = Color3.fromRGB(80, 150, 255)
+                    elseif CargoAtual == "Heroi" then
+                        hl.FillColor = Color3.fromRGB(255, 215, 0)
+                        hl.OutlineColor = Color3.fromRGB(255, 230, 50)
+                    else
+                        hl.FillColor = Color3.fromRGB(50, 255, 50)
+                        hl.OutlineColor = Color3.fromRGB(80, 255, 80)
+                    end
                 end
 
-                -- ✅ SÓ MUDA SE FOR DIFERENTE
-                local Ultimo = UltimoEstado[J]
-                if not Ultimo or Ultimo.Preenchimento ~= NovaCorPreenchimento or Ultimo.Contorno ~= NovaCorContorno or not hl.Enabled then
-                    hl.FillColor = NovaCorPreenchimento
-                    hl.OutlineColor = NovaCorContorno
-                    hl.Enabled = true
-                    UltimoEstado[J] = {Preenchimento = NovaCorPreenchimento, Contorno = NovaCorContorno}
-                end
-            end
-            -- Limpa jogadores que saíram
-            for J in pairs(UltimoEstado) do
-                if not J or not J:IsDescendantOf(Players) then
-                    UltimoEstado[J] = nil
-                end
+                hl.Enabled = true
             end
         end
-        task.wait(0.2)
+        task.wait(0.15)
     end
 end)
 
