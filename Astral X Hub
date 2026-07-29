@@ -134,6 +134,19 @@ ScrollBarEnabled = false,
 local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 -- =========================
+-- ABA XERIFE 
+-- =========================
+local Aba_Xerife = Window:Tab({Titles="Xerife"})
+Sec_Xerife:Toggle({
+    Title = "🔇 Ativar Silent Aim",
+    Default = false,
+    Callback = function(s)
+        SilentAimAtivo = s
+        WindUI:Notify({Title="Silent Aim", Content = s and "✅ LIGADO - VAI SEMPRE NO ASSASSINO" or "❌ DESLIGADO", Duration=2})
+    end
+})
+
+-- =========================
 -- ABA ESP
 -- =========================
 local Aba_ESP = Window:Tab({Title="ESP"})
