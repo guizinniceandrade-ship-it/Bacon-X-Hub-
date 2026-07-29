@@ -133,6 +133,69 @@ ScrollBarEnabled = false,
 -- =========================
 local Aba_Assassino = Window:Tab({Title="Assassino"})
 
+-- =========================
+-- 🎯 PUXAR ALVO PARA A FACA
+-- ✅ USA O COMANDO KnifeThrown
+-- ✅ SÓ A PESSOA MAIS PRÓXIMA DENTRO DO RAIO
+-- =========================
+local PuxarAlvoFaca = false
+local RaioPuxada = 30
+
+-- INTERCEPTADOR DO COMANDO DA FACA
+local RawMetatable = getrawmetatable(game)
+local ChamadaOriginal = RawMetatable.__namecall
+setreadonly(RawMetatable, false)
+
+RawMetatable.__namecall = newcclosure(function(Obj, ...)
+    local Metodo = getnamecallmethod()
+    local Args = {...}
+
+    -- QUANDO JOGAR A FACA
+    if PuxarAlvoFaca and Metodo == "FireServer" and tostring(Obj) == "KnifeThrown" then
+        local PosicaoFaca = Args[1]
+        local MelhorAlvo, MenorDist = nil, math.huge
+
+        -- BUSCA APENAS QUEM ESTÁ DENTRO DO RAIO
+        for _, Jogador in pairs(Players:GetPlayers()) do
+            if Jogador == player or not Jogador.Character or not Jogador.Character:FindFirstChild("HumanoidRootPart") then continue end
+            if Jogador.Character.Humanoid.Health <= 0 then continue end
+
+            local Distancia = (PosicaoFaca - Jogador.Character.HumanoidRootPart.Position).Magnitude
+            if Distancia <= RaioPuxada and Distancia < MenorDist then
+                MenorDist = Distancia
+                MelhorAlvo = Jogador
+            end
+        end
+
+        -- SE ENCONTROU, ALTERA O ALVO PARA ELE
+        if MelhorAlvo then
+            Args[1] = MelhorAlvo.Character.HumanoidRootPart.Position + Vector3.new(0, 1.5, 0)
+            WindUI:Notify({Title="✅ Faca", Content="Alvo puxado: "..MelhorAlvo.Name, Duration=1.5})
+        end
+    end
+
+    return ChamadaOriginal(Obj, unpack(Args))
+end)
+
+setreadonly(RawMetatable, true)
+
+-- 🎛️ ADICIONE ESSES CONTROLES NA INTERFACE DA ABA ASSASSINO
+Sec_Assassino:Section({Title = "KnifeThrown"})
+
+Sec_Assassino:Toggle({
+    Title = "KnifeThrown",
+    Default = false,
+    Callback = function(s)
+        PuxarAlvoFaca = s
+        WindUI:Notify({Title="Puxar Alvo", Content = s and "✅ LIGADO — Faca busca o mais próximo" or "❌ DESLIGADO", Duration=2})
+    end
+})
+
+Sec_Assassino:Slider({
+    Title = "Raio de Busca",
+    Value = {Min=0, Max=100, Default=30},
+    Callback = function(v) RaioPuxada = v end
+})
 
 -- =========================
 -- ABA XERIFE - ATUALIZADA
