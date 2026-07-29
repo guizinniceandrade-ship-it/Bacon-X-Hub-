@@ -243,21 +243,25 @@ Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
 -- ===========================================
--- FUNÇÕES DO ESP - CORRIGIDO E SINCRONIZADO
--- ✅ NÃO APAGA CARGOS SE A LISTA FOR INCOMPLETA
--- ✅ HIGHLIGHT DAS ARMAS MAIS ESTÁVEL
+-- FUNÇÕES DO ESP - CORRIGIDO E SEPARADO
+-- ✅ JOGADORES NÃO MARCAM MAIS ARMAS
+-- ✅ BOTÃO DE ARMAS FUNCIONA INDEPENDENTE
 -- ===========================================
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
-    if not Jogador.Character:FindFirstChild("Highlight") then
-        local hl = Instance.new("Highlight")
-        hl.Name = "Highlight"
-        hl.Adornee = Jogador.Character
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.OutlineTransparency = 0
-        hl.Enabled = false
-        hl.Parent = Jogador.Character
+    -- Remove brilho antigo se houver
+    if Jogador.Character:FindFirstChild("Highlight") then
+        Jogador.Character.Highlight:Destroy()
     end
+    -- Cria brilho SOMENTE NO PERSONAGEM
+    local hl = Instance.new("Highlight")
+    hl.Name = "Highlight"
+    hl.Adornee = Jogador.Character
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.OutlineTransparency = 0
+    hl.FillTransparency = 0.5
+    hl.Enabled = false
+    hl.Parent = Jogador.Character
 end
 
 local function EstaVivo(Jogador, listaCargos)
@@ -267,7 +271,7 @@ local function EstaVivo(Jogador, listaCargos)
 end
 
 -- =================================
--- ✅ PEGA CARGOS - NÃO APAGA SE FALTAR ALGO
+-- PEGA CARGOS - MANTIDO COMO ESTAVA
 -- =================================
 task.spawn(function()
     while true do
@@ -276,20 +280,15 @@ task.spawn(function()
             if PegarDados then
                 local ok, res = pcall(function() return PegarDados:InvokeServer() end)
                 if ok and type(res) == "table" then
-                    -- Primeiro coleta os novos, SEM apagar os antigos ainda
                     local novoMurder, novoSheriff, novoHero = nil, nil, nil
                     for Nome,DadosJogador in pairs(res) do
                         if DadosJogador.Role == "Murderer" then novoMurder = Nome
                         elseif DadosJogador.Role == "Sheriff" then novoSheriff = Nome
                         elseif DadosJogador.Role == "Hero" then novoHero = Nome end
                     end
-
-                    -- Só atualiza se existir o novo, senão MANTÉM o velho
                     if novoMurder then Murder = novoMurder end
                     if novoSheriff then Sheriff = novoSheriff end
                     if novoHero then Hero = novoHero end
-
-                    -- Atualiza a lista completa só quando tiver tudo
                     UltimoCargos = res
                 end
             end
@@ -299,7 +298,7 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ATUALIZA CORES DOS JOGADORES
+-- ATUALIZAÇÃO ESP JOGADORES - ISOLADO
 -- =======================================
 task.spawn(function()
     while true do
@@ -315,7 +314,7 @@ task.spawn(function()
                 CriarBrilho(J)
                 local hl = J.Character:FindFirstChild("Highlight")
                 if not hl then continue end
-
+                
                 local XerifeMorto = false
                 if Sheriff then
                     local XerifePlayer = Players:FindFirstChild(Sheriff)
@@ -337,7 +336,6 @@ task.spawn(function()
                     hl.FillColor = Color3.fromRGB(50, 255, 50)
                     hl.OutlineColor = Color3.fromRGB(80, 255, 80)
                 end
-
                 hl.Enabled = true
             end
         end
@@ -346,16 +344,14 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ✅ ESP ARMAS - FINAL PRONTO PARA SEU HUB
--- ✅ Usa variáveis do seu script: ESP_ATIVO / ESP_Arma
--- ✅ SÓ MARCA O VERDADEIRO GunDrop DA PARTIDA
--- ✅ Ignora Lobby / Mostruário / Armas equipadas
+-- ESP ARMAS - TOTALMENTE INDEPENDENTE
+-- ✅ SÓ MARCA ARMAS CAÍDAS NO CHÃO
+-- ✅ NÃO APARECE QUANDO O BOTÃO ESTIVER DESLIGADO
 -- =======================================
 local MarcaArmas = {}
-
 task.spawn(function()
     while true do
-        -- Se desligado, só desativa visualmente (não apaga nada)
+        -- Se qualquer um dos dois estiver desligado, apaga o destaque
         if not ESP_ATIVO or not ESP_Arma then
             for _,dados in pairs(MarcaArmas) do
                 if dados.Destaque then dados.Destaque.Enabled = false end
@@ -365,37 +361,32 @@ task.spawn(function()
             continue
         end
 
-        -- Procura só o que importa
         for _,obj in ipairs(Workspace:GetDescendants()) do
             local Nome = obj.Name
             local Caminho = obj:GetFullName():lower()
-
-            -- 🎯 REGRA EXATA: só o GunDrop real da partida
+            
+            -- Só pega o GunDrop real da partida
             if Nome ~= "GunDrop" then continue end
             if Caminho:find("lobby") or Caminho:find("weapondisplays") or Caminho:find("prompt") then continue end
 
-            -- ❌ NÃO MARCA SE ESTIVER COM JOGADOR OU NA MOCHILA
+            -- ❌ IGNORA SE ESTIVER COM JOGADOR OU NA MOCHILA
             local TemPessoa = obj:FindFirstAncestorWhichIsA("Model")
             if TemPessoa and TemPessoa:FindFirstChildOfClass("Humanoid") then continue end
             if obj:FindFirstAncestorWhichIsA("Backpack") then continue end
 
-            -- Pega a peça física para anexar o texto
             local Parte = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart", true)
             if not Parte then continue end
 
-            -- CRIA SÓ UMA VEZ POR ARMA
             if not MarcaArmas[obj] then
-                -- Destaque amarelo de contorno
                 local Destaque = Instance.new("Highlight")
                 Destaque.Name = "GunDrop_ESP"
                 Destaque.Adornee = obj
                 Destaque.FillTransparency = 1
                 Destaque.OutlineTransparency = 0
-                Destaque.OutlineColor = Color3.fromRGB(255, 255, 0)
+                Destaque.OutlineColor = Color3.fromRGB(255, 255, 0) -- AMARELO EXATO
                 Destaque.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                 Destaque.Parent = game.CoreGui
 
-                -- Texto "ARMA" em cima
                 local Texto = Instance.new("BillboardGui")
                 Texto.Adornee = Parte
                 Texto.Size = UDim2.new(0, 65, 0, 22)
@@ -415,12 +406,11 @@ task.spawn(function()
                 MarcaArmas[obj] = {Destaque = Destaque, Texto = Texto}
             end
 
-            -- Ativa o destaque e texto
             MarcaArmas[obj].Destaque.Enabled = true
             MarcaArmas[obj].Texto.Enabled = true
         end
 
-        -- Limpa o que já foi coletado/sumiu
+        -- Limpa armas que já foram pegas
         for obj,dados in pairs(MarcaArmas) do
             if not obj or not obj.Parent or not obj:IsDescendantOf(Workspace) then
                 dados.Destaque:Destroy()
@@ -428,7 +418,6 @@ task.spawn(function()
                 MarcaArmas[obj] = nil
             end
         end
-
         task.wait(0.3)
     end
 end)
