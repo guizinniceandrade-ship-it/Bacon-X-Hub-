@@ -131,13 +131,13 @@ ScrollBarEnabled = false,
 -- =========================
 -- ABA ASSASSINO · KILL AURA
 -- =========================
-local Sec_KillAura = Aba_Assassino:Section({Title="Kill Aura a Puch"})
+local Sec_KillAura = Aba_Assassino:Section({Title="⚡ Kill Aura"})
 
 local AuraAtiva = false
-local AlcanceMax = 25 -- valor padrão
+local AlcanceMax = 25
 
 Sec_KillAura:Toggle({
-    Title = "Kill Aura",
+    Title = "Ativar Kill Aura",
     Default = false,
     Callback = function(s) AuraAtiva = s end
 })
@@ -148,7 +148,6 @@ Sec_KillAura:Slider({
     Callback = function(v) AlcanceMax = v end
 })
 
--- ✅ SISTEMA FUNCIONANDO
 task.spawn(function()
     while true do
         if not AuraAtiva then
@@ -165,28 +164,21 @@ task.spawn(function()
         local minhaFrente = meuChar.HumanoidRootPart.CFrame.LookVector
 
         for _, Jogador in pairs(Players:GetPlayers()) do
-            -- Ignora você e quem já morreu
             if Jogador == player then continue end
             if not Jogador.Character then continue end
             local alvoHRP = Jogador.Character:FindFirstChild("HumanoidRootPart")
             local alvoHum = Jogador.Character:FindFirstChild("Humanoid")
             if not alvoHRP or not alvoHum or alvoHum.Health <= 0 then continue end
 
-            -- Verifica se está dentro do alcance que você escolheu
             local distancia = (minhaPos - alvoHRP.Position).Magnitude
             if distancia <= AlcanceMax then
-                -- ✅ TRAZ DIRETO NA SUA FRENTE, SEM BUGAR
-                alvoHRP.CFrame = CFrame.new(
-                    minhaPos + minhaFrente * 3, -- 3 metros na sua frente
-                    minhaPos -- fica virado para você
-                )
+                alvoHRP.CFrame = CFrame.new(minhaPos + minhaFrente * 3, minhaPos)
             end
         end
 
         task.wait(0.15)
     end
 end)
-
 
 -- =========================
 -- ABA XERIFE
