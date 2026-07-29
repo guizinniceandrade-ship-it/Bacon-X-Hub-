@@ -131,7 +131,9 @@ ScrollBarEnabled = false,
 -- =========================
 -- ABA ASSASSINO · KILL AURA
 -- =========================
-local Sec_KillAura = Aba_Assassino:Section({Title="⚡ Kill Aura"})
+
+local Aba_Assassino = Winsow:Tab({Title="Assassino"})
+local Sec_KillAura = Aba_Assassino:Section({Title="Kill Aura"})
 
 local AuraAtiva = false
 local AlcanceMax = 25
