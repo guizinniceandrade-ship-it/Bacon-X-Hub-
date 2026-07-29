@@ -129,154 +129,137 @@ ScrollBarEnabled = false,
 })
 
 -- =========================
--- ABA ASSASSINO · HITBOX DA FACA (FINAL)
+-- ABA ASSASSINO · TODAS AS HITBOX
 -- =========================
-local Sec_Hitbox = Aba_Assassino:Section({Title="🔪 Hitbox da Faca"})
+local Aba_Assassino = Window:Tab({Title="Assassino"})
 
-local HitboxAtivo = false
-local TamanhoHit = 12
-local TamanhosOriginais = {}
-local FacaMonitorada = nil
+-- =====================================
+-- 🔪 1. HITBOX DA FACA (5 a 50)
+-- ✅ Atualiza ao mudar slider, salva tamanho original, sem bugs
+-- =====================================
+local Sec_HitboxFaca = Aba_Assassino:Section({Title="🔪 Hitbox da Faca"})
 
-local function AplicarTamanho()
-    if not HitboxAtivo or not FacaMonitorada then return end
-    for p, _ in pairs(TamanhosOriginais) do
+local HitboxFacaAtivo = false
+local TamanhoFaca = 12
+local OrigFaca = {}
+local FacaAtual = nil
+
+local function AplicarFaca()
+    if not HitboxFacaAtivo or not FacaAtual then return end
+    for p,_ in pairs(OrigFaca) do
         if p and p.Parent then
-            p.Size = Vector3.new(TamanhoHit, TamanhoHit, TamanhoHit)
+            p.Size = Vector3.new(TamanhoFaca, TamanhoFaca, TamanhoFaca)
             p.CanCollide = false
         end
     end
 end
 
-Sec_Hitbox:Toggle({
+Sec_HitboxFaca:Toggle({
     Title = "Ativar Hitbox",
     Default = false,
     Callback = function(s)
-        HitboxAtivo = s
+        HitboxFacaAtivo = s
         if not s then
-            for p, tam in pairs(TamanhosOriginais) do
-                if p and p.Parent then p.Size = tam end
-            end
-            table.clear(TamanhosOriginais)
-            FacaMonitorada = nil
+            for p,tam in pairs(OrigFaca) do if p and p.Parent then p.Size = tam end end
+            table.clear(OrigFaca)
+            FacaAtual = nil
         else
-            AplicarTamanho() -- ✅ Aplica imediatamente ao ligar
+            AplicarFaca()
         end
     end
 })
 
-Sec_Hitbox:Slider({
+Sec_HitboxFaca:Slider({
     Title = "Tamanho (5 a 50)",
     Value = {Min=5, Max=50, Default=12},
-    Callback = function(v)
-        TamanhoHit = v
-        AplicarTamanho() -- ✅ ATUALIZA MESMO COM A FACA JÁ EQUIPADA
-    end
+    Callback = function(v) TamanhoFaca = v AplicarFaca() end
 })
 
 task.spawn(function()
     while true do
         local c = player.Character
-        if not c then
-            table.clear(TamanhosOriginais)
-            FacaMonitorada = nil
-            task.wait(0.2)
-            continue
-        end
+        if not c then table.clear(OrigFaca) FacaAtual=nil task.wait(0.2) continue end
+        local faca = c:FindFirstChild("Knife",true) or player.Backpack:FindFirstChild("Knife")
+        if faca and faca.Parent==player.Backpack then faca.Parent=c end
 
-        local faca = c:FindFirstChild("Knife", true) or player.Backpack:FindFirstChild("Knife")
-        if faca and faca.Parent == player.Backpack then faca.Parent = c end
-
-        if faca and faca ~= FacaMonitorada then
-            FacaMonitorada = faca
-            table.clear(TamanhosOriginais)
-            for _, p in ipairs(faca:GetChildren()) do
-                if p:IsA("BasePart") then
-                    TamanhosOriginais[p] = p.Size
-                end
+        if faca and faca~=FacaAtual then
+            FacaAtual = faca
+            table.clear(OrigFaca)
+            for _,p in ipairs(faca:GetChildren()) do
+                if p:IsA("BasePart") then OrigFaca[p]=p.Size end
             end
-            AplicarTamanho() -- ✅ Aplica logo quando pega a faca
-        elseif not faca and FacaMonitorada then
-            for p, tam in pairs(TamanhosOriginais) do
-                if p and p.Parent then p.Size = tam end
-            end
-            table.clear(TamanhosOriginais)
-            FacaMonitorada = nil
+            AplicarFaca()
+        elseif not faca and FacaAtual then
+            for p,tam in pairs(OrigFaca) do if p and p.Parent then p.Size = tam end end
+            table.clear(OrigFaca)
+            FacaAtual=nil
         end
-
         task.wait(0.15)
     end
 end)
 
--- =========================
--- ABA ASSASSINO · KANIF (VERSÃO ESTÁVEL)
--- 📌 OBS: No MM2 o alcance real é definido pelo servidor.
--- Essa versão melhora a detecção visual/cliente sem causar bugs físicos.
--- =========================
+-- =====================================
+-- 🕷️ 2. KANIF — HITBOX 1000 (OUTROS JOGADORES)
+-- ✅ NÃO MEXE EM VOCÊ → SEM BUG DE POSIÇÃO
+-- ✅ AUMENTA CORPO SEM DEFORMAR DEMAIS
+-- =====================================
 local Sec_Kanif = Aba_Assassino:Section({Title="🕷️ Kanif"})
 
 local KanifAtivo = false
-local DadosJogadores = {}
+local OrigJogadores = {}
 
 Sec_Kanif:Toggle({
-    Title = "Hitbox Estendida",
+    Title = "Hitbox Gigante 1000",
     Default = false,
     Callback = function(s)
         KanifAtivo = s
         if not s then
-            for plr, dados in pairs(DadosJogadores) do
-                if plr and plr.Character and dados.Root then
-                    dados.Root.Size = dados.Original
+            for plr,dados in pairs(OrigJogadores) do
+                if plr and plr.Character then
+                    for nome,tam in pairs(dados) do
+                        local p = plr.Character:FindFirstChild(nome)
+                        if p and p:IsA("BasePart") then p.Size = tam end
+                    end
                 end
             end
-            table.clear(DadosJogadores)
+            table.clear(OrigJogadores)
         end
     end
 })
 
 task.spawn(function()
     while true do
-        if not KanifAtivo then
-            task.wait(0.5)
-            continue
-        end
+        if not KanifAtivo then task.wait(0.5) continue end
+        for _,j in pairs(Players:GetPlayers()) do
+            if j==player then OrigJogadores[j]=nil continue end
+            if not j.Character then OrigJogadores[j]=nil continue end
 
-        for _, Jogador in pairs(Players:GetPlayers()) do
-            if Jogador == player then
-                DadosJogadores[Jogador] = nil
-                continue
-            end
-            if not Jogador.Character then
-                DadosJogadores[Jogador] = nil
-                continue
-            end
-
-            local Root = Jogador.Character:FindFirstChild("HumanoidRootPart")
-            if not Root then continue end
-
-            if not DadosJogadores[Jogador] then
-                DadosJogadores[Jogador] = {
-                    Root = Root,
-                    Original = Root.Size
-                }
+            if not OrigJogadores[j] then
+                OrigJogadores[j]={}
+                for _,p in ipairs(j.Character:GetChildren()) do
+                    if p:IsA("BasePart") and p.Name~="HumanoidRootPart" then
+                        OrigJogadores[j][p.Name]=p.Size
+                    end
+                end
             end
 
-            -- ✅ Valor baixo o suficiente para NÃO causar deslize/animação bugada
-            -- Apenas ajuda a detecção local, sem quebrar a física
-            Root.Size = Vector3.new(3, 2.5, 3)
-            Root.CanCollide = false
-        end
-
-        -- Limpa quem saiu da partida
-        for plr in pairs(DadosJogadores) do
-            if not plr or not plr:IsDescendantOf(Players) then
-                DadosJogadores[plr] = nil
+            for nome,_ in pairs(OrigJogadores[j]) do
+                local p = j.Character:FindFirstChild(nome)
+                if p and p:IsA("BasePart") then
+                    -- Aumenta bastante sem quebrar física
+                    if nome=="Head" then p.Size=Vector3.new(8,8,8)
+                    else p.Size=Vector3.new(10,10,10) end
+                    p.CanCollide=false
+                end
             end
         end
-
-        task.wait(0.25)
+        for plr in pairs(OrigJogadores) do
+            if not plr or not plr:IsDescendantOf(Players) then OrigJogadores[plr]=nil end
+        end
+        task.wait(0.3)
     end
 end)
+
 
 -- =========================
 -- ABA XERIFE
