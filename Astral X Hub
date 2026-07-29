@@ -434,6 +434,46 @@ Value={Min=50, Max=500, Default=128},
 Callback=function(v) player.CameraMaxZoomDistance = v end
 })
 
+-- ===========================================
+-- 🎭 TODOS OS EMOTES DO SCRIPT
+-- ===========================================
+local Sec_Emotes = Aba_Diversao:Section({Title="Emotes Rápidos"})
+
+local function FazerEmote(nome)
+    if not player.Character then return end
+    local Modulo = ReplicatedStorage:FindFirstChild("EmoteModule", true)
+    if Modulo then pcall(function() Modulo:FireServer(nome) end) end
+end
+
+-- PRINCIPAIS
+Sec_Emotes:Button({Title="Sentar", Callback=function() FazerEmote("sit") end})
+Sec_Emotes:Button({Title="Ninja", Callback=function() FazerEmote("ninja") end})
+Sec_Emotes:Button({Title="Dab", Callback=function() FazerEmote("dab") end})
+Sec_Emotes:Button({Title="Zen", Callback=function() FazerEmote("zen") end})
+Sec_Emotes:Button({Title="Floss", Callback=function() FazerEmote("floss") end})
+Sec_Emotes:Button({Title="Sem Cabeça", Callback=function() FazerEmote("headless") end})
+Sec_Emotes:Button({Title="Zumbi", Callback=function() FazerEmote("zombie") end})
+Sec_Emotes:Button({Title="Acenar", Callback=function() FazerEmote("wave") end})
+Sec_Emotes:Button({Title="Aplaudir", Callback=function() FazerEmote("cheer") end})
+Sec_Emotes:Button({Title="Rir", Callback=function() FazerEmote("laugh") end})
+
+-- ADICIONAIS QUE TAMBÉM TEM LÁ
+Sec_Emotes:Button({Title="Dançar", Callback=function() FazerEmote("dance") end})
+Sec_Emotes:Button({Title="Pular", Callback=function() FazerEmote("jump") end})
+Sec_Emotes:Button({Title="Apontar", Callback=function() FazerEmote("point") end})
+Sec_Emotes:Button({Title="Despedir", Callback=function() FazerEmote("salute") end})
+Sec_Emotes:Button({Title="Flexionar", Callback=function() FazerEmote("muscle") end})
+
+-- ESPECIAL
+Sec_Emotes:Button({Title="Emote Aleatório Sem Parar", Callback=function()
+    local lista = {"sit","ninja","dab","zen","floss","headless","zombie","wave","cheer","laugh","dance","point","salute","muscle"}
+    task.spawn(function()
+        while task.wait(0.8) do
+            FazerEmote(lista[math.random(#lista)])
+        end
+    end)
+end})
+
 -- =========================
 -- ABA TELEPORTE
 -- =========================
