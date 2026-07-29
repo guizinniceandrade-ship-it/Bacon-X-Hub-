@@ -298,52 +298,6 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ATUALIZAÇÃO ESP JOGADORES - ISOLADO
--- =======================================
-task.spawn(function()
-    while true do
-        if not ESP_ATIVO then
-            for _,J in pairs(Players:GetPlayers()) do
-                if J.Character and J.Character:FindFirstChild("Highlight") then
-                    J.Character.Highlight.Enabled = false
-                end
-            end
-        else
-            for _,J in pairs(Players:GetPlayers()) do
-                if J == player or not J.Character then continue end
-                CriarBrilho(J)
-                local hl = J.Character:FindFirstChild("Highlight")
-                if not hl then continue end
-                
-                local XerifeMorto = false
-                if Sheriff then
-                    local XerifePlayer = Players:FindFirstChild(Sheriff)
-                    if XerifePlayer and not EstaVivo(XerifePlayer, UltimoCargos) then
-                        XerifeMorto = true
-                    end
-                end
-
-                if J.Name == Murder and EstaVivo(J, UltimoCargos) then
-                    hl.FillColor = Color3.fromRGB(255, 40, 40)
-                    hl.OutlineColor = Color3.fromRGB(255, 80, 80)
-                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
-                    hl.FillColor = Color3.fromRGB(40, 120, 255)
-                    hl.OutlineColor = Color3.fromRGB(80, 150, 255)
-                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
-                    hl.FillColor = Color3.fromRGB(255, 215, 0)
-                    hl.OutlineColor = Color3.fromRGB(255, 230, 50)
-                else
-                    hl.FillColor = Color3.fromRGB(50, 255, 50)
-                    hl.OutlineColor = Color3.fromRGB(80, 255, 80)
-                end
-                hl.Enabled = true
-            end
-        end
-        task.wait(0.15)
-    end
-end)
-
--- =======================================
 -- ESP ARMAS - TOTALMENTE INDEPENDENTE
 -- ✅ SÓ MARCA ARMAS CAÍDAS NO CHÃO
 -- ✅ NÃO APARECE QUANDO O BOTÃO ESTIVER DESLIGADO
@@ -418,9 +372,6 @@ task.spawn(function()
                 MarcaArmas[obj] = nil
             end
         end
-        task.wait(0.3)
-    end
-end)
 
 -- ===========================================
 -- FUNÇÕES DO AUTO FARM - EXATAMENTE COMO O SEU
