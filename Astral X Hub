@@ -241,25 +241,29 @@ local Aba_Teleporte = Window:Tab({Title="Teleporte"})
 local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
 Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
+-- ===========================================
+-- FUNÇÕES DO ESP - VERSÃO FINAL COMPLETA
+-- ✅ JOGADORES: SEM PISCAR, CORES CERTAS
+-- ✅ ARMAS: TOTALMENTE SEPARADAS, BOTÃO FUNCIONA
+-- ✅ OTIMIZADO PARA CELULAR
+-- ===========================================
 
--- ===========================================
--- FUNÇÕES DO ESP - CORRIGIDO E SEPARADO
--- ✅ JOGADORES NÃO MARCAM MAIS ARMAS
--- ✅ BOTÃO DE ARMAS FUNCIONA INDEPENDENTE
--- ===========================================
+-- CRIA BRILHO SEM FLASH DE COR PADRÃO
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
-    -- Remove brilho antigo se houver
+    -- Apaga velho antes de criar novo
     if Jogador.Character:FindFirstChild("Highlight") then
         Jogador.Character.Highlight:Destroy()
     end
-    -- Cria brilho SOMENTE NO PERSONAGEM
     local hl = Instance.new("Highlight")
     hl.Name = "Highlight"
     hl.Adornee = Jogador.Character
     hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     hl.OutlineTransparency = 0
     hl.FillTransparency = 0.5
+    -- Já define cor padrão na criação
+    hl.FillColor = Color3.fromRGB(50, 255, 50)
+    hl.OutlineColor = Color3.fromRGB(80, 255, 80)
     hl.Enabled = false
     hl.Parent = Jogador.Character
 end
@@ -271,7 +275,7 @@ local function EstaVivo(Jogador, listaCargos)
 end
 
 -- =================================
--- PEGA CARGOS - MANTIDO COMO ESTAVA
+-- PEGA CARGOS - MANTIDO E ESTÁVEL
 -- =================================
 task.spawn(function()
     while true do
@@ -298,14 +302,78 @@ task.spawn(function()
 end)
 
 -- =======================================
+-- ESP JOGADORES - SEM PISCAR
+-- =======================================
+task.spawn(function()
+    local UltimoEstado = {} -- Guarda estado para não reescrever igual
+    while true do
+        if not ESP_ATIVO then
+            for _,J in pairs(Players:GetPlayers()) do
+                if J.Character and J.Character:FindFirstChild("Highlight") then
+                    J.Character.Highlight.Enabled = false
+                    UltimoEstado[J] = nil
+                end
+            end
+        else
+            for _,J in pairs(Players:GetPlayers()) do
+                if J == player or not J.Character then continue end
+                CriarBrilho(J)
+                local hl = J.Character:FindFirstChild("Highlight")
+                if not hl then continue end
+
+                local XerifeMorto = false
+                if Sheriff then
+                    local XerifePlayer = Players:FindFirstChild(Sheriff)
+                    if XerifePlayer and not EstaVivo(XerifePlayer, UltimoCargos) then
+                        XerifeMorto = true
+                    end
+                end
+
+                -- Define cor correta
+                local NovaCorPreenchimento, NovaCorContorno
+                if J.Name == Murder and EstaVivo(J, UltimoCargos) then
+                    NovaCorPreenchimento = Color3.fromRGB(255, 40, 40)
+                    NovaCorContorno = Color3.fromRGB(255, 80, 80)
+                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
+                    NovaCorPreenchimento = Color3.fromRGB(40, 120, 255)
+                    NovaCorContorno = Color3.fromRGB(80, 150, 255)
+                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
+                    NovaCorPreenchimento = Color3.fromRGB(255, 215, 0)
+                    NovaCorContorno = Color3.fromRGB(255, 230, 50)
+                else
+                    NovaCorPreenchimento = Color3.fromRGB(50, 255, 50)
+                    NovaCorContorno = Color3.fromRGB(80, 255, 80)
+                end
+
+                -- ✅ SÓ MUDA SE FOR DIFERENTE
+                local Ultimo = UltimoEstado[J]
+                if not Ultimo or Ultimo.Preenchimento ~= NovaCorPreenchimento or Ultimo.Contorno ~= NovaCorContorno or not hl.Enabled then
+                    hl.FillColor = NovaCorPreenchimento
+                    hl.OutlineColor = NovaCorContorno
+                    hl.Enabled = true
+                    UltimoEstado[J] = {Preenchimento = NovaCorPreenchimento, Contorno = NovaCorContorno}
+                end
+            end
+            -- Limpa jogadores que saíram
+            for J in pairs(UltimoEstado) do
+                if not J or not J:IsDescendantOf(Players) then
+                    UltimoEstado[J] = nil
+                end
+            end
+        end
+        task.wait(0.2)
+    end
+end)
+
+-- =======================================
 -- ESP ARMAS - TOTALMENTE INDEPENDENTE
--- ✅ SÓ MARCA ARMAS CAÍDAS NO CHÃO
--- ✅ NÃO APARECE QUANDO O BOTÃO ESTIVER DESLIGADO
+-- ✅ SÓ MARCA ARMAS NO CHÃO
+-- ✅ BOTÃO LIGA/DESLIGA SEM INTERFERIR
 -- =======================================
 local MarcaArmas = {}
 task.spawn(function()
     while true do
-        -- Se qualquer um dos dois estiver desligado, apaga o destaque
+        -- Desativa se qualquer opção estiver off
         if not ESP_ATIVO or not ESP_Arma then
             for _,dados in pairs(MarcaArmas) do
                 if dados.Destaque then dados.Destaque.Enabled = false end
@@ -319,11 +387,11 @@ task.spawn(function()
             local Nome = obj.Name
             local Caminho = obj:GetFullName():lower()
             
-            -- Só pega o GunDrop real da partida
+            -- Apenas GunDrop da partida
             if Nome ~= "GunDrop" then continue end
             if Caminho:find("lobby") or Caminho:find("weapondisplays") or Caminho:find("prompt") then continue end
 
-            -- ❌ IGNORA SE ESTIVER COM JOGADOR OU NA MOCHILA
+            -- ❌ IGNORA ARMAS COM JOGADOR OU NA MOCHILA
             local TemPessoa = obj:FindFirstAncestorWhichIsA("Model")
             if TemPessoa and TemPessoa:FindFirstChildOfClass("Humanoid") then continue end
             if obj:FindFirstAncestorWhichIsA("Backpack") then continue end
@@ -331,13 +399,14 @@ task.spawn(function()
             local Parte = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart", true)
             if not Parte then continue end
 
+            -- Cria apenas uma vez
             if not MarcaArmas[obj] then
                 local Destaque = Instance.new("Highlight")
                 Destaque.Name = "GunDrop_ESP"
                 Destaque.Adornee = obj
                 Destaque.FillTransparency = 1
                 Destaque.OutlineTransparency = 0
-                Destaque.OutlineColor = Color3.fromRGB(255, 255, 0) -- AMARELO EXATO
+                Destaque.OutlineColor = Color3.fromRGB(255, 255, 0)
                 Destaque.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                 Destaque.Parent = game.CoreGui
 
@@ -364,7 +433,7 @@ task.spawn(function()
             MarcaArmas[obj].Texto.Enabled = true
         end
 
-        -- Limpa armas que já foram pegas
+        -- Limpa armas que sumiram
         for obj,dados in pairs(MarcaArmas) do
             if not obj or not obj.Parent or not obj:IsDescendantOf(Workspace) then
                 dados.Destaque:Destroy()
@@ -372,6 +441,9 @@ task.spawn(function()
                 MarcaArmas[obj] = nil
             end
         end
+        task.wait(0.3)
+    end
+end)
 
 -- ===========================================
 -- FUNÇÕES DO AUTO FARM - EXATAMENTE COMO O SEU
