@@ -137,20 +137,20 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 -- =========================
 -- ABA XERIFE - ATUALIZADA
 -- =========================
+
 local Aba_Xerife = Window:Tab({
     Title = "🔫 Xerife"
 })
 local Sec_Xerife = Aba_Xerife:Section({
-    Title = "Silent AII"
+    Title = "SILENT AIM & UTILITÁRIOS"
 })
 
--- VARIAVEIS DO SISTEMA
 local SilentAimAtivo = false
 local AjustePrevisao = 0.15
 local AutoIrArmaAtivo = false
 local Roles = {Murderer = nil, Sheriff = nil}
 
--- PEGA CARGOS DO JOGO
+-- PEGA CARGOS
 local function AtualizarCargos()
     pcall(function()
         local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
@@ -166,7 +166,7 @@ local function AtualizarCargos()
     end)
 end
 
--- SILENT AIM INTERCEPTADOR (MÉTODO NAUHUB)
+-- ✅ SILENT AIM — EXATAMENTE O JEITO QUE VOCÊ TINHA E FUNCIONAVA
 local RawMetatable = getrawmetatable(game)
 local ChamadaOriginal = RawMetatable.__namecall
 setreadonly(RawMetatable, false)
@@ -180,7 +180,7 @@ RawMetatable.__namecall = newcclosure(function(Objeto, ...)
         local Alvo = Roles.Murderer
         if Alvo and Alvo.Character and Alvo.Character:FindFirstChild("HumanoidRootPart") then
             local ParteAlvo = Alvo.Character.HumanoidRootPart
-            local Previsao = ParteAlvo.AssemblyLinearVelocity * AjustePrevisao
+            local Previsao = ParteAlvo.AssemblyLinearVelocity / 40
             if math.abs(ParteAlvo.AssemblyLinearVelocity.Y) < 10 then
                 Args[2] = ParteAlvo.Position + Previsao + Vector3.new(0, 1.5, 0)
             end
@@ -192,23 +192,16 @@ end)
 
 setreadonly(RawMetatable, true)
 
--- ✅ SISTEMA IR E VOLTAR AUTOMÁTICO
+-- ✅ AUTO IR E VOLTAR NA ARMA — COMO VOCÊ PEDIU
 task.spawn(function()
     while task.wait(0.1) do
         if not AutoIrArmaAtivo then continue end
-
-        local Arma = Workspace:FindFirstChild("GunDrop", true)
+        local Arma = workspace:FindFirstChild("GunDrop", true)
         if Arma and HRP() then
-            -- SALVA SUA POSIÇÃO ORIGINAL
-            local MinhaPosicaoOriginal = HRP().CFrame
-
-            -- VAI ATÉ A ARMA RÁPIDO
+            local PosicaoOriginal = HRP().CFrame
             HRP().CFrame = Arma.CFrame * CFrame.new(0, 2, 0)
-            task.wait(0.08) -- TEMPO BEM CURTO
-
-            -- VOLTA IMEDIATAMENTE PARA ONDE VOCÊ ESTAVA
-            HRP().CFrame = MinhaPosicaoOriginal
-            WindUI:Notify({Title="✅ Xerife", Content="Peguei a arma e voltei!", Duration=1})
+            task.wait(0.08)
+            HRP().CFrame = PosicaoOriginal
         end
     end
 end)
@@ -217,9 +210,9 @@ end)
 Sec_Xerife:Toggle({
     Title = "🔇 Ativar Silent Aim",
     Default = false,
-    Callback = function(e)
-        SilentAimAtivo = e
-        WindUI:Notify({Title="Silent Aim", Content = e and "✅ LIGADO — acerta sempre no Assassino" or "❌ DESLIGADO", Duration=2})
+    Callback = function(s)
+        SilentAimAtivo = s
+        WindUI:Notify({Title="Silent Aim", Content = s and "✅ LIGADO" or "❌ DESLIGADO", Duration=2})
     end
 })
 
@@ -230,14 +223,13 @@ Sec_Xerife:Slider({
 })
 
 Sec_Xerife:Toggle({
-    Title = "📍 Ir e Voltar na Arma Automaticamente",
+    Title = "📍 Ir/Voltar na Arma Automaticamente",
     Default = false,
     Callback = function(e)
         AutoIrArmaAtivo = e
-        WindUI:Notify({Title="Auto Pegar", Content = e and "✅ LIGADO — Vai e volta sozinho" or "❌ DESLIGADO", Duration=2})
+        WindUI:Notify({Title="Auto Pegar", Content = e and "✅ LIGADO" or "❌ DESLIGADO", Duration=2})
     end
 })
-
 
 -- =========================
 -- ABA ESP
