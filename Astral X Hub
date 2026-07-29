@@ -131,7 +131,7 @@ ScrollBarEnabled = false,
 -- =========================
 -- ABA ASSASSINO · KILL AURA
 -- =========================
-
+local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 -- =========================
 -- ABA XERIFE
