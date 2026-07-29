@@ -129,94 +129,152 @@ ScrollBarEnabled = false,
 })
 
 -- =========================
--- ABA ASSASSINO
+-- ABA ASSASSINO · HITBOX DA FACA (FINAL)
 -- =========================
-local Aba_Assassino = Window:Tab({Title="Assassino"})
-local Sec_Hitbox = Aba_Assassino:Section({Title="Hitbox"})
+local Sec_Hitbox = Aba_Assassino:Section({Title="🔪 Hitbox da Faca"})
 
 local HitboxAtivo = false
 local TamanhoHit = 12
+local TamanhosOriginais = {}
+local FacaMonitorada = nil
+
+local function AplicarTamanho()
+    if not HitboxAtivo or not FacaMonitorada then return end
+    for p, _ in pairs(TamanhosOriginais) do
+        if p and p.Parent then
+            p.Size = Vector3.new(TamanhoHit, TamanhoHit, TamanhoHit)
+            p.CanCollide = false
+        end
+    end
+end
 
 Sec_Hitbox:Toggle({
     Title = "Ativar Hitbox",
     Default = false,
-    Callback = function(s) HitboxAtivo = s end
+    Callback = function(s)
+        HitboxAtivo = s
+        if not s then
+            for p, tam in pairs(TamanhosOriginais) do
+                if p and p.Parent then p.Size = tam end
+            end
+            table.clear(TamanhosOriginais)
+            FacaMonitorada = nil
+        else
+            AplicarTamanho() -- ✅ Aplica imediatamente ao ligar
+        end
+    end
 })
 
 Sec_Hitbox:Slider({
     Title = "Tamanho (5 a 50)",
     Value = {Min=5, Max=50, Default=12},
-    Callback = function(v) TamanhoHit = v end
+    Callback = function(v)
+        TamanhoHit = v
+        AplicarTamanho() -- ✅ ATUALIZA MESMO COM A FACA JÁ EQUIPADA
+    end
 })
 
--- SISTEMA DA HITBOX
-RunService.Stepped:Connect(function()
-    local c = player.Character
-    if not c then return end
-    local faca = c:FindFirstChild("Knife")
-    if not faca then return end
+task.spawn(function()
+    while true do
+        local c = player.Character
+        if not c then
+            table.clear(TamanhosOriginais)
+            FacaMonitorada = nil
+            task.wait(0.2)
+            continue
+        end
 
-    if HitboxAtivo then
-        for _, p in ipairs(faca:GetChildren()) do
-            if p:IsA("BasePart") then
-                p.Size = Vector3.new(TamanhoHit, TamanhoHit, TamanhoHit)
-                p.CanCollide = false
+        local faca = c:FindFirstChild("Knife", true) or player.Backpack:FindFirstChild("Knife")
+        if faca and faca.Parent == player.Backpack then faca.Parent = c end
+
+        if faca and faca ~= FacaMonitorada then
+            FacaMonitorada = faca
+            table.clear(TamanhosOriginais)
+            for _, p in ipairs(faca:GetChildren()) do
+                if p:IsA("BasePart") then
+                    TamanhosOriginais[p] = p.Size
+                end
             end
-        end
-    else
-        for _, p in ipairs(faca:GetChildren()) do
-            if p:IsA("BasePart") then
-                p.Size = Vector3.new(1.8, 1, 5.5)
+            AplicarTamanho() -- ✅ Aplica logo quando pega a faca
+        elseif not faca and FacaMonitorada then
+            for p, tam in pairs(TamanhosOriginais) do
+                if p and p.Parent then p.Size = tam end
             end
+            table.clear(TamanhosOriginais)
+            FacaMonitorada = nil
         end
+
+        task.wait(0.15)
     end
 end)
 
 -- =========================
--- ABA ASSASSINO · ADICIONAL
--- =========================
--- =========================
--- ABA ASSASSINO · KANIF (SEM DEFORMAR)
+-- ABA ASSASSINO · KANIF (VERSÃO ESTÁVEL)
+-- 📌 OBS: No MM2 o alcance real é definido pelo servidor.
+-- Essa versão melhora a detecção visual/cliente sem causar bugs físicos.
 -- =========================
 local Sec_Kanif = Aba_Assassino:Section({Title="🕷️ Kanif"})
 
 local KanifAtivo = false
-local DadosOriginais = {} -- GUARDA O TAMANHO REAL PARA VOLTAR DEPOIS
+local DadosJogadores = {}
 
 Sec_Kanif:Toggle({
-    Title = "Hitbox Gigante (Normal Visual)",
+    Title = "Hitbox Estendida",
     Default = false,
-    Callback = function(s) KanifAtivo = s end
+    Callback = function(s)
+        KanifAtivo = s
+        if not s then
+            for plr, dados in pairs(DadosJogadores) do
+                if plr and plr.Character and dados.Root then
+                    dados.Root.Size = dados.Original
+                end
+            end
+            table.clear(DadosJogadores)
+        end
+    end
 })
 
-RunService.Stepped:Connect(function()
-    for _, Jogador in pairs(Players:GetPlayers()) do
-        if Jogador == player then continue end
-        if not Jogador.Character then continue end
+task.spawn(function()
+    while true do
+        if not KanifAtivo then
+            task.wait(0.5)
+            continue
+        end
 
-        for _, Parte in ipairs(Jogador.Character:GetChildren()) do
-            if Parte:IsA("BasePart") then
+        for _, Jogador in pairs(Players:GetPlayers()) do
+            if Jogador == player then
+                DadosJogadores[Jogador] = nil
+                continue
+            end
+            if not Jogador.Character then
+                DadosJogadores[Jogador] = nil
+                continue
+            end
 
-                -- GUARDA O TAMANHO SÓ NA PRIMEIRA VEZ
-                if not DadosOriginais[Parte] then
-                    DadosOriginais[Parte] = Parte.Size
-                end
+            local Root = Jogador.Character:FindFirstChild("HumanoidRootPart")
+            if not Root then continue end
 
-                if KanifAtivo then
-                    -- SÓ MUDA A COLISÃO, NÃO MEXE NO VISUAL
-                    Parte.CanQuery = true
-                    Parte.CollisionGroup = "Default"
-                    -- AUMENTA A ÁREA DE DETECÇÃO SEM MUDAR O TAMANHO APARENTE
-                    Parte.Size = Vector3.new(12, 12, 12) -- BASTANTE, MAS NÃO FICA QUADRADO GIGANTE
-                else
-                    -- VOLTA EXATAMENTE COMO ERA
-                    if DadosOriginais[Parte] then
-                        Parte.Size = DadosOriginais[Parte]
-                    end
-                end
+            if not DadosJogadores[Jogador] then
+                DadosJogadores[Jogador] = {
+                    Root = Root,
+                    Original = Root.Size
+                }
+            end
 
+            -- ✅ Valor baixo o suficiente para NÃO causar deslize/animação bugada
+            -- Apenas ajuda a detecção local, sem quebrar a física
+            Root.Size = Vector3.new(3, 2.5, 3)
+            Root.CanCollide = false
+        end
+
+        -- Limpa quem saiu da partida
+        for plr in pairs(DadosJogadores) do
+            if not plr or not plr:IsDescendantOf(Players) then
+                DadosJogadores[plr] = nil
             end
         end
+
+        task.wait(0.25)
     end
 end)
 
