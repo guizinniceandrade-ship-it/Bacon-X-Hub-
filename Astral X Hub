@@ -143,38 +143,6 @@ local Aba_Xerife = Window:Tab({
     Title = "🔫 Xerife"
 })
 
-
--- ===========================================
--- 🎛️ TODAS AS OPÇÕES NA INTERFACE
--- ===========================================
-Sec_Xerife:Toggle({
-    Title = "🔇 Ativar Silent Aim",
-    Default = false,
-    Callback = function(Estado)
-        SilentAimAtivo = Estado
-        WindUI:Notify({
-            Title = "Silent Aim",
-            Content = Estado and "✅ LIGADO — acerta sempre no Assassino" or "❌ DESLIGADO",
-            Duration = 2
-        })
-    end
-})
-
-Sec_Xerife:Button({
-    Title = "📦 Pegar/Equipar Arma",
-    Callback = PegarArma
-})
-
-Sec_Xerife:Button({
-    Title = "📋 Ver Quem É Quem",
-    Callback = MostrarCargos
-})
-
-Sec_Xerife:Button({
-    Title = "🔁 Atualizar Dados",
-    Callback = AtualizarCargos
-})
-
 -- =========================
 -- ABA ESP
 -- =========================
