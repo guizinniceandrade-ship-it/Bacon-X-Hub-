@@ -137,6 +137,128 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 -- ABA XERIFE
 -- =========================
 local Aba_Xerife = Window:Tab({Title="Xerife"})
+local Sec_Xerife = Aba_Xerife:Section({Title = "🔫 SILENT AIM & TIRO"})
+
+-- VARIÁVEIS DO XERIFE
+local SilentAimAtivo = false
+local TipoTiro = "Normal"
+local BotaoTiroVisivel = false
+local TamanhoBotao = 50
+local BotaoTiro, BotaoTiroFrame = nil, nil
+
+-- PEGA ASSASSINO
+local function PegarAssassino()
+    local ok, res = pcall(function() return ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer() end)
+    if not ok or not res then return nil end
+    for nome, info in pairs(res) do
+        if info.Role == "Murderer" then return Players:FindFirstChild(nome) end
+    end
+    return nil
+end
+
+-- ATIRAR COM SILENT AIM
+local function AtirarNoAssassino()
+    if not player.Character or not player.Character:FindFirstChild("Humanoid") or player.Character.Humanoid.Health <= 0 then
+        return WindUI:Notify({Title="Xerife", Content="Você está morto!", Icon="x-circle", Duration=2})
+    end
+    local assassino = PegarAssassino()
+    if not assassino or not assassino.Character then
+        return WindUI:Notify({Title="Xerife", Content="Assassino não encontrado!", Icon="x-circle", Duration=2})
+    end
+    local arma = player.Character:FindFirstChild("Gun") or player.Backpack:FindFirstChild("Gun")
+    if not arma then
+        return WindUI:Notify({Title="Xerife", Content="Sem arma!", Icon="x-circle", Duration=2})
+    end
+    if not player.Character:FindFirstChild("Gun") then arma.Parent = player.Character task.wait(0.1) end
+
+    -- Teleporte se escolhido
+    if TipoTiro == "Teleporte até alvo" then
+        local eu = player.Character:FindFirstChild("HumanoidRootPart")
+        local ele = assassino.Character:FindFirstChild("HumanoidRootPart")
+        if eu and ele then eu.CFrame = ele.CFrame * CFrame.new(0,0,-4) task.wait(0.1) end
+    end
+
+    -- ✨ SILENT AIM: MANDA A POSIÇÃO DO ALVO, NÃO DA SUA MIRA
+    local alvoPos = assassino.Character:FindFirstChild("HumanoidRootPart")
+    if arma and arma:FindFirstChild("KnifeLocal") and arma.KnifeLocal:FindFirstChild("CreateBeam") and alvoPos then
+        arma.KnifeLocal.CreateBeam.RemoteFunction:InvokeServer(1, alvoPos.Position, "AH2")
+        WindUI:Notify({Title="Xerife", Content="✅ Tiro certeiro!", Icon="check-circle", Duration=2})
+    end
+end
+
+-- BOTÃO FLUTUANTE
+local function CriarBotao()
+    if BotaoTiro then return end
+    local Gui = CoreGui:FindFirstChild("AstralX_Sheriff") or Instance.new("ScreenGui")
+    Gui.Name = "AstralX_Sheriff" Gui.ResetOnSpawn = false Gui.IgnoreGuiInset = true Gui.Parent = CoreGui
+
+    BotaoTiroFrame = Instance.new("Frame")
+    BotaoTiroFrame.Size = UDim2.new(0,TamanhoBotao,0,TamanhoBotao)
+    BotaoTiroFrame.Position = UDim2.new(1,-TamanhoBotao-20,0.5,-TamanhoBotao/2)
+    BotaoTiroFrame.AnchorPoint = Vector2.new(1,0.5)
+    BotaoTiroFrame.BackgroundTransparency = 1
+    BotaoTiroFrame.Parent = Gui
+
+    BotaoTiro = Instance.new("TextButton")
+    BotaoTiro.Size = UDim2.new(1,0,1,0)
+    BotaoTiro.BackgroundColor3 = Color3.fromRGB(0,80,180)
+    BotaoTiro.TextColor3 = Color3.new(1,1,1)
+    BotaoTiro.Text = "TIRO" BotaoTiro.TextScaled = true BotaoTiro.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", BotaoTiro).CornerRadius = UDim.new(0.3,0)
+    BotaoTiro.Parent = BotaoTiroFrame
+
+    -- Arrastar botão
+    local arrastando, inicioPos, inicioMouse = false
+    BotaoTiro.InputBegan:Connect(function(e)
+        if e.UserInputType == Enum.UserInputType.MouseButton1 or e.UserInputType == Enum.UserInputType.Touch then
+            arrastando = true inicioPos = BotaoTiroFrame.Position inicioMouse = e.Position
+        end
+    end)
+    UIS.InputChanged:Connect(function(e)
+        if arrastando then
+            BotaoTiroFrame.Position = UDim2.new(inicioPos.X.Scale, inicioPos.X.Offset+(e.Position-inicioMouse).X, inicioPos.Y.Scale, inicioPos.Y.Offset+(e.Position-inicioMouse).Y)
+        end
+    end)
+    BotaoTiro.InputEnded:Connect(function() arrastando = false end)
+    BotaoTiro.MouseButton1Click:Connect(AtirarNoAssassino)
+    BotaoTiroVisivel = true
+end
+local function RemoverBotao() if BotaoTiroFrame then BotaoTiroFrame:Destroy() end; BotaoTiro=nil; BotaoTiroVisivel=false end
+
+-- 🎛️ ITENS DA SESSÃO — IGUALZINHO AS OUTRAS
+Sec_Xerife:Toggle({
+    Title = "Ativar Silent Aim",
+    Default = false,
+    Callback = function(s) SilentAimAtivo = s end
+})
+Sec_Xerife:Dropdown({
+    Title = "Modo de Tiro",
+    Values = {"Normal", "Teleporte até alvo"},
+    Value = "Normal",
+    Callback = function(v) TipoTiro = v end
+})
+Sec_Xerife:Button({
+    Title = "🔫 Atirar no Assassino",
+    Callback = AtirarNoAssassino
+})
+Sec_Xerife:Toggle({
+    Title = "Mostrar Botão Flutuante",
+    Default = false,
+    Callback = function(s) if s then CriarBotao() else RemoverBotao() end end
+})
+Sec_Xerife:Slider({
+    Title = "Tamanho do Botão",
+    Value = {Min=30, Max=100, Default=50},
+    Callback = function(v) TamanhoBotao=v; if BotaoTiroVisivel then RemoverBotao() CriarBotao() end end
+})
+Sec_Xerife:Button({
+    Title = "📦 Pegar Arma",
+    Callback = function()
+        local arma = player.Backpack:FindFirstChild("Gun")
+        if arma then arma.Parent=player.Character; WindUI:Notify({Title="Xerife", Content="✅ Arma pronta!", Icon="check-circle", Duration=2})
+        else WindUI:Notify({Title="Xerife", Content="Sem arma na mochila!", Icon="alert-circle", Duration=2}) end
+    end
+})
 
 -- =========================
 -- ABA ESP
