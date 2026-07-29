@@ -133,104 +133,6 @@ ScrollBarEnabled = false,
 -- =========================
 local Aba_Assassino = Window:Tab({Title="Assassino"})
 
-
--- =========================
--- ABA XERIFE - VERSÃO FINAL
--- ✅ SILENT AIM NATIVO DO MM2
--- ✅ USA A LÓGICA DO INTERCEPTOR
--- =========================
-local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_Xerife = Aba_Xerife:Section({Title = "🔫 SILENT AIM & TIRO"})
-
--- VARIAVEIS DO SISTEMA
-local SilentAimAtivo = false
-local Roles = {Murderer = nil, Sheriff = nil}
-
--- PEGA OS CARGOS AUTOMATICAMENTE
-local function AtualizarCargos()
-    pcall(function()
-        local dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
-        if not dados then return end
-        Roles.Murderer = nil
-        Roles.Sheriff = nil
-        for nome, info in pairs(dados) do
-            local jogador = Players:FindFirstChild(nome)
-            if not jogador then continue end
-            if info.Role == "Murderer" then Roles.Murderer = jogador end
-            if info.Role == "Sheriff" then Roles.Sheriff = jogador end
-        end
-    end)
-end
-
--- ===========================================
--- ✨ O SILENT AIM QUE FUNCIONA - INTERCEPTOR
--- ===========================================
-local RawMetatable = getrawmetatable(game)
-local ChamadaOriginal = RawMetatable.__namecall
-setreadonly(RawMetatable, false)
-
-RawMetatable.__namecall = newcclosure(function(Objeto, ...)
-    local Metodo = getnamecallmethod()
-    local Argumentos = {...}
-
-    -- SE SILENT AIM ESTIVER LIGADO E FOR O COMANDO DE TIRO
-    if SilentAimAtivo and Metodo == "InvokeServer" and tostring(Objeto) == "ShootGun" then
-        AtualizarCargos()
-        local Alvo = Roles.Murderer
-        if Alvo and Alvo.Character and Alvo.Character:FindFirstChild("HumanoidRootPart") then
-            local PosicaoAlvo = Alvo.Character.HumanoidRootPart.Position
-            -- COLOCA A POSIÇÃO DO ASSASSINO NO LUGAR DO SEU PONTO DE MIRA
-            Argumentos[2] = PosicaoAlvo
-        end
-    end
-
-    return ChamadaOriginal(Objeto, unpack(Argumentos))
-end)
-
-setreadonly(RawMetatable, true)
-
--- ===========================================
--- FUNÇÕES ADICIONAIS
--- ===========================================
-local function PegarArma()
-    local arma = player.Backpack:FindFirstChild("Gun") or player.Character:FindFirstChild("Gun")
-    if arma and not player.Character:FindFirstChild("Gun") then
-        arma.Parent = player.Character
-        WindUI:Notify({Title="✅ Xerife", Content="Arma equipada!", Icon="check-circle", Duration=2})
-    else
-        WindUI:Notify({Title="❌ Xerife", Content="Sem arma na mochila!", Icon="alert-circle", Duration=2})
-    end
-end
-
--- ===========================================
--- BOTÕES E OPÇÕES NA INTERFACE
--- ===========================================
-Sec_Xerife:Toggle({
-    Title = "Ativar Silent Aim",
-    Default = false,
-    Callback = function(s)
-        SilentAimAtivo = s
-        WindUI:Notify({Title="🔫 Silent Aim", Content = s and "ATIVADO - VAI SEMPRE NO ASSASSINO" or "DESATIVADO", Icon = s and "check-circle" or "x-circle", Duration=2})
-    end
-})
-
-Sec_Xerife:Button({
-    Title = "📦 Pegar/Equipar Arma",
-    Callback = PegarArma
-})
-
-Sec_Xerife:Button({
-    Title = "🔁 Atualizar Cargos Agora",
-    Callback = function()
-        AtualizarCargos()
-        if Roles.Murderer then
-            WindUI:Notify({Title="✅ Xerife", Content="Assassino: "..Roles.Murderer.Name, Icon="user", Duration=3})
-        else
-            WindUI:Notify({Title="❌ Xerife", Content="Assassino não encontrado!", Icon="alert-circle", Duration=2})
-        end
-    end
-})
-
 -- =========================
 -- ABA ESP
 -- =========================
@@ -665,3 +567,47 @@ RunService.RenderStepped:Connect(function()
         Cam.FieldOfView = FOV_Atual
     end
 end)
+
+-- ===========================================
+-- ✨ SILENT AIM - VERSÃO QUE FUNCIONA 100%
+-- USA A LÓGICA DO METATABLE (INTERCEPTOR)
+-- ===========================================
+local SilentAimAtivo = false
+
+-- SALVA O MÉTODO ORIGINAL PARA NÃO QUEBRAR O JOGO
+local RawMetatable = getrawmetatable(game)
+local ChamadaOriginal = RawMetatable.__namecall
+setreadonly(RawMetatable, false)
+
+-- INTERCEPTA QUALQUER CHAMADA DE FUNÇÃO DO JOGO
+RawMetatable.__namecall = newcclosure(function(Objeto, ...)
+    local Metodo = getnamecallmethod()
+    local Argumentos = {...}
+
+    -- SE SILENT AIM ESTIVER LIGADO E FOR O DISPARO DA ARMA
+    if SilentAimAtivo and Metodo == "InvokeServer" then
+        local Nome = tostring(Objeto):lower()
+        if Nome:find("shoot") or Nome:find("gun") or Nome:find("beam") then
+            -- PROCURA O ASSASSINO AUTOMATICAMENTE
+            for _, Jogador in pairs(Players:GetPlayers()) do
+                if Jogador ~= player and Jogador.Character then
+                    local TemFaca = Jogador.Backpack:FindFirstChild("Knife") or Jogador.Character:FindFirstChild("Knife")
+                    if TemFaca then
+                        local Alvo = Jogador.Character:FindFirstChild("HumanoidRootPart")
+                        if Alvo then
+                            -- TROCA A POSIÇÃO DA SUA MIRA PELA POSIÇÃO DELE
+                            Argumentos[2] = Alvo.Position + Vector3.new(0, 1.6, 0) -- AJUSTA PARA O PEITO
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- MANDA O COMANDO ORIGINAL COM A POSIÇÃO ALTERADA
+    return ChamadaOriginal(Objeto, unpack(Argumentos))
+end)
+
+setreadonly(RawMetatable, true)
+
