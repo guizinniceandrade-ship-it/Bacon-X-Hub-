@@ -242,11 +242,6 @@ local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
 Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
--- ===========================================
--- FUNÃ‡Ã•ES DO ESP - CORRIGIDO E SINCRONIZADO
--- âœ… NÃƒO APAGA CARGOS SE A LISTA FOR INCOMPLETA
--- âœ… HIGHLIGHT DAS ARMAS MAIS ESTÃVEL
--- ===========================================
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
     if not Jogador.Character:FindFirstChild("Highlight") then
@@ -266,9 +261,6 @@ local function EstaVivo(Jogador, listaCargos)
     return not Info.Killed and not Info.Dead
 end
 
--- =================================
--- âœ… PEGA CARGOS - NÃƒO APAGA SE FALTAR ALGO
--- =================================
 task.spawn(function()
     while true do
         if ESP_ATIVO then
@@ -276,20 +268,15 @@ task.spawn(function()
             if PegarDados then
                 local ok, res = pcall(function() return PegarDados:InvokeServer() end)
                 if ok and type(res) == "table" then
-                    -- Primeiro coleta os novos, SEM apagar os antigos ainda
                     local novoMurder, novoSheriff, novoHero = nil, nil, nil
                     for Nome,DadosJogador in pairs(res) do
                         if DadosJogador.Role == "Murderer" then novoMurder = Nome
                         elseif DadosJogador.Role == "Sheriff" then novoSheriff = Nome
                         elseif DadosJogador.Role == "Hero" then novoHero = Nome end
                     end
-
-                    -- SÃ³ atualiza se existir o novo, senÃ£o MANTÃ‰M o velho
                     if novoMurder then Murder = novoMurder end
                     if novoSheriff then Sheriff = novoSheriff end
                     if novoHero then Hero = novoHero end
-
-                    -- Atualiza a lista completa sÃ³ quando tiver tudo
                     UltimoCargos = res
                 end
             end
@@ -298,9 +285,6 @@ task.spawn(function()
     end
 end)
 
--- =======================================
--- ATUALIZA CORES DOS JOGADORES
--- =======================================
 task.spawn(function()
     while true do
         if not ESP_ATIVO then
@@ -316,28 +300,18 @@ task.spawn(function()
                 local hl = J.Character:FindFirstChild("Highlight")
                 if not hl then continue end
 
-                local XerifeMorto = false
-                if Sheriff then
-                    local XerifePlayer = Players:FindFirstChild(Sheriff)
-                    if XerifePlayer and not EstaVivo(XerifePlayer, UltimoCargos) then
-                        XerifeMorto = true
-                    end
-                end
+                local XerifeMorto = Sheriff and Players:FindFirstChild(Sheriff) and not EstaVivo(Players[Sheriff], UltimoCargos) or false
 
                 if J.Name == Murder and EstaVivo(J, UltimoCargos) then
                     hl.FillColor = Color3.fromRGB(255, 40, 40)
-                    hl.OutlineColor = Color3.fromRGB(255, 80, 80)
                 elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
                     hl.FillColor = Color3.fromRGB(40, 120, 255)
-                    hl.OutlineColor = Color3.fromRGB(80, 150, 255)
                 elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
                     hl.FillColor = Color3.fromRGB(255, 215, 0)
-                    hl.OutlineColor = Color3.fromRGB(255, 230, 50)
                 else
                     hl.FillColor = Color3.fromRGB(50, 255, 50)
-                    hl.OutlineColor = Color3.fromRGB(80, 255, 80)
                 end
-
+                hl.OutlineColor = hl.FillColor
                 hl.Enabled = true
             end
         end
