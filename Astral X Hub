@@ -242,37 +242,22 @@ local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
 Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
+ ===========================================
+-- FUNÃ‡Ã•ES DO ESP - CORRIGIDO E SINCRONIZADO
+-- âœ… NÃƒO APAGA CARGOS SE A LISTA FOR INCOMPLETA
+-- âœ… HIGHLIGHT DAS ARMAS MAIS ESTÃVEL
 -- ===========================================
--- FUNÇÕES DO ESP - SÓ JOGADORES | NÃO MARCA ARMAS
--- ✅ Destaque só no corpo, não pega arma
--- ✅ Não marca arma caída nem equipada
--- ✅ Mantém sua lógica de cargos intacta
--- ===========================================
-local UltimoCargo = {} -- Guarda último cargo para não piscar
-local Destaques = {} -- Controla só os destaques de jogadores
-
--- ✅ CRIA DESTAQUE SÓ NO CORPO (HumanoidRootPart)
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
-    if Destaques[Jogador] then return end -- Não cria duplicado
-
-    local hrp = Jogador.Character:WaitForChild("HumanoidRootPart")
-    local hl = Instance.new("Highlight")
-    hl.Name = "Highlight"
-    hl.Adornee = hrp -- ✅ Só na raiz, nunca na arma
-    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    hl.OutlineTransparency = 0
-    hl.Enabled = false
-    hl.Parent = hrp
-
-    Destaques[Jogador] = hl
-
-    -- Atualiza automaticamente ao renascer
-    Jogador.CharacterAdded:Connect(function()
-        Destaques[Jogador] = nil
-        UltimoCargo[Jogador] = nil
-        CriarBrilho(Jogador)
-    end)
+    if not Jogador.Character:FindFirstChild("Highlight") then
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight"
+        hl.Adornee = Jogador.Character
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineTransparency = 0
+        hl.Enabled = false
+        hl.Parent = Jogador.Character
+    end
 end
 
 local function EstaVivo(Jogador, listaCargos)
@@ -282,7 +267,7 @@ local function EstaVivo(Jogador, listaCargos)
 end
 
 -- =================================
--- PEGA CARGOS (SUA LÓGICA ORIGINAL)
+-- âœ… PEGA CARGOS - NÃƒO APAGA SE FALTAR ALGO
 -- =================================
 task.spawn(function()
     while true do
@@ -291,6 +276,7 @@ task.spawn(function()
             if PegarDados then
                 local ok, res = pcall(function() return PegarDados:InvokeServer() end)
                 if ok and type(res) == "table" then
+                    -- Primeiro coleta os novos, SEM apagar os antigos ainda
                     local novoMurder, novoSheriff, novoHero = nil, nil, nil
                     for Nome,DadosJogador in pairs(res) do
                         if DadosJogador.Role == "Murderer" then novoMurder = Nome
@@ -298,10 +284,12 @@ task.spawn(function()
                         elseif DadosJogador.Role == "Hero" then novoHero = Nome end
                     end
 
+                    -- SÃ³ atualiza se existir o novo, senÃ£o MANTÃ‰M o velho
                     if novoMurder then Murder = novoMurder end
                     if novoSheriff then Sheriff = novoSheriff end
                     if novoHero then Hero = novoHero end
 
+                    -- Atualiza a lista completa sÃ³ quando tiver tudo
                     UltimoCargos = res
                 end
             end
@@ -311,19 +299,21 @@ task.spawn(function()
 end)
 
 -- =======================================
--- ATUALIZAÇÃO SÓ PARA JOGADORES
+-- ATUALIZA CORES DOS JOGADORES
 -- =======================================
 task.spawn(function()
     while true do
         if not ESP_ATIVO then
-            for _,hl in pairs(Destaques) do
-                hl.Enabled = false
+            for _,J in pairs(Players:GetPlayers()) do
+                if J.Character and J.Character:FindFirstChild("Highlight") then
+                    J.Character.Highlight.Enabled = false
+                end
             end
         else
             for _,J in pairs(Players:GetPlayers()) do
                 if J == player or not J.Character then continue end
                 CriarBrilho(J)
-                local hl = Destaques[J]
+                local hl = J.Character:FindFirstChild("Highlight")
                 if not hl then continue end
 
                 local XerifeMorto = false
@@ -334,28 +324,18 @@ task.spawn(function()
                     end
                 end
 
-                -- Define cargo
-                local CargoAtual = "Inocente"
-                if J.Name == Murder and EstaVivo(J, UltimoCargos) then CargoAtual = "Assassino"
-                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then CargoAtual = "Xerife"
-                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then CargoAtual = "Heroi" end
-
-                -- Só muda cor se realmente trocou de cargo
-                if UltimoCargo[J] ~= CargoAtual then
-                    UltimoCargo[J] = CargoAtual
-                    if CargoAtual == "Assassino" then
-                        hl.FillColor = Color3.fromRGB(255, 40, 40)
-                        hl.OutlineColor = Color3.fromRGB(255, 80, 80)
-                    elseif CargoAtual == "Xerife" then
-                        hl.FillColor = Color3.fromRGB(40, 120, 255)
-                        hl.OutlineColor = Color3.fromRGB(80, 150, 255)
-                    elseif CargoAtual == "Heroi" then
-                        hl.FillColor = Color3.fromRGB(255, 215, 0)
-                        hl.OutlineColor = Color3.fromRGB(255, 230, 50)
-                    else
-                        hl.FillColor = Color3.fromRGB(50, 255, 50)
-                        hl.OutlineColor = Color3.fromRGB(80, 255, 80)
-                    end
+                if J.Name == Murder and EstaVivo(J, UltimoCargos) then
+                    hl.FillColor = Color3.fromRGB(255, 40, 40)
+                    hl.OutlineColor = Color3.fromRGB(255, 80, 80)
+                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
+                    hl.FillColor = Color3.fromRGB(40, 120, 255)
+                    hl.OutlineColor = Color3.fromRGB(80, 150, 255)
+                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
+                    hl.FillColor = Color3.fromRGB(255, 215, 0)
+                    hl.OutlineColor = Color3.fromRGB(255, 230, 50)
+                else
+                    hl.FillColor = Color3.fromRGB(50, 255, 50)
+                    hl.OutlineColor = Color3.fromRGB(80, 255, 80)
                 end
 
                 hl.Enabled = true
