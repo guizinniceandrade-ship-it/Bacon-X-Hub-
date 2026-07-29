@@ -242,7 +242,7 @@ local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
 Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
- ===========================================
+-- ===========================================
 -- FUNÃ‡Ã•ES DO ESP - CORRIGIDO E SINCRONIZADO
 -- âœ… NÃƒO APAGA CARGOS SE A LISTA FOR INCOMPLETA
 -- âœ… HIGHLIGHT DAS ARMAS MAIS ESTÃVEL
