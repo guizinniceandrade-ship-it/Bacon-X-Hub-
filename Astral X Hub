@@ -136,8 +136,9 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 -- =========================
 -- ABA XERIFE 
 -- =========================
-local Aba_Xerife = Window:Tab({Titles="Xerife"})
-local Sec_Xerife = Aba_Xerife:Section({Title = "Xerife"})
+local Aba_Xerife = Window:Tab({Title="Xerife"})
+local Sec_Xerife = Aba_Xerife:Section({Title = "Xerife Silent AIM"})
+
 -- =========================
 -- ABA ESP
 -- =========================
