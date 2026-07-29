@@ -128,16 +128,63 @@ HideSearchBar = true,
 ScrollBarEnabled = false,
 })
 
--- =========================
--- 🗡️ ABA ASSASSINO - PESSOA ACOMPANHA A FACA
--- ✅ NO EXATO MOMENTO DO LANÇAMENTO
--- ✅ TELEPORTA JUNTO ENQUANTO ESTIVER NO AR
--- ✅ PARA QUANDO A FACA BATER
--- ✅ SÓ A PESSOA MAIS PRÓXIMA DENTRO DO RAIO
--- =========================
-local Aba_Assassino = Window:Tab({
-    Title="🗡️ Assassino"
-})
+-- ===========================================
+-- 🗡️ ABA ASSASSINO - FUNÇÕES COMPLETAS
+-- ===========================================
+
+-- ⚙️ VARIÁVEIS DA ABA ASSASSINO (adicione na área de variáveis do seu script)
+local KillAuraAtivo = false
+local AlcanceAura = 12
+local TeleFaca = false
+local FacaInstantanea = false
+
+-- 📌 INTERFACE DA ABA ASSASSINO
+local Aba_Assassino = Window:Tab({Title="Assassino"})
+local Sec_Ass = Aba_Assassino:Section({Title="Ferramentas do Assassino"})
+
+Sec_Ass:Toggle({Title="Aura de Matar", Default=false, Callback=function(s) KillAuraAtivo = s end})
+Sec_Ass:Slider({Title="Alcance da Aura (1 a 1000)", Value={Min=1, Max=1000, Default=12}, Callback=function(v) AlcanceAura = v end})
+Sec_Ass:Button({Title="Matar o mais próximo", Callback=function()
+    local alvo, dist = nil, math.huge
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (HRP().Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then dist=d alvo=p end
+        end
+    end
+    if alvo and alvo.Character then HRP().CFrame = alvo.Character.HumanoidRootPart.CFrame end
+end})
+Sec_Ass:Button({Title="Matar todos de uma vez", Callback=function()
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            pcall(function() HRP().CFrame = p.Character.HumanoidRootPart.CFrame end)
+        end
+    end
+end})
+
+-- 🔁 LOOP PRINCIPAL DAS FUNÇÕES (adicione no final do seu script)
+task.spawn(function()
+    while true do
+        -- SÓ FUNCIONA SE VOCÊ FOR O ASSASSINO
+        if player.Name == Murder then
+            
+            -- ✅ KILL AURA
+            if KillAuraAtivo then
+                local minhaPos = HRP().Position
+                for _,p in pairs(Players:GetPlayers()) do
+                    if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (minhaPos - p.Character.HumanoidRootPart.Position).Magnitude
+                        if dist <= AlcanceAura then
+                            pcall(function() HRP().CFrame = p.Character.HumanoidRootPart.CFrame end)
+                        end
+                    end
+                end
+            end
+
+        end
+        RunService.Heartbeat:Wait()
+    end
+end)
 
 -- =========================
 -- ABA XERIFE - ATUALIZADA
