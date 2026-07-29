@@ -215,6 +215,94 @@ local function IrAteArma()
     end
 end
 
+-- ===========================================
+-- 🎯 AIM LOCK + CÍRCULO FOV
+-- ✅ GRUDA SÓ SE ESTIVER DENTRO DO CÍRCULO
+-- ✅ AJUSTA TAMANHO DE 50 ATÉ 200
+-- ===========================================
+local AimLockAtivo = false
+local TamanhoFOV = 100
+local CirculoFOV = nil
+
+-- 🎨 CRIA O CÍRCULO NO MEIO DA TELA
+local function CriarCirculo()
+    if CirculoFOV then return end
+    local Gui = Instance.new("ScreenGui")
+    Gui.Name = "AimLock_FOV"
+    Gui.ResetOnSpawn = false
+    Gui.IgnoreGuiInset = true
+    Gui.Parent = game.CoreGui
+
+    CirculoFOV = Instance.new("Frame")
+    CirculoFOV.Size = UDim2.new(0, TamanhoFOV*2, 0, TamanhoFOV*2)
+    CirculoFOV.Position = UDim2.new(0.5, -TamanhoFOV, 0.5, -TamanhoFOV)
+    CirculoFOV.AnchorPoint = Vector2.new(0.5, 0.5)
+    CirculoFOV.BackgroundTransparency = 1
+    Instance.new("UICorner", CirculoFOV).CornerRadius = UDim.new(1,0)
+    local Borda = Instance.new("UIStroke")
+    Borda.Color = Color3.fromRGB(255, 80, 80)
+    Borda.Thickness = 2
+    Borda.Transparency = 0.3
+    Borda.Parent = CirculoFOV
+    CirculoFOV.Visible = false
+    CirculoFOV.Parent = Gui
+end
+
+-- 🧠 LOOP PRINCIPAL DO AIM LOCK
+task.spawn(function()
+    CriarCirculo()
+    while task.wait() do
+        -- ATUALIZA TAMANHO DO CÍRCULO
+        if CirculoFOV then
+            CirculoFOV.Size = UDim2.new(0, TamanhoFOV*2, 0, TamanhoFOV*2)
+            CirculoFOV.Position = UDim2.new(0.5, -TamanhoFOV, 0.5, -TamanhoFOV)
+            CirculoFOV.Visible = AimLockAtivo
+        end
+
+        if not AimLockAtivo then continue end
+
+        -- PEGA O ASSASSINO
+        local Alvo = Roles.Murderer
+        if not Alvo or not Alvo.Character or not Alvo.Character:FindFirstChild("HumanoidRootPart") then continue end
+
+        -- TRANSFORMA POSIÇÃO DELE PARA TELA
+        local PosTela, Visivel = workspace.CurrentCamera:WorldToViewportPoint(Alvo.Character.HumanoidRootPart.Position + Vector3.new(0,1.5,0))
+        if not Visivel or PosTela.Z < 0 then continue end
+
+        -- VERIFICA SE ESTÁ DENTRO DO CÍRCULO
+        local CentroTela = Vector2.new(workspace.CurrentCamera.ViewportSize.X/2, workspace.CurrentCamera.ViewportSize.Y/2)
+        local Distancia = (Vector2.new(PosTela.X, PosTela.Y) - CentroTela).Magnitude
+
+        if Distancia <= TamanhoFOV then
+            -- ✅ DENTRO: GRUDA A TELA NELE
+            workspace.CurrentCamera.CFrame = CFrame.new(
+                workspace.CurrentCamera.CFrame.Position,
+                Alvo.Character.HumanoidRootPart.Position + Vector3.new(0,1.5,0)
+            )
+        end
+    end
+end)
+
+-- 🎛️ ADICIONE ESSES CONTROLES NA INTERFACE DA ABA XERIFE
+Sec_Xerife:Section({Title = "🎯 AIM LOCK & FOV"})
+
+Sec_Xerife:Toggle({
+    Title = "🎯 Ativar Aim Lock",
+    Default = false,
+    Callback = function(e)
+        AimLockAtivo = e
+        WindUI:Notify({Title="Aim Lock", Content = e and "✅ LIGADO — Gruda no alvo" or "❌ DESLIGADO", Duration=2})
+    end
+})
+
+Sec_Xerife:Slider({
+    Title = "📏 Tamanho do Círculo FOV",
+    Value = {Min=50, Max=200, Default=100},
+    Callback = function(v)
+        TamanhoFOV = v
+    end
+})
+
 -- INTERFACE
 Sec_Xerife:Toggle({
     Title = "🔇 Ativar Silent Aim",
