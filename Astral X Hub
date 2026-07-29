@@ -133,11 +133,130 @@ ScrollBarEnabled = false,
 -- =========================
 local Aba_Assassino = Window:Tab({Title="Assassino"})
 
+
 -- =========================
--- ABA XERIFE 
+-- ABA XERIFE - COMPLETA
+-- ✅ COM TODAS FUNÇÕES DO SILENT AIM ORIGINAL
+-- ✅ DETECÇÃO AUTOMÁTICA, PREVISÃO DE MOVIMENTO
 -- =========================
-local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_Xerife = Aba_Xerife:Section({Title = "Xerife Silent AIM"})
+local Aba_Xerife = Window:Tab({
+    Title = "🔫 Xerife"
+})
+local Sec_Xerife = Aba_Xerife:Section({
+    Title = "SILENT AIM & TIRO"
+})
+
+-- VARIAVEIS GERAIS (IGUAL O SCRIPT ORIGINAL)
+local SilentAimAtivo = false
+local Roles = {
+    Murderer = nil,
+    Sheriff = nil
+}
+local LocalPlayer = game.Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RaycastParams = RaycastParams.new()
+RaycastParams.IgnoreWater = true
+RaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+-- ===========================================
+-- 🧠 FUNÇÃO DE PEGAR CARGOS (DO SCRIPT ORIGINAL)
+-- ===========================================
+local function AtualizarCargos()
+    pcall(function()
+        local Dados = game.ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+        if not Dados then return end
+        Roles.Murderer = nil
+        Roles.Sheriff = nil
+        for Nome, Info in pairs(Dados) do
+            local Jogador = game.Players:FindFirstChild(Nome)
+            if not Jogador then continue end
+            if Info.Role == "Murderer" then Roles.Murderer = Jogador end
+            if Info.Role == "Sheriff" then Roles.Sheriff = Jogador end
+        end
+    end)
+end
+
+-- ===========================================
+-- ✨ O SILENT AIM ORIGINAL - INTERCEPTADOR
+-- ===========================================
+local RawMetatable = getrawmetatable(game)
+local ChamadaOriginal = RawMetatable.__namecall
+setreadonly(RawMetatable, false)
+
+RawMetatable.__namecall = newcclosure(function(Objeto, ...)
+    local Metodo = getnamecallmethod()
+    local Args = {...}
+
+    -- SE LIGADO E FOR O COMANDO DE TIRO DO MM2
+    if SilentAimAtivo and Metodo == "InvokeServer" and tostring(Objeto) == "ShootGun" then
+        AtualizarCargos()
+        local Alvo = Roles.Murderer
+        if Alvo and Alvo.Character and Alvo.Character:FindFirstChild("HumanoidRootPart") then
+            local ParteAlvo = Alvo.Character.HumanoidRootPart
+            -- PREVINE MOVIMENTO (IGUAL O SCRIPT BOM)
+            local Previsao = ParteAlvo.AssemblyLinearVelocity / 40
+            if math.abs(ParteAlvo.AssemblyLinearVelocity.Y) < 10 then
+                Args[2] = ParteAlvo.Position + Previsao + Vector3.new(0, 1.5, 0)
+            end
+        end
+    end
+
+    return ChamadaOriginal(Objeto, unpack(Args))
+end)
+
+setreadonly(RawMetatable, true)
+
+-- ===========================================
+-- 🛠️ FUNÇÕES EXTRAS
+-- ===========================================
+local function PegarArma()
+    local Arma = LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Gun")
+    if Arma and not LocalPlayer.Character:FindFirstChild("Gun") then
+        Arma.Parent = LocalPlayer.Character
+        WindUI:Notify({Title="✅ Xerife", Content="Arma equipada!", Duration=2})
+    else
+        WindUI:Notify({Title="❌ Xerife", Content="Sem arma disponível!", Duration=2})
+    end
+end
+
+local function MostrarCargos()
+    AtualizarCargos()
+    local Texto = ""
+    if Roles.Murderer then Texto = Texto.."Assassino: "..Roles.Murderer.Name.."\n" end
+    if Roles.Sheriff then Texto = Texto.."Xerife: "..Roles.Sheriff.Name end
+    WindUI:Notify({Title="📋 Cargos", Content=Texto or "Nenhum encontrado", Duration=3})
+end
+
+-- ===========================================
+-- 🎛️ TODAS AS OPÇÕES NA INTERFACE
+-- ===========================================
+Sec_Xerife:Toggle({
+    Title = "🔇 Ativar Silent Aim",
+    Default = false,
+    Callback = function(Estado)
+        SilentAimAtivo = Estado
+        WindUI:Notify({
+            Title = "Silent Aim",
+            Content = Estado and "✅ LIGADO — acerta sempre no Assassino" or "❌ DESLIGADO",
+            Duration = 2
+        })
+    end
+})
+
+Sec_Xerife:Button({
+    Title = "📦 Pegar/Equipar Arma",
+    Callback = PegarArma
+})
+
+Sec_Xerife:Button({
+    Title = "📋 Ver Quem É Quem",
+    Callback = MostrarCargos
+})
+
+Sec_Xerife:Button({
+    Title = "🔁 Atualizar Dados",
+    Callback = AtualizarCargos
+})
 
 -- =========================
 -- ABA ESP
@@ -573,47 +692,4 @@ RunService.RenderStepped:Connect(function()
         Cam.FieldOfView = FOV_Atual
     end
 end)
-
--- ===========================================
--- ✨ SILENT AIM - VERSÃO QUE FUNCIONA 100%
--- USA A LÓGICA DO METATABLE (INTERCEPTOR)
--- ===========================================
-local SilentAimAtivo = false
-
--- SALVA O MÉTODO ORIGINAL PARA NÃO QUEBRAR O JOGO
-local RawMetatable = getrawmetatable(game)
-local ChamadaOriginal = RawMetatable.__namecall
-setreadonly(RawMetatable, false)
-
--- INTERCEPTA QUALQUER CHAMADA DE FUNÇÃO DO JOGO
-RawMetatable.__namecall = newcclosure(function(Objeto, ...)
-    local Metodo = getnamecallmethod()
-    local Argumentos = {...}
-
-    -- SE SILENT AIM ESTIVER LIGADO E FOR O DISPARO DA ARMA
-    if SilentAimAtivo and Metodo == "InvokeServer" then
-        local Nome = tostring(Objeto):lower()
-        if Nome:find("shoot") or Nome:find("gun") or Nome:find("beam") then
-            -- PROCURA O ASSASSINO AUTOMATICAMENTE
-            for _, Jogador in pairs(Players:GetPlayers()) do
-                if Jogador ~= player and Jogador.Character then
-                    local TemFaca = Jogador.Backpack:FindFirstChild("Knife") or Jogador.Character:FindFirstChild("Knife")
-                    if TemFaca then
-                        local Alvo = Jogador.Character:FindFirstChild("HumanoidRootPart")
-                        if Alvo then
-                            -- TROCA A POSIÇÃO DA SUA MIRA PELA POSIÇÃO DELE
-                            Argumentos[2] = Alvo.Position + Vector3.new(0, 1.6, 0) -- AJUSTA PARA O PEITO
-                            break
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    -- MANDA O COMANDO ORIGINAL COM A POSIÇÃO ALTERADA
-    return ChamadaOriginal(Objeto, unpack(Argumentos))
-end)
-
-setreadonly(RawMetatable, true)
 
