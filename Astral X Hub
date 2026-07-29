@@ -242,25 +242,24 @@ local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
 Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
-
 -- ===========================================
--- CÓDIGO ORIGINAL CORRIGIDO | SEM PISCAR
--- ✅ Destaque SÓ NO CORPO, NÃO PEGA ARMA
--- ✅ Só muda cor quando o cargo REALMENTE mudar
--- ✅ Funciona perfeitamente ao renascer
+-- FUNÇÕES DO ESP - SÓ JOGADORES | NÃO MARCA ARMAS
+-- ✅ Destaque só no corpo, não pega arma
+-- ✅ Não marca arma caída nem equipada
+-- ✅ Mantém sua lógica de cargos intacta
 -- ===========================================
-local UltimoCargo = {} -- Guarda o último cargo para não repetir
-local Destaques = {} -- Guarda os destaques criados
+local UltimoCargo = {} -- Guarda último cargo para não piscar
+local Destaques = {} -- Controla só os destaques de jogadores
 
--- ✅ CRIA DESTAQUE SÓ NO HumanoidRootPart (NÃO PEGA ARMA)
+-- ✅ CRIA DESTAQUE SÓ NO CORPO (HumanoidRootPart)
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
-    if Destaques[Jogador] then return end -- Já tem, não cria outro
+    if Destaques[Jogador] then return end -- Não cria duplicado
 
     local hrp = Jogador.Character:WaitForChild("HumanoidRootPart")
     local hl = Instance.new("Highlight")
     hl.Name = "Highlight"
-    hl.Adornee = hrp -- ✅ AQUI É A MUDANÇA PRINCIPAL: só na raiz, não em todo o personagem
+    hl.Adornee = hrp -- ✅ Só na raiz, nunca na arma
     hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     hl.OutlineTransparency = 0
     hl.Enabled = false
@@ -268,9 +267,8 @@ local function CriarBrilho(Jogador)
 
     Destaques[Jogador] = hl
 
-    -- ✅ TRATA RENASCIMENTO AUTOMÁTICO
-    Jogador.CharacterAdded:Connect(function(novoChar)
-        task.wait(0.05)
+    -- Atualiza automaticamente ao renascer
+    Jogador.CharacterAdded:Connect(function()
         Destaques[Jogador] = nil
         UltimoCargo[Jogador] = nil
         CriarBrilho(Jogador)
@@ -283,7 +281,9 @@ local function EstaVivo(Jogador, listaCargos)
     return not Info.Killed and not Info.Dead
 end
 
--- ✅ PEGA CARGOS - MANTÉM SUA LÓGICA DE NÃO APAGAR ANTES DE TEMPO
+-- =================================
+-- PEGA CARGOS (SUA LÓGICA ORIGINAL)
+-- =================================
 task.spawn(function()
     while true do
         if ESP_ATIVO then
@@ -310,16 +310,18 @@ task.spawn(function()
     end
 end)
 
--- ✅ ATUALIZA CORES - SÓ MUDA SE O CARGO FOR DIFERENTE
+-- =======================================
+-- ATUALIZAÇÃO SÓ PARA JOGADORES
+-- =======================================
 task.spawn(function()
     while true do
         if not ESP_ATIVO then
-            for _,J in pairs(Players:GetPlayers()) do
-                if Destaques[J] then Destaques[J].Enabled = false end
+            for _,hl in pairs(Destaques) do
+                hl.Enabled = false
             end
         else
             for _,J in pairs(Players:GetPlayers()) do
-                if J == player then continue end
+                if J == player or not J.Character then continue end
                 CriarBrilho(J)
                 local hl = Destaques[J]
                 if not hl then continue end
@@ -332,13 +334,13 @@ task.spawn(function()
                     end
                 end
 
-                -- Define o cargo atual
+                -- Define cargo
                 local CargoAtual = "Inocente"
                 if J.Name == Murder and EstaVivo(J, UltimoCargos) then CargoAtual = "Assassino"
                 elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then CargoAtual = "Xerife"
                 elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then CargoAtual = "Heroi" end
 
-                -- ✅ SÓ MUDA A COR SE FOR DIFERENTE DA ÚLTIMA
+                -- Só muda cor se realmente trocou de cargo
                 if UltimoCargo[J] ~= CargoAtual then
                     UltimoCargo[J] = CargoAtual
                     if CargoAtual == "Assassino" then
