@@ -173,6 +173,40 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =========================
+-- ABA ASSASSINO · ADICIONAL
+-- =========================
+-- ✅ NOVA SEÇÃO: KANIF
+local Sec_Kanif = Aba_Assassino:Section({Title="🕷️ Kanif"})
+
+local KanifAtivo = false
+
+Sec_Kanif:Toggle({
+    Title = "Ativar Hitbox 1000 (Outros)",
+    Default = false,
+    Callback = function(s) KanifAtivo = s end
+})
+
+-- ✅ SISTEMA FUNCIONANDO
+RunService.Stepped:Connect(function()
+    for _, Jogador in pairs(Players:GetPlayers()) do
+        if Jogador == player then continue end
+        if not Jogador.Character then continue end
+
+        local HRP = Jogador.Character:FindFirstChild("HumanoidRootPart")
+        if not HRP then continue end
+
+        if KanifAtivo then
+            -- Aumenta só quando ativado
+            HRP.Size = Vector3.new(1000, 1000, 1000)
+            HRP.CanCollide = false
+        else
+            -- Volta ao normal quando desligar
+            HRP.Size = Vector3.new(2, 2, 2)
+        end
+    end
+end)
+
+-- =========================
 -- ABA XERIFE
 -- =========================
 local Aba_Xerife = Window:Tab({Title="Xerife"})
