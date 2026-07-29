@@ -143,6 +143,97 @@ local Aba_Xerife = Window:Tab({
     Title = "🔫 Xerife"
 })
 
+local Sec_Xerife = Aba_Xerife:Section({
+    Title = "SILENT AIM & UTILITÁRIOS"
+})
+
+-- VARIAVEIS DO SISTEMA
+local SilentAimAtivo = false
+local AjustePrevisao = 0.15
+local Roles = {Murderer = nil, Sheriff = nil}
+
+-- PEGA CARGOS DO JOGO
+local function AtualizarCargos()
+    pcall(function()
+        local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+        if not Dados then return end
+        Roles.Murderer = nil
+        Roles.Sheriff = nil
+        for Nome, Info in pairs(Dados) do
+            local Jogador = Players:FindFirstChild(Nome)
+            if not Jogador then continue end
+            if Info.Role == "Murderer" then Roles.Murderer = Jogador end
+            if Info.Role == "Sheriff" then Roles.Sheriff = Jogador end
+        end
+    end)
+end
+
+-- SILENT AIM INTERCEPTADOR (MÉTODO NAUHUB)
+local RawMetatable = getrawmetatable(game)
+local ChamadaOriginal = RawMetatable.__namecall
+setreadonly(RawMetatable, false)
+
+RawMetatable.__namecall = newcclosure(function(Objeto, ...)
+    local Metodo = getnamecallmethod()
+    local Args = {...}
+
+    if SilentAimAtivo and Metodo == "InvokeServer" and tostring(Objeto) == "ShootGun" then
+        AtualizarCargos()
+        local Alvo = Roles.Murderer
+        if Alvo and Alvo.Character and Alvo.Character:FindFirstChild("HumanoidRootPart") then
+            local ParteAlvo = Alvo.Character.HumanoidRootPart
+            local Previsao = ParteAlvo.AssemblyLinearVelocity * AjustePrevisao
+            if math.abs(ParteAlvo.AssemblyLinearVelocity.Y) < 10 then
+                Args[2] = ParteAlvo.Position + Previsao + Vector3.new(0, 1.5, 0)
+            end
+        end
+    end
+
+    return ChamadaOriginal(Objeto, unpack(Args))
+end)
+
+setreadonly(RawMetatable, true)
+
+-- FUNÇÕES AUXILIARES
+local function PegarArma()
+    local Arma = player.Character:FindFirstChild("Gun") or player.Backpack:FindFirstChild("Gun")
+    if Arma and not player.Character:FindFirstChild("Gun") then
+        Arma.Parent = player.Character
+        WindUI:Notify({Title="✅ Xerife", Content="Arma equipada!", Duration=2})
+    else
+        WindUI:Notify({Title="❌ Xerife", Content="Sem arma disponível!", Duration=2})
+    end
+end
+
+local function IrAteArma()
+    local Arma = Workspace:FindFirstChild("GunDrop", true)
+    if Arma and HRP() then
+        HRP().CFrame = Arma.CFrame * CFrame.new(0, 2, 0)
+        WindUI:Notify({Title="✅ Xerife", Content="Teleportado até a arma!", Duration=2})
+    else
+        WindUI:Notify({Title="❌ Xerife", Content="Nenhuma arma caída encontrada!", Duration=2})
+    end
+end
+
+-- INTERFACE
+Sec_Xerife:Toggle({
+    Title = "🔇 Ativar Silent Aim",
+    Default = false,
+    Callback = function(e)
+        SilentAimAtivo = e
+        WindUI:Notify({Title="Silent Aim", Content = e and "✅ LIGADO — acerta sempre no Assassino" or "❌ DESLIGADO", Duration=2})
+    end
+})
+
+Sec_Xerife:Slider({
+    Title = "Ajuste de Previsão",
+    Value = {Min=0, Max=0.5, Default=0.15},
+    Callback = function(v) AjustePrevisao = v end
+})
+
+Sec_Xerife:Button({Title = "📦 Pegar/Equipar Arma", Callback = PegarArma})
+Sec_Xerife:Button({Title = "📍 Ir até a Arma", Callback = IrAteArma})
+
 -- =========================
 -- ABA ESP
 -- =========================
