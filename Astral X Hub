@@ -126,7 +126,46 @@ ScrollBarEnabled = false,
 -- =========================
 -- ABA ASSASSINO
 -- =========================
-local Aba_Assassino = Window:Tab({Title="Assassino"})
+-- ✅ SÓ HITBOX · IGUAL ESTILO ABA DIVERSÃO
+local Sec_Hitbox = Aba_Assassino:Section({Title="Hitbox"})
+
+local HitboxAtivo = false
+local TamanhoHit = 12
+
+Sec_Hitbox:Toggle({
+    Title = "Ativar Hitbox",
+    Default = false,
+    Callback = function(s) HitboxAtivo = s end
+})
+
+Sec_Hitbox:Slider({
+    Title = "Tamanho (5 a 50)",
+    Value = {Min=5, Max=50, Default=12},
+    Callback = function(v) TamanhoHit = v end
+})
+
+-- SISTEMA FUNCIONAL
+RunService.Stepped:Connect(function()
+    local c = player.Character
+    if not c then return end
+    local faca = c:FindFirstChild("Knife")
+    if not faca then return end
+
+    if HitboxAtivo then
+        for _, p in ipairs(faca:GetChildren()) do
+            if p:IsA("BasePart") then
+                p.Size = Vector3.new(TamanhoHit, TamanhoHit, TamanhoHit)
+                p.CanCollide = false
+            end
+        end
+    else
+        for _, p in ipairs(faca:GetChildren()) do
+            if p:IsA("BasePart") then
+                p.Size = Vector3.new(1.8, 1, 5.5) -- volta ao normal
+            end
+        end
+    end
+end)
 
 -- =========================
 -- ABA XERIFE
