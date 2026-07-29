@@ -135,26 +135,19 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 
 -- =========================
--- ABA XERIFE - COMPLETA
--- ✅ COM TODAS FUNÇÕES DO SILENT AIM ORIGINAL
--- ✅ DETECÇÃO AUTOMÁTICA, PREVISÃO DE MOVIMENTO
--- =========================
--- =========================
--- ABA XERIFE - COMPLETA & CORRIGIDA
--- ✅ SILENT AIM PERFEITO
--- ✅ PEGAR ARMA 100% FUNCIONANDO
--- ✅ IR ATÉ ARMA
+-- ABA XERIFE - ATUALIZADA
 -- =========================
 local Aba_Xerife = Window:Tab({
     Title = "🔫 Xerife"
 })
 local Sec_Xerife = Aba_Xerife:Section({
-    Title = "SILENT AIM & UTILITÁRIOS"
+    Title = "Silent AII"
 })
 
 -- VARIAVEIS DO SISTEMA
 local SilentAimAtivo = false
 local AjustePrevisao = 0.15
+local AutoIrArmaAtivo = false
 local Roles = {Murderer = nil, Sheriff = nil}
 
 -- PEGA CARGOS DO JOGO
@@ -199,49 +192,26 @@ end)
 
 setreadonly(RawMetatable, true)
 
--- ✅ PEGAR/EQUIPAR ARMA — CORRIGIDO E GARANTIDO
-local function PegarArma()
-    local Arma = 
-        player.Character:FindFirstChild("Gun", true) or
-        player.Backpack:FindFirstChild("Gun", true) or
-        player.StarterGear:FindFirstChild("Gun", true)
+-- ✅ SISTEMA IR E VOLTAR AUTOMÁTICO
+task.spawn(function()
+    while task.wait(0.1) do
+        if not AutoIrArmaAtivo then continue end
 
-    if not Arma then
-        WindUI:Notify({Title="❌ Xerife", Content="Nenhuma arma encontrada!", Duration=2})
-        return
-    end
+        local Arma = Workspace:FindFirstChild("GunDrop", true)
+        if Arma and HRP() then
+            -- SALVA SUA POSIÇÃO ORIGINAL
+            local MinhaPosicaoOriginal = HRP().CFrame
 
-    if Arma.Parent == player.Character then
-        WindUI:Notify({Title="✅ Xerife", Content="Arma já está equipada!", Duration=2})
-        return
-    end
+            -- VAI ATÉ A ARMA RÁPIDO
+            HRP().CFrame = Arma.CFrame * CFrame.new(0, 2, 0)
+            task.wait(0.08) -- TEMPO BEM CURTO
 
-    Arma.Parent = player.Character
-    task.wait(0.2)
-
-    if player.Character:FindFirstChild("Gun") then
-        WindUI:Notify({Title="✅ Xerife", Content="Arma pronta na mão!", Duration=2})
-    else
-        WindUI:Notify({Title="⚠️ Xerife", Content="Tentando novamente...", Duration=2})
-        task.spawn(function()
-            task.wait(0.1)
-            Arma.Parent = player.Character
-        end)
+            -- VOLTA IMEDIATAMENTE PARA ONDE VOCÊ ESTAVA
+            HRP().CFrame = MinhaPosicaoOriginal
+            WindUI:Notify({Title="✅ Xerife", Content="Peguei a arma e voltei!", Duration=1})
+        end
     end
-end
-
--- ✅ IR ATÉ ARMA CAÍDA
-local function IrAteArma()
-    local Arma = workspace:FindFirstChild("GunDrop", true)
-    if not Arma then
-        WindUI:Notify({Title="❌ Xerife", Content="Nenhuma arma caída no chão!", Duration=2})
-        return
-    end
-    if HRP() then
-        HRP().CFrame = Arma.CFrame * CFrame.new(0, 1.5, 0)
-        WindUI:Notify({Title="✅ Xerife", Content="Cheguei na arma!", Duration=2})
-    end
-end
+end)
 
 -- INTERFACE
 Sec_Xerife:Toggle({
@@ -259,8 +229,14 @@ Sec_Xerife:Slider({
     Callback = function(v) AjustePrevisao = v end
 })
 
-Sec_Xerife:Button({Title = "📦 Pegar/Equipar Arma", Callback = PegarArma})
-Sec_Xerife:Button({Title = "📍 Ir até a Arma", Callback = IrAteArma})
+Sec_Xerife:Toggle({
+    Title = "📍 Ir e Voltar na Arma Automaticamente",
+    Default = false,
+    Callback = function(e)
+        AutoIrArmaAtivo = e
+        WindUI:Notify({Title="Auto Pegar", Content = e and "✅ LIGADO — Vai e volta sozinho" or "❌ DESLIGADO", Duration=2})
+    end
+})
 
 
 -- =========================
