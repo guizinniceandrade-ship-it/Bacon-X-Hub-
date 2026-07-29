@@ -246,7 +246,6 @@ Sec_Assassino:Slider({
 -- =========================
 -- ABA XERIFE - ATUALIZADA
 -- =========================
-
 local Aba_Xerife = Window:Tab({
     Title = "🔫 Xerife"
 })
@@ -254,85 +253,80 @@ local Sec_Xerife = Aba_Xerife:Section({
     Title = "SILENT AIM & UTILITÁRIOS"
 })
 
-local SilentAimAtivo = false
-local AjustePrevisao = 0.15
+local SheriffAim = false
+local GunAccuracy = 25
 local AutoIrArmaAtivo = false
-local Roles = {Murderer = nil, Sheriff = nil}
+local Murderer = nil
 
--- PEGA CARGOS
-local function AtualizarCargos()
+-- PEGA O ASSASSINO (MÉTODO DO NAUHUB)
+local function PegarAssassino()
     pcall(function()
-        local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
-        if not Dados then return end
-        Roles.Murderer = nil
-        Roles.Sheriff = nil
-        for Nome, Info in pairs(Dados) do
-            local Jogador = Players:FindFirstChild(Nome)
-            if not Jogador then continue end
-            if Info.Role == "Murderer" then Roles.Murderer = Jogador end
-            if Info.Role == "Sheriff" then Roles.Sheriff = Jogador end
+        Murderer = nil
+        for i,v in pairs(Players:GetChildren()) do 
+            if (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) then
+                Murderer = v
+                break
+            end
         end
     end)
 end
 
--- ✅ SILENT AIM — EXATAMENTE O JEITO QUE VOCÊ TINHA E FUNCIONAVA
+-- ✅ SILENT AIM EXATO DO NAUHUB — INTERCEPTADOR
 local RawMetatable = getrawmetatable(game)
 local ChamadaOriginal = RawMetatable.__namecall
 setreadonly(RawMetatable, false)
 
-RawMetatable.__namecall = newcclosure(function(Objeto, ...)
+RawMetatable.__namecall = newcclosure(function(Self, ...)
     local Metodo = getnamecallmethod()
     local Args = {...}
 
-    if SilentAimAtivo and Metodo == "InvokeServer" and tostring(Objeto) == "ShootGun" then
-        AtualizarCargos()
-        local Alvo = Roles.Murderer
-        if Alvo and Alvo.Character and Alvo.Character:FindFirstChild("HumanoidRootPart") then
-            local ParteAlvo = Alvo.Character.HumanoidRootPart
-            local Previsao = ParteAlvo.AssemblyLinearVelocity / 40
-            if math.abs(ParteAlvo.AssemblyLinearVelocity.Y) < 10 then
-                Args[2] = ParteAlvo.Position + Previsao + Vector3.new(0, 1.5, 0)
-            end
+    if SheriffAim and Metodo == "InvokeServer" and tostring(Self) == "ShootGun" then
+        PegarAssassino()
+        if Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") then
+            local Alvo = Murderer.Character.HumanoidRootPart
+            local Velocidade = Alvo.AssemblyLinearVelocity
+            -- ✅ FÓRMULA EXATA DO NAUHUB PARA PREVISÃO
+            Args[2] = Alvo.Position + (Velocidade * Vector3.new(GunAccuracy/200, 0, GunAccuracy/200)) + Vector3.new(0,1.5,0)
         end
     end
 
-    return ChamadaOriginal(Objeto, unpack(Args))
+    return ChamadaOriginal(Self, unpack(Args))
 end)
 
 setreadonly(RawMetatable, true)
 
--- ✅ AUTO IR E VOLTAR NA ARMA — COMO VOCÊ PEDIU
+-- ✅ AUTO IR E VOLTAR NA ARMA
 task.spawn(function()
     while task.wait(0.1) do
         if not AutoIrArmaAtivo then continue end
         local Arma = workspace:FindFirstChild("GunDrop", true)
         if Arma and HRP() then
-            local PosicaoOriginal = HRP().CFrame
+            local PosOriginal = HRP().CFrame
             HRP().CFrame = Arma.CFrame * CFrame.new(0, 2, 0)
             task.wait(0.08)
-            HRP().CFrame = PosicaoOriginal
+            HRP().CFrame = PosOriginal
         end
     end
 end)
 
--- INTERFACE
+-- 🎛️ INTERFACE IGUAL O ESTILO DO SEU HUB
 Sec_Xerife:Toggle({
-    Title = "🔇 Ativar Silent Aim",
+    Title = "🔇 Sheriff Silent Aim",
     Default = false,
     Callback = function(s)
-        SilentAimAtivo = s
-        WindUI:Notify({Title="Silent Aim", Content = s and "✅ LIGADO" or "❌ DESLIGADO", Duration=2})
+        SheriffAim = s
+        WindUI:Notify({Title="Silent Aim", Content = s and "✅ LIGADO — NauHub Style" or "❌ DESLIGADO", Duration=2})
     end
 })
 
 Sec_Xerife:Slider({
-    Title = "Ajuste de Previsão",
-    Value = {Min=0, Max=0.5, Default=0.15},
-    Callback = function(v) AjustePrevisao = v end
+    Title = "🎯 Precisão / Previsão",
+    Value = {Min=0, Max=100, Default=25},
+    Callback = function(v) GunAccuracy = v end
 })
 
 Sec_Xerife:Toggle({
-    Title = "📍 Ir/Voltar na Arma Automaticamente",
+    Title = "📍 Ir/Voltar na Arma",
     Default = false,
     Callback = function(e)
         AutoIrArmaAtivo = e
