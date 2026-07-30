@@ -19,4 +19,63 @@ local NomeJanela = "ASTRAL X Hub"
 if game.CoreGui:FindFirstChild(NomeJanela) then game.CoreGui[NomeJanela]:Destroy() end
 if player.PlayerGui:FindFirstChild(NomeJanela) then player.PlayerGui[NomeJanela]:Destroy() end
 
+-- ===========================================
+-- FUNÇÕES AUXILIARES
+-- ===========================================
+local function HRP()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
+
+local function GetMapa()
+    for _,v in ipairs(workspace:GetChildren()) do
+        if v:IsA("Model") then
+            if v:FindFirstChild("Spawns", true) and v.Name ~= "Lobby" and not string.find(v.Name:lower(),"lobby") then
+                return v
+            end
+        end
+    end
+end
+
+local function GetLobby()
+    for _,v in ipairs(workspace:GetChildren()) do
+        if v:IsA("Model") then
+            local n = v.Name:lower()
+            if string.find(n,"lobby") then return v end
+        end
+    end
+end
+
+local function GetBasePart(model)
+    if not model then return end
+    if model.PrimaryPart then return model.PrimaryPart end
+    return model:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function IrPartida()
+    local mapa = GetMapa()
+    if mapa then
+        local spawn = mapa:FindFirstChild("Spawns", true) or mapa:FindFirstChild("PlayerSpawns", true)
+        if spawn then
+            local part = spawn:FindFirstChildWhichIsA("BasePart", true)
+            if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+        end
+        local part = GetBasePart(mapa)
+        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+    end
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            HRP().CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,3)
+            return
+        end
+    end
+end
+
+local function IrLobby()
+    local lobby = GetLobby()
+    if lobby then
+        local part = GetBasePart(lobby)
+        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) end
+    end
+end
 
