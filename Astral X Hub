@@ -246,6 +246,31 @@ Sec_Animacoes:Button({
     end
 })
 
+-- ===========================================
+-- 🔁 LOOP PARA FAZER TODAS FUNÇÕES FUNCIONAREM
+-- COLOQUE ESSE LOOP NO FINAL DO SEU SCRIPT
+-- ===========================================
+RunService.Heartbeat:Connect(function()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        local hum = player.Character.Humanoid
+        hum.WalkSpeed = walkSpeed
+        hum.JumpPower = jumpPower
+    end
+end)
+
+UIS.JumpRequest:Connect(function()
+    if infJump and player.Character then
+        local hum = player.Character:FindFirstChild("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    local cam = workspace.CurrentCamera
+    if ZoomInfinito then cam.FieldOfView = FOV_Atual end
+    if CameraAtravessaParede then cam.CameraSubject = cam end
+end)
+
 -- =========================
 -- ABA TELEPORTE
 -- =========================
@@ -602,24 +627,4 @@ task.spawn(function()
         end
         RunService.Heartbeat:Wait()
     end
-end)
-
--- ===========================================
--- LOOP GERAL - SÓ MOVIMENTO, SEM PESO
--- ===========================================
-UIS.JumpRequest:Connect(function()
-    if infJump and player.Character then
-        local hum = player.Character:FindFirstChild("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-    end
-end)
-
-RunService.Stepped:Connect(function()
-    local char = player.Character
-    if not char then return end
-    local hum = char:FindFirstChild("Humanoid")
-    if not hum then return end
-
-    hum.WalkSpeed = walkSpeed
-    hum.JumpPower = jumpPower
 end)
