@@ -110,4 +110,108 @@ local CONFIG_FARM = {
 local AutoFarmAtivo = false
 local collectedCoins = {}
 
+-- ===========================================
+-- INTERFACE PRINCIPAL
+-- ===========================================
+local Window = WindUI:CreateWindow({
+Title = "ASTRAL X Hub",
+Folder = "AstralX",
+Size = UDim2.fromOffset(580,460),
+MinSize = Vector2.new(560,350),
+MaxSize = Vector2.new(850,560),
+Transparent = true,
+Theme = "Dark",
+Resizable = true,
+SideBarWidth = 200,
+BackgroundImageTransparency = 0.42,
+HideSearchBar = true,
+ScrollBarEnabled = false,
+})
+
+-- ===========================================
+-- ðŸ—¡ï¸ ABA ASSASSINO - TODAS FUNÃ‡Ã•ES DO YARHM
+-- ===========================================
+
+-- âš™ï¸ ADICIONE ESSAS VARIÃVEIS JUNTO DAS OUTRAS DO SEU SCRIPT
+local KillAuraAtivo = false
+local AlcanceAura = 12
+local FacaInstantanea = false
+local TeleporteComFaca = false
+local ArremessoFalso = false
+local TravarAlvo = false
+
+-- ðŸ“Œ INTERFACE COMPLETA
+local Aba_Assassino = Window:Tab({Title="ðŸ—¡ï¸ Assassino"})
+local Sec_Ass = Aba_Assassino:Section({Title="Controle da Faca"})
+
+Sec_Ass:Toggle({Title="Aura de Matar", Default=false, Callback=function(s) KillAuraAtivo = s end})
+Sec_Ass:Slider({Title="Alcance da Aura (1 a 1000)", Value={Min=1, Max=1000, Default=12}, Callback=function(v) AlcanceAura = v end})
+Sec_Ass:Toggle({Title="Arremesso InstantÃ¢neo", Default=false, Callback=function(s) FacaInstantanea = s end})
+Sec_Ass:Toggle({Title="Teleportar junto com a faca", Default=false, Callback=function(s) TeleporteComFaca = s end})
+Sec_Ass:Toggle({Title="Arremesso Falso (disfarÃ§ar)", Default=false, Callback=function(s) ArremessoFalso = s end})
+
+Sec_Ass:Button({Title="Matar o mais prÃ³ximo", Callback=function()
+    local alvo, dist = nil, math.huge
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (HRP().Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then dist=d alvo=p end
+        end
+    end
+    if alvo and alvo.Character then HRP().CFrame = alvo.Character.HumanoidRootPart.CFrame end
+end})
+
+Sec_Ass:Button({Title="Matar todos de uma vez", Callback=function()
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            pcall(function() HRP().CFrame = p.Character.HumanoidRootPart.CFrame end)
+        end
+    end
+end})
+
+-- ðŸ” LOOP PRINCIPAL - COLOQUE NO FINAL DO SEU SCRIPT
+task.spawn(function()
+    while true do
+        -- SÃ“ FUNCIONA SE VOCÃŠ FOR O ASSASSINO
+        if player.Name == Murder and player.Character then
+            local minhaPos = HRP().Position
+
+            -- âœ… AURA DE MATAR
+            if KillAuraAtivo then
+                for _,p in pairs(Players:GetPlayers()) do
+                    if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (minhaPos - p.Character.HumanoidRootPart.Position).Magnitude
+                        if dist <= AlcanceAura then
+                            pcall(function() HRP().CFrame = p.Character.HumanoidRootPart.CFrame end)
+                        end
+                    end
+                end
+            end
+
+            -- âœ… ARREMESSO INSTANTÃ‚NEO / TELEPORTE / FALSO
+            if FacaInstantanea or TeleporteComFaca or ArremessoFalso then
+                -- Detecta quando vocÃª usa a faca
+                player.Character.Humanoid.Activated:Connect(function()
+                    local alvo, dist = nil, math.huge
+                    for _,p in pairs(Players:GetPlayers()) do
+                        if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                            local d = (minhaPos - p.Character.HumanoidRootPart.Position).Magnitude
+                            if d < dist then dist=d alvo=p end
+                        end
+                    end
+                    if not alvo or not alvo.Character then return end
+
+                    -- Se for arremesso falso: sÃ³ faz a animaÃ§Ã£o, nÃ£o acerta
+                    if ArremessoFalso then return end
+
+                    -- Se for arremesso rÃ¡pido/teleporte
+                    if TeleporteComFaca then
+                        HRP().CFrame = alvo.Character.HumanoidRootPart.CFrame
+                    end
+                end)
+            end
+        end
+        RunService.Heartbeat:Wait()
+    end
+end)
 
