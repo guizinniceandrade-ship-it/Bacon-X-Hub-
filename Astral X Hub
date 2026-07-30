@@ -446,3 +446,153 @@ Sec_Diversao:Button({
         end)
     end
 })
+
+-- =========================
+-- ABA TELEPORTE
+-- =========================
+local Aba_Teleporte = Window:Tab({Title="Teleporte"})
+local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
+Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
+Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
+
+local function CriarBrilho(Jogador)
+    if not Jogador or not Jogador.Character then return end
+    if not Jogador.Character:FindFirstChild("Highlight") then
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight"
+        hl.Adornee = Jogador.Character
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineTransparency = 0
+        hl.Enabled = false
+        hl.Parent = Jogador.Character
+    end
+end
+
+local function EstaVivo(Jogador, listaCargos)
+    if not listaCargos or not listaCargos[Jogador.Name] then return false end
+    local Info = listaCargos[Jogador.Name]
+    return not Info.Killed and not Info.Dead
+end
+
+task.spawn(function()
+    while true do
+        if ESP_ATIVO then
+            local PegarDados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+            if PegarDados then
+                local ok, res = pcall(function() return PegarDados:InvokeServer() end)
+                if ok and type(res) == "table" then
+                    local novoMurder, novoSheriff, novoHero = nil, nil, nil
+                    for Nome,DadosJogador in pairs(res) do
+                        if DadosJogador.Role == "Murderer" then novoMurder = Nome
+                        elseif DadosJogador.Role == "Sheriff" then novoSheriff = Nome
+                        elseif DadosJogador.Role == "Hero" then novoHero = Nome end
+                    end
+                    if novoMurder then Murder = novoMurder end
+                    if novoSheriff then Sheriff = novoSheriff end
+                    if novoHero then Hero = novoHero end
+                    UltimoCargos = res
+                end
+            end
+        end
+        task.wait(0.3)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if not ESP_ATIVO then
+            for _,J in pairs(Players:GetPlayers()) do
+                if J.Character and J.Character:FindFirstChild("Highlight") then
+                    J.Character.Highlight.Enabled = false
+                end
+            end
+        else
+            for _,J in pairs(Players:GetPlayers()) do
+                if J == player or not J.Character then continue end
+                CriarBrilho(J)
+                local hl = J.Character:FindFirstChild("Highlight")
+                if not hl then continue end
+
+                local XerifeMorto = Sheriff and Players:FindFirstChild(Sheriff) and not EstaVivo(Players[Sheriff], UltimoCargos) or false
+
+                if J.Name == Murder and EstaVivo(J, UltimoCargos) then
+                    hl.FillColor = Color3.fromRGB(255, 40, 40)
+                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
+                    hl.FillColor = Color3.fromRGB(40, 120, 255)
+                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
+                    hl.FillColor = Color3.fromRGB(255, 215, 0)
+                else
+                    hl.FillColor = Color3.fromRGB(50, 255, 50)
+                end
+                hl.OutlineColor = hl.FillColor
+                hl.Enabled = true
+            end
+        end
+        task.wait(0.15)
+    end
+end)
+
+-- ===========================================
+-- ðŸ”„ SERVIDOR HOP CORRIGIDO
+-- COLOQUE DENTRO DA ABA TELEPORTE
+-- ===========================================
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local Sec_Hop = Aba_Teleporte:Section({Title="ðŸ”„ Trocar Servidor"})
+
+-- FUNÃ‡ÃƒO CORRIGIDA PARA BUSCAR SERVIDORES
+local function BuscarServidor(minimoJogadores)
+    local placeId = game.PlaceId
+    local link = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=50", placeId)
+    
+    local sucesso, resposta = pcall(function()
+        return HttpService:GetAsync(link, true)
+    end)
+    
+    if not sucesso or not resposta then return nil end
+    
+    local dadosSucesso, dados = pcall(function()
+        return HttpService:JSONDecode(resposta)
+    end)
+    
+    if not dadosSucesso or not dados or not dados.data then return nil end
+    
+    for _, servidor in ipairs(dados.data) do
+        if servidor.playing >= minimoJogadores and servidor.id ~= game.JobId then
+            return servidor.id
+        end
+    end
+    return nil
+end
+
+-- 1ï¸âƒ£ Servidor com bastantes pessoas
+Sec_Hop:Button({Title="ðŸ‘¥ Servidor Cheio", Callback=function()
+    local id = BuscarServidor(10) -- MUDAR AQUI SE QUISER MAIS/MENOS
+    if id then
+        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, id) end)
+    end
+end})
+
+-- 2ï¸âƒ£ Servidor com poucas pessoas
+Sec_Hop:Button({Title="ðŸ§ Servidor Vazio", Callback=function()
+    local id = BuscarServidor(1)
+    if id then
+        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, id) end)
+    end
+end})
+
+-- 3ï¸âƒ£ Copiar cÃ³digo do servidor atual
+Sec_Hop:Button({Title="ðŸ“‹ Copiar CÃ³digo Atual", Callback=function()
+    pcall(function() setclipboard(tostring(game.JobId)) end)
+end})
+
+-- 4ï¸âƒ£ Entrar com cÃ³digo manual
+Sec_Hop:AddBox({
+    Name = "ðŸ”‘ CÃ³digo do Servidor",
+    Callback = function(codigo)
+        if codigo and codigo ~= "" then
+            pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, codigo) end)
+        end
+    end
+})
