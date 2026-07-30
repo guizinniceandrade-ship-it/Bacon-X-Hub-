@@ -596,3 +596,257 @@ Sec_Hop:AddBox({
         end
     end
 })
+
+-- =======================================
+-- ESP ARMAS - TOTALMENTE INDEPENDENTE
+-- âœ… SÃ“ MARCA ARMAS NO CHÃƒO
+-- âœ… BOTÃƒO LIGA/DESLIGA SEM INTERFERIR
+-- =======================================
+local MarcaArmas = {}
+task.spawn(function()
+    while true do
+        -- Desativa se qualquer opÃ§Ã£o estiver off
+        if not ESP_ATIVO or not ESP_Arma then
+            for _,dados in pairs(MarcaArmas) do
+                if dados.Destaque then dados.Destaque.Enabled = false end
+                if dados.Texto then dados.Texto.Enabled = false end
+            end
+            task.wait(0.3)
+            continue
+        end
+
+        for _,obj in ipairs(Workspace:GetDescendants()) do
+            local Nome = obj.Name
+            local Caminho = obj:GetFullName():lower()
+            
+            -- Apenas GunDrop da partida
+            if Nome ~= "GunDrop" then continue end
+            if Caminho:find("lobby") or Caminho:find("weapondisplays") or Caminho:find("prompt") then continue end
+
+            -- âŒ IGNORA ARMAS COM JOGADOR OU NA MOCHILA
+            local TemPessoa = obj:FindFirstAncestorWhichIsA("Model")
+            if TemPessoa and TemPessoa:FindFirstChildOfClass("Humanoid") then continue end
+            if obj:FindFirstAncestorWhichIsA("Backpack") then continue end
+
+            local Parte = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart", true)
+            if not Parte then continue end
+
+            -- Cria apenas uma vez
+            if not MarcaArmas[obj] then
+                local Destaque = Instance.new("Highlight")
+                Destaque.Name = "GunDrop_ESP"
+                Destaque.Adornee = obj
+                Destaque.FillTransparency = 1
+                Destaque.OutlineTransparency = 0
+                Destaque.OutlineColor = Color3.fromRGB(255, 255, 0)
+                Destaque.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                Destaque.Parent = game.CoreGui
+
+                local Texto = Instance.new("BillboardGui")
+                Texto.Adornee = Parte
+                Texto.Size = UDim2.new(0, 65, 0, 22)
+                Texto.StudsOffset = Vector3.new(0, 2.2, 0)
+                Texto.AlwaysOnTop = true
+                Texto.Parent = Parte
+
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.fromScale(1, 1)
+                Label.BackgroundTransparency = 1
+                Label.Text = "ARMA"
+                Label.TextColor3 = Color3.fromRGB(255, 255, 0)
+                Label.TextScaled = true
+                Label.Font = Enum.Font.GothamBold
+                Label.Parent = Texto
+
+                MarcaArmas[obj] = {Destaque = Destaque, Texto = Texto}
+            end
+
+            MarcaArmas[obj].Destaque.Enabled = true
+            MarcaArmas[obj].Texto.Enabled = true
+        end
+
+        -- Limpa armas que sumiram
+        for obj,dados in pairs(MarcaArmas) do
+            if not obj or not obj.Parent or not obj:IsDescendantOf(Workspace) then
+                dados.Destaque:Destroy()
+                dados.Texto:Destroy()
+                MarcaArmas[obj] = nil
+            end
+        end
+        task.wait(0.3)
+    end
+end)
+
+-- ===========================================
+-- FUNÃ‡Ã•ES DO AUTO FARM - EXATAMENTE COMO O SEU
+-- ===========================================
+local function EmPartida()
+local char = player.Character
+if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then return false end
+for _, p in pairs(Players:GetPlayers()) do
+if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then return true end
+end
+return false
+end
+
+local function QuantidadeMochila()
+local ok, n = pcall(function()
+local g = player:WaitForChild("PlayerGui"):WaitForChild("MainGUI", 2)
+return tonumber(g.Game.CoinBags.Container.SnowToken.CurrencyFrame.Icon.Coins.Text) or 0
+end)
+return ok and n or 0
+end
+
+local function getNearestCoin(minhaPos)
+local melhorMoeda = nil
+local menorDist = math.huge
+local CoinContainer = Workspace:FindFirstChild("CoinContainer", true)
+if not CoinContainer then return nil end
+
+for _, v in ipairs(CoinContainer:GetChildren()) do  
+    if v:IsA("BasePart")  
+    and v.Name == "Coin_Server"  
+    and v:FindFirstChild("TouchInterest")  
+    and v:FindFirstChild("CoinVisual")  
+    and not collectedCoins[v]  
+    and not v:GetAttribute("Collected") then  
+
+        local dist = (minhaPos - v.Position).Magnitude  
+        if dist < CONFIG_FARM.alcance_maximo and dist < menorDist then  
+            menorDist = dist  
+            melhorMoeda = v  
+        end  
+    end  
+end  
+return melhorMoeda
+
+end
+
+local function MoedaValida(moeda)
+return moeda and moeda.Parent and moeda:IsA("BasePart")
+and moeda:FindFirstChild("TouchInterest")
+and moeda:FindFirstChild("CoinVisual")
+and not moeda:GetAttribute("Collected")
+end
+
+-- ===========================================
+-- LOOP PRINCIPAL DO AUTO FARM - EXATO
+-- ===========================================
+task.spawn(function()
+    while true do
+        if AutoFarmAtivo then
+            if not EmPartida() then
+                table.clear(collectedCoins)
+                RunService.Heartbeat:Wait()
+                continue
+            end
+
+            local atual = QuantidadeMochila()
+            if atual >= CONFIG_FARM.limite then
+                repeat
+                    RunService.Heartbeat:Wait()
+                    atual = QuantidadeMochila()
+                until atual < CONFIG_FARM.limite or not AutoFarmAtivo or not EmPartida()
+                table.clear(collectedCoins)
+                continue
+            end
+
+            local c = player.Character
+            if not c or not c.PrimaryPart then RunService.Heartbeat:Wait() continue end
+
+            local minhaPos = c.PrimaryPart.Position
+            local alvo = getNearestCoin(minhaPos)
+
+            if alvo then
+                local ini = minhaPos
+                local destino = alvo.Position
+                local distTotal = (ini - destino).Magnitude
+                local tempo = distTotal / CONFIG_FARM.velocidade
+                local tIni = os.clock()
+                local aindaValida = true
+
+                while AutoFarmAtivo and EmPartida() and MoedaValida(alvo) and QuantidadeMochila() < CONFIG_FARM.limite do
+                    local char = player.Character
+                    if not char or not char.PrimaryPart then aindaValida = false break end
+
+                    local novaPos = char.PrimaryPart.Position
+                    local novoAlvo = getNearestCoin(novaPos)
+                    if novoAlvo and novoAlvo ~= alvo then
+                        alvo = novoAlvo
+                        ini = novaPos
+                        destino = alvo.Position
+                        distTotal = (ini - destino).Magnitude
+                        tempo = distTotal / CONFIG_FARM.velocidade
+                        tIni = os.clock()
+                    end
+
+                    local progresso = math.min((os.clock() - tIni) / tempo, 1)
+                    char:PivotTo(CFrame.new(ini:Lerp(destino, progresso)))
+
+                    if not MoedaValida(alvo) then
+                        collectedCoins[alvo] = true
+                        aindaValida = false
+                        break
+                    end
+
+                    if progresso >= 1 then break end
+                    RunService.Heartbeat:Wait()
+                end
+
+                if aindaValida and alvo and alvo.Parent then
+                    collectedCoins[alvo] = true
+                end
+            else
+                table.clear(collectedCoins)
+                RunService.Heartbeat:Wait()
+            end
+        end
+        RunService.Heartbeat:Wait()
+    end
+end)
+
+-- ===========================================
+-- LOOP GERAL - SÃ“ MOVIMENTO, SEM PESO
+-- ===========================================
+UIS.JumpRequest:Connect(function()
+    if infJump and player.Character then
+        local hum = player.Character:FindFirstChild("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    local char = player.Character
+    if not char then return end
+    local hum = char:FindFirstChild("Humanoid")
+    if not hum then return end
+
+    hum.WalkSpeed = walkSpeed
+    hum.JumpPower = jumpPower
+end)
+
+-- ===========================================
+-- SISTEMA DA CÃ‚MERA 100% FUNCIONAL
+-- ===========================================
+RunService.RenderStepped:Connect(function()
+    local Cam = workspace.CurrentCamera
+
+    -- âœ… ZOOM INFINITO
+    if ZoomInfinito then
+        player.CameraMaxZoomDistance = 1000000
+    else
+        player.CameraMaxZoomDistance = ZoomMax_Padrao
+    end
+
+    -- âœ… CÃ‚MERA ATRAVESSA PAREDE
+    if CameraAtravessaParede then
+        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
+    else
+        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
+    end
+
+    -- âœ… TRAVA O FOV ESCOLHIDO
+    if Cam.FieldOfView ~= FOV_Atual then
+        Cam.FieldOfView = FOV_Atual
+    end
+end)
