@@ -1,4 +1,4 @@
--- ===========================================
+GG-- ===========================================
 -- ASTRAL X HUB · COMPLETO E ARRUMADO
 -- ✅ PROTEÇÃO: NÃO ABRE 2 JANELAS
 -- ✅ HITBOX NA ABA ASSASSINO
@@ -162,3 +162,58 @@ RunService.Stepped:Connect(function()
         end
     end
 end)
+
+-- =========================
+-- ABA XERIFE
+-- =========================
+local Aba_Xerife = Window:Tab({Title="Xerife"})
+
+-- =========================
+-- ABA ESP
+-- =========================
+local Aba_ESP = Window:Tab({Title="ESP"})
+local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
+
+Sec_ESP:Toggle({Title = "Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
+Sec_ESP:Toggle({Title = "Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
+
+-- =========================
+-- ABA FARM
+-- =========================
+local Aba_Farm = Window:Tab({Title="Farm"})
+local Sec_Farm = Aba_Farm:Section({Title = "Auto Farm MM2"})
+
+Sec_Farm:Toggle({Title = "Ativar Auto Farm", Default = false, Callback = function(s) AutoFarmAtivo = s end})
+Sec_Farm:Button({
+    Title = "🛡️ Ativar Anti-AFK",
+    Callback = function()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn", true))()
+        end)
+    end
+})
+
+-- =========================
+-- ABA JOGADOR
+-- =========================
+local Aba_Diversao = Window:Tab({Title="Jogador"})
+local Sec_Jogador = Aba_Diversao:Section({Title="Controle do Jogador"})
+
+Sec_Jogador:Slider({Title="Velocidade de Andar", Value={Min=16, Max=250, Default=16}, Callback=function(v) walkSpeed = v end})
+Sec_Jogador:Slider({Title="Força do Pulo", Value={Min=50, Max=250, Default=50}, Callback=function(v) jumpPower = v end})
+Sec_Jogador:Toggle({Title="Pulo Infinito", Default=false, Callback=function(s) infJump = s end})
+
+local Sec_Camera = Aba_Diversao:Section({Title="Controle da Câmera"})
+Sec_Camera:Toggle({Title="Zoom Infinito", Default=false, Callback=function(s) ZoomInfinito = s end})
+Sec_Camera:Toggle({Title="Câmera Atravessa Parede", Default=false, Callback=function(s) CameraAtravessaParede = s end})
+Sec_Camera:Slider({Title="Campo de Visão (FOV)", Value={Min=70, Max=150, Default=70}, Callback=function(v) FOV_Atual = v workspace.CurrentCamera.FieldOfView = v end})
+Sec_Camera:Slider({Title="Zoom Mínimo", Value={Min=0.5, Max=10, Default=0.5}, Callback=function(v) player.CameraMinZoomDistance = v end})
+Sec_Camera:Slider({Title="Zoom Máximo", Value={Min=50, Max=500, Default=128}, Callback=function(v) player.CameraMaxZoomDistance = v end})
+
+-- =========================
+-- ABA TELEPORTE
+-- =========================
+local Aba_Teleporte = Window:Tab({Title="Teleporte"})
+local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
+Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
+Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
