@@ -203,16 +203,6 @@ Sec_Jogador:Slider({Title="Velocidade de Andar", Value={Min=16, Max=250, Default
 Sec_Jogador:Slider({Title="Força do Pulo", Value={Min=50, Max=250, Default=50}, Callback=function(v) jumpPower = v end})
 Sec_Jogador:Toggle({Title="Pulo Infinito", Default=false, Callback=function(s) infJump = s end})
 
-local Sec_Camera = Aba_Diversao:Section({Title="Controle da Câmera"})
-Sec_Camera:Toggle({Title="Zoom Infinito", Default=false, Callback=function(s) ZoomInfinito = s end})
-Sec_Camera:Toggle({Title="Câmera Atravessa Parede", Default=false, Callback=function(s) CameraAtravessaParede = s end})
-Sec_Camera:Slider({Title="Campo de Visão (FOV)", Value={Min=70, Max=150, Default=70}, Callback=function(v)
-    FOV_Atual = v
-    workspace.CurrentCamera.FieldOfView = v
-end})
-Sec_Camera:Slider({Title="Zoom Mínimo", Value={Min=0.5, Max=10, Default=0.5}, Callback=function(v) player.CameraMinZoomDistance = v end})
-Sec_Camera:Slider({Title="Zoom Máximo", Value={Min=50, Max=500, Default=128}, Callback=function(v) player.CameraMaxZoomDistance = v end})
-
 -- ===========================================
 -- 🎭 SESSÃO: SCRIPT DE EMOÇÕES NÃO OFICIAL
 -- ===========================================
@@ -444,9 +434,4 @@ RunService.Stepped:Connect(function()
     if c then
         local h = c:FindFirstChild("Humanoid")
         if h then h.WalkSpeed = walkSpeed h.JumpPower = jumpPower end
-        local cam = Workspace.CurrentCamera
-        if ZoomInfinito then player.CameraMaxZoomDistance = 1000000 end
-        if CameraAtravessaParede then player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam end
-        if cam.FieldOfView ~= FOV_Atual then cam.FieldOfView = FOV_Atual end
-    end
-end)
+        
