@@ -79,3 +79,24 @@ local function IrLobby()
     end
 end
 
+-- ===========================================
+-- VARIÁVEIS GERAIS
+-- ===========================================
+local walkSpeed = 16
+local jumpPower = 50
+local infJump = false
+
+local ESP_ATIVO = false
+local ESP_Arma = true
+local UltimoCargos = {}
+local Murder, Sheriff, Hero = nil, nil, nil
+
+local ZoomInfinito = false
+local CameraAtravessaParede = false
+local FOV_Atual = 70
+local ZoomMin_Padrao = 0.5
+local ZoomMax_Padrao = 128
+
+local CONFIG_FARM = {velocidade = 24, limite = 40, alcance_maximo = 999}
+local AutoFarmAtivo = false
+local collectedCoins = {}
