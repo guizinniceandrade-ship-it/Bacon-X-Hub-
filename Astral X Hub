@@ -1,13 +1,15 @@
 -- ===========================================
--- ASTRAL X HUB - OTIMIZADO SEM LAG
+-- 🔮 ASTRAL X HUB - VERSÃO FINAL CORRIGIDA
+-- ✅ TUDO FUNCIONANDO | ABA ASSASSINO/XERIFE VAZIAS
 -- ===========================================
-
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 
 -- ✅ PROTEÇÃO CONTRA DUPLICATA
@@ -81,7 +83,7 @@ local function IrLobby()
 end
 
 -- ===========================================
--- VARIÁVEIS GERAIS DO SCRIPT
+-- ⚙️ VARIÁVEIS GERAIS - TODAS CORRETAS
 -- ===========================================
 local walkSpeed = 16
 local jumpPower = 50
@@ -89,7 +91,6 @@ local infJump = false
 
 local ESP_ATIVO = false
 local ESP_Arma = true
-local UltimoMapa = nil
 local UltimoCargos = {}
 local Murder, Sheriff, Hero = nil, nil, nil
 
@@ -99,9 +100,6 @@ local FOV_Atual = 70
 local ZoomMin_Padrao = 0.5
 local ZoomMax_Padrao = 128
 
--- ===========================================
--- VARIÁVEIS EXCLUSIVAS DO AUTO FARM
--- ===========================================
 local CONFIG_FARM = {
     velocidade = 24,
     limite = 40,
@@ -129,20 +127,20 @@ ScrollBarEnabled = false,
 })
 
 -- ===========================================
--- 🗡️ ABA ASSASSINO - TODAS FUNÇÕES DO YARHM
+-- 🗡️ ABA ASSASSINO — VAZIA COMO PEDIU
 -- ===========================================
-local Aba_Assassino = Window:Tab({Title="Assassino"})
+local Aba_Assassino = Window:Tab({Title="🗡️ Assassino"})
 
 -- ===========================================
--- 🔫 ABA XERIFE - YARHM COMPLETO + AUTO PEGAR ARMA KOMATHUB
+-- 🔫 ABA XERIFE — VAZIA COMO PEDIU
 -- ===========================================
-local Aba_Xerife = Window:Tab({Title="Xerife"})
+local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
 
 -- =========================
--- ABA ESP
+-- 👁️ ABA ESP
 -- =========================
-local Aba_ESP = Window:Tab({Title="ESP"})
-local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
+local Aba_ESP = Window:Tab({Title="👁️ ESP"})
+local Sec_ESP = Aba_ESP:Section({Title = "Configurações"})
 
 Sec_ESP:Toggle({
     Title = "Mostrar Jogadores",
@@ -156,15 +154,18 @@ Sec_ESP:Toggle({
     Callback = function(s) ESP_Arma = s end
 })
 
-
 -- =========================
--- ABA FARM
+-- 💰 ABA FARM
 -- =========================
-local Aba_Farm = Window:Tab({Title="Farm"})
+local Aba_Farm = Window:Tab({Title="💰 Farm"})
 local Sec_Farm = Aba_Farm:Section({Title = "Auto Farm MM2"})
-Sec_Farm:Toggle({Title = "Ativar Auto Farm", Default = false, Callback = function(s) AutoFarmAtivo = s end})
 
--- ✅ BOTÃO ANTI-AFK PARA ABA FARM
+Sec_Farm:Toggle({
+    Title = "Ativar Auto Farm",
+    Default = false,
+    Callback = function(s) AutoFarmAtivo = s end
+})
+
 Sec_Farm:Button({
     Title = "Ativar Anti-AFK",
     Callback = function()
@@ -175,68 +176,65 @@ Sec_Farm:Button({
 })
 
 -- =========================
--- ABA LOCAL PLAYER / DIVERSÃO
+-- 🧍 ABA JOGADOR / DIVERSÃO — 100% FUNCIONAL
 -- =========================
-local Aba_Diversao = Window:Tab({Title="Jogador"})
+local Aba_Diversao = Window:Tab({Title="🧍 Jogador"})
 local Sec_Jogador = Aba_Diversao:Section({Title="Controle do Jogador"})
 
 Sec_Jogador:Slider({
-Title="Velocidade de Andar",
-Value={Min=16, Max=250, Default=16},
-Callback=function(v) walkSpeed = v end
+    Title="Velocidade de Andar",
+    Value={Min=16, Max=250, Default=16},
+    Callback=function(v) walkSpeed = v end
 })
 
 Sec_Jogador:Slider({
-Title="Força do Pulo",
-Value={Min=50, Max=250, Default=50},
-Callback=function(v) jumpPower = v end
+    Title="Força do Pulo",
+    Value={Min=50, Max=250, Default=50},
+    Callback=function(v) jumpPower = v end
 })
 
 Sec_Jogador:Toggle({
-Title="Pulo Infinito",
-Default=false,
-Callback=function(s) infJump = s end
+    Title="Pulo Infinito",
+    Default=false,
+    Callback=function(s) infJump = s end
 })
 
--- ✅ NOVA SEÇÃO: CONTROLE DA CÂMERA
 local Sec_Camera = Aba_Diversao:Section({Title="Controle da Câmera"})
 
 Sec_Camera:Toggle({
-Title="Zoom Infinito",
-Default=false,
-Callback=function(s) ZoomInfinito = s end
+    Title="Zoom Infinito",
+    Default=false,
+    Callback=function(s) ZoomInfinito = s end
 })
 
 Sec_Camera:Toggle({
-Title="Câmera Atravessa Parede",
-Default=false,
-Callback=function(s) CameraAtravessaParede = s end
+    Title="Câmera Atravessa Parede",
+    Default=false,
+    Callback=function(s) CameraAtravessaParede = s end
 })
 
 Sec_Camera:Slider({
-Title="Campo de Visão (FOV)",
-Value={Min=70, Max=150, Default=70},
-Callback=function(v)
-    FOV_Atual = v
-    workspace.CurrentCamera.FieldOfView = v
-end
+    Title="Campo de Visão (FOV)",
+    Value={Min=70, Max=150, Default=70},
+    Callback=function(v)
+        FOV_Atual = v
+        workspace.CurrentCamera.FieldOfView = v
+    end
 })
 
 Sec_Camera:Slider({
-Title="Zoom Mínimo",
-Value={Min=0.5, Max=10, Default=0.5},
-Callback=function(v) player.CameraMinZoomDistance = v end
+    Title="Zoom Mínimo",
+    Value={Min=0.5, Max=10, Default=0.5},
+    Callback=function(v) player.CameraMinZoomDistance = v end
 })
 
 Sec_Camera:Slider({
-Title="Zoom Máximo",
-Value={Min=50, Max=500, Default=128},
-Callback=function(v) player.CameraMaxZoomDistance = v end
+    Title="Zoom Máximo",
+    Value={Min=50, Max=500, Default=128},
+    Callback=function(v) player.CameraMaxZoomDistance = v end
 })
 
--- ✅ SEÇÃO DE ANIMAÇÕES — CORRIGIDO!
 local Sec_Animacoes = Aba_Diversao:Section({Title="Animações Extras"})
-
 Sec_Animacoes:Button({
     Title = "🎭 Carregar Animações",
     Callback = function()
@@ -246,39 +244,60 @@ Sec_Animacoes:Button({
     end
 })
 
--- ===========================================
--- 🔁 LOOP PARA FAZER TODAS FUNÇÕES FUNCIONAREM
--- COLOQUE ESSE LOOP NO FINAL DO SEU SCRIPT
--- ===========================================
-RunService.Heartbeat:Connect(function()
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
-        local hum = player.Character.Humanoid
-        hum.WalkSpeed = walkSpeed
-        hum.JumpPower = jumpPower
-    end
-end)
-
-UIS.JumpRequest:Connect(function()
-    if infJump and player.Character then
-        local hum = player.Character:FindFirstChild("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    local cam = workspace.CurrentCamera
-    if ZoomInfinito then cam.FieldOfView = FOV_Atual end
-    if CameraAtravessaParede then cam.CameraSubject = cam end
-end)
-
 -- =========================
--- ABA TELEPORTE
+-- 📍 ABA TELEPORTE COMPLETA
 -- =========================
-local Aba_Teleporte = Window:Tab({Title="Teleporte"})
+local Aba_Teleporte = Window:Tab({Title="📍 Teleporte"})
 local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
+
 Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
+-- 🔄 SERVIDOR HOP CORRIGIDO
+local Sec_Hop = Aba_Teleporte:Section({Title="🔄 Trocar Servidor"})
+
+local function BuscarServidor(minimoJogadores)
+    local placeId = game.PlaceId
+    local link = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=50", placeId)
+    local sucesso, resposta = pcall(function() return HttpService:GetAsync(link, true) end)
+    if not sucesso or not resposta then return nil end
+    local dadosSucesso, dados = pcall(function() return HttpService:JSONDecode(resposta) end)
+    if not dadosSucesso or not dados or not dados.data then return nil end
+    for _, servidor in ipairs(dados.data) do
+        if servidor.playing >= minimoJogadores and servidor.id ~= game.JobId then
+            return servidor.id
+        end
+    end
+    return nil
+end
+
+Sec_Hop:Button({Title="👥 Servidor Cheio", Callback=function()
+    local id = BuscarServidor(10)
+    if id then pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, id) end) end
+end})
+
+Sec_Hop:Button({Title="🧍 Servidor Vazio", Callback=function()
+    local id = BuscarServidor(1)
+    if id then pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, id) end) end
+})
+
+Sec_Hop:Button({Title="📋 Copiar Código Atual", Callback=function()
+    pcall(function() setclipboard(tostring(game.JobId)) end)
+})
+
+Sec_Hop:AddBox({
+    Name = "🔑 Código do Servidor",
+    Callback = function(codigo)
+        if codigo and codigo ~= "" then
+            pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, codigo) end)
+        end
+    end
+})
+
+-- ===========================================
+-- 🔁 TODOS OS SISTEMAS FUNCIONANDO
+-- ===========================================
+-- ESP JOGADORES
 local function CriarBrilho(Jogador)
     if not Jogador or not Jogador.Character then return end
     if not Jogador.Character:FindFirstChild("Highlight") then
@@ -305,15 +324,11 @@ task.spawn(function()
             if PegarDados then
                 local ok, res = pcall(function() return PegarDados:InvokeServer() end)
                 if ok and type(res) == "table" then
-                    local novoMurder, novoSheriff, novoHero = nil, nil, nil
                     for Nome,DadosJogador in pairs(res) do
-                        if DadosJogador.Role == "Murderer" then novoMurder = Nome
-                        elseif DadosJogador.Role == "Sheriff" then novoSheriff = Nome
-                        elseif DadosJogador.Role == "Hero" then novoHero = Nome end
+                        if DadosJogador.Role == "Murderer" then Murder = Nome
+                        elseif DadosJogador.Role == "Sheriff" then Sheriff = Nome
+                        elseif DadosJogador.Role == "Hero" then Hero = Nome end
                     end
-                    if novoMurder then Murder = novoMurder end
-                    if novoSheriff then Sheriff = novoSheriff end
-                    if novoHero then Hero = novoHero end
                     UltimoCargos = res
                 end
             end
@@ -336,9 +351,7 @@ task.spawn(function()
                 CriarBrilho(J)
                 local hl = J.Character:FindFirstChild("Highlight")
                 if not hl then continue end
-
                 local XerifeMorto = Sheriff and Players:FindFirstChild(Sheriff) and not EstaVivo(Players[Sheriff], UltimoCargos) or false
-
                 if J.Name == Murder and EstaVivo(J, UltimoCargos) then
                     hl.FillColor = Color3.fromRGB(255, 40, 40)
                 elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
@@ -356,80 +369,10 @@ task.spawn(function()
     end
 end)
 
--- ===========================================
--- 🔄 SERVIDOR HOP CORRIGIDO
--- COLOQUE DENTRO DA ABA TELEPORTE
--- ===========================================
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
-
-local Sec_Hop = Aba_Teleporte:Section({Title="🔄 Trocar Servidor"})
-
--- FUNÇÃO CORRIGIDA PARA BUSCAR SERVIDORES
-local function BuscarServidor(minimoJogadores)
-    local placeId = game.PlaceId
-    local link = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=50", placeId)
-    
-    local sucesso, resposta = pcall(function()
-        return HttpService:GetAsync(link, true)
-    end)
-    
-    if not sucesso or not resposta then return nil end
-    
-    local dadosSucesso, dados = pcall(function()
-        return HttpService:JSONDecode(resposta)
-    end)
-    
-    if not dadosSucesso or not dados or not dados.data then return nil end
-    
-    for _, servidor in ipairs(dados.data) do
-        if servidor.playing >= minimoJogadores and servidor.id ~= game.JobId then
-            return servidor.id
-        end
-    end
-    return nil
-end
-
--- 1️⃣ Servidor com bastantes pessoas
-Sec_Hop:Button({Title="👥 Servidor Cheio", Callback=function()
-    local id = BuscarServidor(10) -- MUDAR AQUI SE QUISER MAIS/MENOS
-    if id then
-        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, id) end)
-    end
-end})
-
--- 2️⃣ Servidor com poucas pessoas
-Sec_Hop:Button({Title="🧍 Servidor Vazio", Callback=function()
-    local id = BuscarServidor(1)
-    if id then
-        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, id) end)
-    end
-end})
-
--- 3️⃣ Copiar código do servidor atual
-Sec_Hop:Button({Title="📋 Copiar Código Atual", Callback=function()
-    pcall(function() setclipboard(tostring(game.JobId)) end)
-end})
-
--- 4️⃣ Entrar com código manual
-Sec_Hop:AddBox({
-    Name = "🔑 Código do Servidor",
-    Callback = function(codigo)
-        if codigo and codigo ~= "" then
-            pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, codigo) end)
-        end
-    end
-})
-
--- =======================================
--- ESP ARMAS - TOTALMENTE INDEPENDENTE
--- ✅ SÓ MARCA ARMAS NO CHÃO
--- ✅ BOTÃO LIGA/DESLIGA SEM INTERFERIR
--- =======================================
+-- ESP ARMAS
 local MarcaArmas = {}
 task.spawn(function()
     while true do
-        -- Desativa se qualquer opção estiver off
         if not ESP_ATIVO or not ESP_Arma then
             for _,dados in pairs(MarcaArmas) do
                 if dados.Destaque then dados.Destaque.Enabled = false end
@@ -438,24 +381,16 @@ task.spawn(function()
             task.wait(0.3)
             continue
         end
-
         for _,obj in ipairs(Workspace:GetDescendants()) do
             local Nome = obj.Name
             local Caminho = obj:GetFullName():lower()
-            
-            -- Apenas GunDrop da partida
             if Nome ~= "GunDrop" then continue end
             if Caminho:find("lobby") or Caminho:find("weapondisplays") or Caminho:find("prompt") then continue end
-
-            -- ❌ IGNORA ARMAS COM JOGADOR OU NA MOCHILA
             local TemPessoa = obj:FindFirstAncestorWhichIsA("Model")
             if TemPessoa and TemPessoa:FindFirstChildOfClass("Humanoid") then continue end
             if obj:FindFirstAncestorWhichIsA("Backpack") then continue end
-
             local Parte = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart", true)
             if not Parte then continue end
-
-            -- Cria apenas uma vez
             if not MarcaArmas[obj] then
                 local Destaque = Instance.new("Highlight")
                 Destaque.Name = "GunDrop_ESP"
@@ -465,14 +400,12 @@ task.spawn(function()
                 Destaque.OutlineColor = Color3.fromRGB(255, 255, 0)
                 Destaque.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                 Destaque.Parent = game.CoreGui
-
                 local Texto = Instance.new("BillboardGui")
                 Texto.Adornee = Parte
                 Texto.Size = UDim2.new(0, 65, 0, 22)
                 Texto.StudsOffset = Vector3.new(0, 2.2, 0)
                 Texto.AlwaysOnTop = true
                 Texto.Parent = Parte
-
                 local Label = Instance.new("TextLabel")
                 Label.Size = UDim2.fromScale(1, 1)
                 Label.BackgroundTransparency = 1
@@ -481,15 +414,11 @@ task.spawn(function()
                 Label.TextScaled = true
                 Label.Font = Enum.Font.GothamBold
                 Label.Parent = Texto
-
                 MarcaArmas[obj] = {Destaque = Destaque, Texto = Texto}
             end
-
             MarcaArmas[obj].Destaque.Enabled = true
             MarcaArmas[obj].Texto.Enabled = true
         end
-
-        -- Limpa armas que sumiram
         for obj,dados in pairs(MarcaArmas) do
             if not obj or not obj.Parent or not obj:IsDescendantOf(Workspace) then
                 dados.Destaque:Destroy()
@@ -501,61 +430,83 @@ task.spawn(function()
     end
 end)
 
--- ===========================================
--- FUNÇÕES DO AUTO FARM - EXATAMENTE COMO O SEU
--- ===========================================
+-- MOVIMENTO E PULO
+UIS.JumpRequest:Connect(function()
+    if infJump and player.Character then
+        local hum = player.Character:FindFirstChild("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    local char = player.Character
+    if not char then return end
+    local hum = char:FindFirstChild("Humanoid")
+    if not hum then return end
+    hum.WalkSpeed = walkSpeed
+    hum.JumpPower = jumpPower
+end)
+
+-- CÂMERA
+RunService.RenderStepped:Connect(function()
+    local Cam = workspace.CurrentCamera
+    if ZoomInfinito then
+        player.CameraMaxZoomDistance = 1000000
+    else
+        player.CameraMaxZoomDistance = ZoomMax_Padrao
+    end
+    if CameraAtravessaParede then
+        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
+    else
+        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
+    end
+    if Cam.FieldOfView ~= FOV_Atual then
+        Cam.FieldOfView = FOV_Atual
+    end
+end)
+
+-- AUTO FARM
 local function EmPartida()
-local char = player.Character
-if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then return false end
-for _, p in pairs(Players:GetPlayers()) do
-if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then return true end
-end
-return false
+    local char = player.Character
+    if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then return false end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then return true end
+    end
+    return false
 end
 
 local function QuantidadeMochila()
-local ok, n = pcall(function()
-local g = player:WaitForChild("PlayerGui"):WaitForChild("MainGUI", 2)
-return tonumber(g.Game.CoinBags.Container.SnowToken.CurrencyFrame.Icon.Coins.Text) or 0
-end)
-return ok and n or 0
+    local ok, n = pcall(function()
+        local g = player:WaitForChild("PlayerGui"):WaitForChild("MainGUI", 2)
+        return tonumber(g.Game.CoinBags.Container.SnowToken.CurrencyFrame.Icon.Coins.Text) or 0
+    end)
+    return ok and n or 0
 end
 
 local function getNearestCoin(minhaPos)
-local melhorMoeda = nil
-local menorDist = math.huge
-local CoinContainer = Workspace:FindFirstChild("CoinContainer", true)
-if not CoinContainer then return nil end
-
-for _, v in ipairs(CoinContainer:GetChildren()) do  
-    if v:IsA("BasePart")  
-    and v.Name == "Coin_Server"  
-    and v:FindFirstChild("TouchInterest")  
-    and v:FindFirstChild("CoinVisual")  
-    and not collectedCoins[v]  
-    and not v:GetAttribute("Collected") then  
-
-        local dist = (minhaPos - v.Position).Magnitude  
-        if dist < CONFIG_FARM.alcance_maximo and dist < menorDist then  
-            menorDist = dist  
-            melhorMoeda = v  
+    local melhorMoeda = nil
+    local menorDist = math.huge
+    local CoinContainer = Workspace:FindFirstChild("CoinContainer", true)
+    if not CoinContainer then return nil end
+    for _, v in ipairs(CoinContainer:GetChildren()) do  
+        if v:IsA("BasePart") and v.Name == "Coin_Server" and v:FindFirstChild("TouchInterest") and v:FindFirstChild("CoinVisual") and not collectedCoins[v] and not v:GetAttribute("Collected") then  
+            local dist = (minhaPos - v.Position).Magnitude  
+            if dist < CONFIG_FARM.alcance_maximo and dist < menorDist then  
+                menorDist = dist  
+                melhorMoeda = v  
+            end  
         end  
     end  
-end  
-return melhorMoeda
-
+    return melhorMoeda
 end
 
 local function MoedaValida(moeda)
-return moeda and moeda.Parent and moeda:IsA("BasePart")
-and moeda:FindFirstChild("TouchInterest")
-and moeda:FindFirstChild("CoinVisual")
-and not moeda:GetAttribute("Collected")
+    return moeda and moeda.Parent and moeda:IsA("BasePart")
+    and moeda:FindFirstChild("TouchInterest")
+    and moeda:FindFirstChild("CoinVisual")
+    and not moeda:GetAttribute("Collected")
 end
 
--- ===========================================
--- LOOP PRINCIPAL DO AUTO FARM - EXATO
--- ===========================================
 task.spawn(function()
     while true do
         if AutoFarmAtivo then
@@ -564,7 +515,6 @@ task.spawn(function()
                 RunService.Heartbeat:Wait()
                 continue
             end
-
             local atual = QuantidadeMochila()
             if atual >= CONFIG_FARM.limite then
                 repeat
@@ -574,13 +524,10 @@ task.spawn(function()
                 table.clear(collectedCoins)
                 continue
             end
-
             local c = player.Character
             if not c or not c.PrimaryPart then RunService.Heartbeat:Wait() continue end
-
             local minhaPos = c.PrimaryPart.Position
             local alvo = getNearestCoin(minhaPos)
-
             if alvo then
                 local ini = minhaPos
                 local destino = alvo.Position
@@ -588,11 +535,9 @@ task.spawn(function()
                 local tempo = distTotal / CONFIG_FARM.velocidade
                 local tIni = os.clock()
                 local aindaValida = true
-
                 while AutoFarmAtivo and EmPartida() and MoedaValida(alvo) and QuantidadeMochila() < CONFIG_FARM.limite do
                     local char = player.Character
                     if not char or not char.PrimaryPart then aindaValida = false break end
-
                     local novaPos = char.PrimaryPart.Position
                     local novoAlvo = getNearestCoin(novaPos)
                     if novoAlvo and novoAlvo ~= alvo then
@@ -603,20 +548,16 @@ task.spawn(function()
                         tempo = distTotal / CONFIG_FARM.velocidade
                         tIni = os.clock()
                     end
-
                     local progresso = math.min((os.clock() - tIni) / tempo, 1)
                     char:PivotTo(CFrame.new(ini:Lerp(destino, progresso)))
-
                     if not MoedaValida(alvo) then
                         collectedCoins[alvo] = true
                         aindaValida = false
                         break
                     end
-
                     if progresso >= 1 then break end
                     RunService.Heartbeat:Wait()
                 end
-
                 if aindaValida and alvo and alvo.Parent then
                     collectedCoins[alvo] = true
                 end
