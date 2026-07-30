@@ -1,1 +1,113 @@
+-- ===========================================
+-- ASTRAL X HUB - OTIMIZADO SEM LAG
+-- ===========================================
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+
+-- âœ… PROTEÃ‡ÃƒO CONTRA DUPLICATA
+local NomeJanela = "ASTRAL X Hub"
+if game.CoreGui:FindFirstChild(NomeJanela) then game.CoreGui[NomeJanela]:Destroy() end
+if player.PlayerGui:FindFirstChild(NomeJanela) then player.PlayerGui[NomeJanela]:Destroy() end
+
+-- ===========================================
+-- FUNÃ‡Ã•ES AUXILIARES GERAIS
+-- ===========================================
+local function HRP()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
+
+local function GetMapa()
+    for _,v in ipairs(workspace:GetChildren()) do
+        if v:IsA("Model") then
+            if v:FindFirstChild("Spawns", true)
+            and v.Name ~= "Lobby"
+            and not string.find(v.Name:lower(),"lobby") then
+                return v
+            end
+        end
+    end
+end
+
+local function GetLobby()
+    for _,v in ipairs(workspace:GetChildren()) do
+        if v:IsA("Model") then
+            local n = v.Name:lower()
+            if string.find(n,"lobby") then return v end
+        end
+    end
+end
+
+local function GetBasePart(model)
+    if not model then return end
+    if model.PrimaryPart then return model.PrimaryPart end
+    return model:FindFirstChildWhichIsA("BasePart", true)
+end
+
+-- ===========================================
+-- ABA TELEPORTE - FUNÃ‡Ã•ES
+-- ===========================================
+local function IrPartida()
+    local mapa = GetMapa()
+    if mapa then
+        local spawn = mapa:FindFirstChild("Spawns", true) or mapa:FindFirstChild("PlayerSpawns", true)
+        if spawn then
+            local part = spawn:FindFirstChildWhichIsA("BasePart", true)
+            if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+        end
+        local part = GetBasePart(mapa)
+        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) return end
+    end
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            HRP().CFrame = plr.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,3)
+            return
+        end
+    end
+end
+
+local function IrLobby()
+    local lobby = GetLobby()
+    if lobby then
+        local part = GetBasePart(lobby)
+        if part then HRP().CFrame = part.CFrame + Vector3.new(0,5,0) end
+    end
+end
+
+-- ===========================================
+-- VARIÃVEIS GERAIS DO SCRIPT
+-- ===========================================
+local walkSpeed = 16
+local jumpPower = 50
+local infJump = false
+
+local ESP_ATIVO = false
+local ESP_Arma = true
+local UltimoMapa = nil
+local UltimoCargos = {}
+local Murder, Sheriff, Hero = nil, nil, nil
+
+local ZoomInfinito = false
+local CameraAtravessaParede = false
+local FOV_Atual = 70
+local ZoomMin_Padrao = 0.5
+local ZoomMax_Padrao = 128
+
+-- ===========================================
+-- VARIÃVEIS EXCLUSIVAS DO AUTO FARM
+-- ===========================================
+local CONFIG_FARM = {
+    velocidade = 24,
+    limite = 40,
+    alcance_maximo = 999
+}
+local AutoFarmAtivo = false
+local collectedCoins = {}
+
 
