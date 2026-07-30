@@ -623,30 +623,3 @@ RunService.Stepped:Connect(function()
     hum.WalkSpeed = walkSpeed
     hum.JumpPower = jumpPower
 end)
-
--- ===========================================
--- SISTEMA DA CÂMERA 100% FUNCIONAL
--- ===========================================
-RunService.RenderStepped:Connect(function()
-    local Cam = workspace.CurrentCamera
-
-    -- ✅ ZOOM INFINITO
-    if ZoomInfinito then
-        player.CameraMaxZoomDistance = 1000000
-    else
-        player.CameraMaxZoomDistance = ZoomMax_Padrao
-    end
-
-    -- ✅ CÂMERA ATRAVESSA PAREDE
-    if CameraAtravessaParede then
-        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
-    else
-        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
-    end
-
-    -- ✅ TRAVA O FOV ESCOLHIDO
-    if Cam.FieldOfView ~= FOV_Atual then
-        Cam.FieldOfView = FOV_Atual
-    end
-end)
-
