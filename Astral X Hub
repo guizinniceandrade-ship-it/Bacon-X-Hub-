@@ -100,3 +100,65 @@ local ZoomMax_Padrao = 128
 local CONFIG_FARM = {velocidade = 24, limite = 40, alcance_maximo = 999}
 local AutoFarmAtivo = false
 local collectedCoins = {}
+
+-- ===========================================
+-- INTERFACE PRINCIPAL
+-- ===========================================
+local Window = WindUI:CreateWindow({
+    Title = "ASTRAL X Hub",
+    Folder = "AstralX",
+    Size = UDim2.fromOffset(580,460),
+    MinSize = Vector2.new(560,350),
+    MaxSize = Vector2.new(850,560),
+    Transparent = true,
+    Theme = "Dark",
+    Resizable = true,
+    SideBarWidth = 200,
+    BackgroundImageTransparency = 0.42,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+})
+
+-- =========================
+-- ABA ASSASSINO
+-- =========================
+local Aba_Assassino = Window:Tab({Title="Assassino"})
+local Sec_Hitbox = Aba_Assassino:Section({Title="Hitbox"})
+
+local HitboxAtivo = false
+local TamanhoHit = 12
+
+Sec_Hitbox:Toggle({
+    Title = "Ativar Hitbox",
+    Default = false,
+    Callback = function(s) HitboxAtivo = s end
+})
+
+Sec_Hitbox:Slider({
+    Title = "Tamanho (5 a 50)",
+    Value = {Min=5, Max=50, Default=12},
+    Callback = function(v) TamanhoHit = v end
+})
+
+-- SISTEMA DA HITBOX
+RunService.Stepped:Connect(function()
+    local c = player.Character
+    if not c then return end
+    local faca = c:FindFirstChild("Knife")
+    if not faca then return end
+
+    if HitboxAtivo then
+        for _, p in ipairs(faca:GetChildren()) do
+            if p:IsA("BasePart") then
+                p.Size = Vector3.new(TamanhoHit, TamanhoHit, TamanhoHit)
+                p.CanCollide = false
+            end
+        end
+    else
+        for _, p in ipairs(faca:GetChildren()) do
+            if p:IsA("BasePart") then
+                p.Size = Vector3.new(1.8, 1, 5.5)
+            end
+        end
+    end
+end)
