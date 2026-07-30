@@ -534,6 +534,51 @@ task.spawn(function()
     end
 end)
 
+-- ===========================================
+-- 🔄 SERVIDOR HOP - DENTRO DA ABA TELEPORTE
+-- ===========================================
+local Sec_Hop = Aba_Teleporte:Section({Title="🔄 Trocar Servidor"})
+
+local function PegarServidores(minimo)
+    local jogoId = game.PlaceId
+    local resposta = game:HttpGetAsync("https://games.roblox.com/v1/games/"..jogoId.."/servers/Public?sortOrder=Desc&limit=100")
+    local lista = loadstring("return "..resposta)()
+    if not lista or not lista.data then return nil end
+    for _, serv in pairs(lista.data) do
+        if serv.playing >= minimo then
+            return serv.id
+        end
+    end
+    return nil
+end
+
+-- 1️⃣ Servidor com bastantes pessoas
+Sec_Hop:Button({Title="👥 Servidor Cheio", Callback=function()
+    local id = PegarServidores(12) -- mínimo 12 pessoas, pode mudar
+    if id then pcall(function() game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, id) end) end
+end})
+
+-- 2️⃣ Servidor com poucas pessoas
+Sec_Hop:Button({Title="🧍 Servidor Vazio", Callback=function()
+    local id = PegarServidores(1)
+    if id then pcall(function() game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, id) end) end
+end})
+
+-- 3️⃣ Copia código do servidor atual
+Sec_Hop:Button({Title="📋 Copiar Código Atual", Callback=function()
+    pcall(function() setclipboard(game.JobId) end)
+end})
+
+-- 4️⃣ Colar código e entrar
+Sec_Hop:AddBox({
+    Name = "🔑 Colar Código Aqui",
+    Callback = function(codigo)
+        if codigo and codigo ~= "" then
+            pcall(function() game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, codigo) end)
+        end
+    end
+})
+
 -- =======================================
 -- ESP ARMAS - TOTALMENTE INDEPENDENTE
 -- ✅ SÓ MARCA ARMAS NO CHÃO
