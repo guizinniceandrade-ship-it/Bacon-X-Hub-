@@ -215,3 +215,124 @@ task.spawn(function()
     end
 end)
 
+-- ===========================================
+-- ðŸ”« ABA XERIFE - YARHM COMPLETO + AUTO PEGAR ARMA KOMATHUB
+-- ===========================================
+
+-- âš™ï¸ ADICIONE ESSAS VARIÃVEIS JUNTO DAS OUTRAS
+local MiraOculta = false
+local AutoAtirar = false
+local PrevisaoTiro = 2.8
+local BotaoFlutuante = false
+local AutoPegarArma = false
+local AlvoMurder = nil
+local Teleportando = false
+
+-- ðŸ“Œ INTERFACE COMPLETA
+local Aba_Xerife = Window:Tab({Title="ðŸ”« Xerife"})
+local Sec_Xer = Aba_Xerife:Section({Title="Mira e Tiro"})
+
+Sec_Xer:Toggle({Title="Mira InvisÃ­vel", Default=false, Callback=function(s) MiraOculta = s end})
+Sec_Xer:Toggle({Title="Auto Atirar no Assassino", Default=false, Callback=function(s) AutoAtirar = s end})
+Sec_Xer:Toggle({Title="Mostrar BotÃ£o Flutuante", Default=false, Callback=function(s) 
+    BotaoFlutuante = s
+    FloatingButton.Visible = s
+end})
+Sec_Xer:Toggle({Title="Auto Pegar Arma (Vai e Volta)", Default=false, Callback=function(s) AutoPegarArma = s end})
+Sec_Xer:Slider({Title="PrevisÃ£o de Movimento", Value={Min=0, Max=10, Default=2.8}, Callback=function(v) PrevisaoTiro = v end})
+Sec_Xer:Button({Title="Atirar Agora no Assassino", Callback=function() AtirarNoMurderer() end})
+
+-- ðŸ“Œ BOTÃƒO FLUTUANTE
+local FloatingButton = Instance.new("TextButton")
+FloatingButton.Name = "BotaoXerife"
+FloatingButton.Text = "ATIRAR"
+FloatingButton.Font = Enum.Font.GothamBold
+FloatingButton.TextColor3 = Color3.new(1,1,1)
+FloatingButton.BackgroundColor3 = Color3.fromRGB(220, 30, 30)
+FloatingButton.Size = UDim2.new(0, 90, 0, 45)
+FloatingButton.Position = UDim2.new(0.85,0,0.5,0)
+FloatingButton.Visible = false
+FloatingButton.Parent = game.CoreGui
+Instance.new("UICorner", FloatingButton).CornerRadius = UDim.new(0,8)
+
+-- ðŸŽ¯ FUNÃ‡ÃƒO PRINCIPAL DE TIRO
+function AtirarNoMurderer()
+    if player.Name ~= Sheriff then return end
+    local Alvo = Players:FindFirstChild(Murder)
+    if not Alvo or not Alvo.Character then return end
+    local AlvoHRP = Alvo.Character:FindFirstChild("HumanoidRootPart")
+    local EuHRP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not AlvoHRP or not EuHRP then return end
+
+    -- Calcula posiÃ§Ã£o futura
+    local PosicaoAjustada = AlvoHRP.Position + (AlvoHRP.Velocity * PrevisaoTiro)
+
+    -- Mira invisÃ­vel: nÃ£o mexe a cÃ¢mera
+    if not MiraOculta then
+        workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.Position, PosicaoAjustada)
+    end
+
+    -- Atira
+    task.wait(0.02)
+    pcall(function() player.Character.Humanoid:Activate() end)
+end
+
+-- ðŸ§² AUTO PEGAR ARMA IGUAL KOMATHUB (VAI E VOLTA)
+local function PegarArma()
+    if Teleportando then return end
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local arma = nil
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v.Name == "GunDrop" and v:IsA("BasePart") then
+            arma = v
+            break
+        end
+    end
+    if not arma then return end
+
+    Teleportando = true
+    local LugarOriginal = root.CFrame -- âœ… GUARDA SEU LUGAR
+    root.CFrame = arma.CFrame + Vector3.new(0,2,0) -- âœ… VAI NA ARMA
+    task.wait(0.4) -- âœ… TEMPO DE PEGAR
+    if root then root.CFrame = LugarOriginal end -- âœ… VOLTA PRO SEU LUGAR
+    task.wait(0.3)
+    Teleportando = false
+end
+
+-- ðŸ” LOOP PRINCIPAL
+task.spawn(function()
+    while true do
+        if player.Name == Sheriff then
+            -- Auto tiro
+            if AutoAtirar then AtirarNoMurderer() end
+            -- Auto pegar arma
+            if AutoPegarArma then PegarArma() end
+        end
+        RunService.Heartbeat:Wait()
+    end
+end)
+
+-- ðŸ–±ï¸ FAZER BOTÃƒO FLUTUANTE ARRASTAR E CLICAR
+local Arrastando, InicioPos, InicioMouse
+FloatingButton.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        Arrastando = true
+        InicioPos = FloatingButton.Position
+        InicioMouse = i.Position
+    end
+end)
+UIS.InputChanged:Connect(function(i)
+    if Arrastando and i.UserInputType == Enum.UserInputType.MouseMovement then
+        local Delta = i.Position - InicioMouse
+        FloatingButton.Position = UDim2.new(
+            InicioPos.X.Scale, InicioPos.X.Offset + Delta.X,
+            InicioPos.Y.Scale, InicioPos.Y.Offset + Delta.Y
+        )
+    end
+end)
+UIS.InputEnded:Connect(function() Arrastando = false end)
+FloatingButton.MouseButton1Click:Connect(AtirarNoMurderer)
+
