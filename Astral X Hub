@@ -336,3 +336,113 @@ end)
 UIS.InputEnded:Connect(function() Arrastando = false end)
 FloatingButton.MouseButton1Click:Connect(AtirarNoMurderer)
 
+-- =========================
+-- ABA ESP
+-- =========================
+local Aba_ESP = Window:Tab({Title="ESP"})
+local Sec_ESP = Aba_ESP:Section({Title = "ConfiguraÃ§Ãµes do ESP"})
+
+Sec_ESP:Toggle({
+    Title = "Mostrar Jogadores",
+    Default = false,
+    Callback = function(s) ESP_ATIVO = s end
+})
+
+Sec_ESP:Toggle({
+    Title = "Marcar Armas",
+    Default = true,
+    Callback = function(s) ESP_Arma = s end
+})
+
+
+-- =========================
+-- ABA FARM
+-- =========================
+local Aba_Farm = Window:Tab({Title="Farm"})
+local Sec_Farm = Aba_Farm:Section({Title = "Auto Farm MM2"})
+Sec_Farm:Toggle({Title = "Ativar Auto Farm", Default = false, Callback = function(s) AutoFarmAtivo = s end})
+
+-- âœ… BOTÃƒO ANTI-AFK PARA ABA FARM
+Sec_Farm:Button({
+    Title = "Ativar Anti-AFK",
+    Callback = function()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn", true))()
+        end)
+    end
+})
+
+-- =========================
+-- ABA LOCAL PLAYER / DIVERSÃƒO
+-- =========================
+local Aba_Diversao = Window:Tab({Title="Jogador"})
+local Sec_Jogador = Aba_Diversao:Section({Title="Controle do Jogador"})
+
+Sec_Jogador:Slider({
+Title="Velocidade de Andar",
+Value={Min=16, Max=250, Default=16},
+Callback=function(v) walkSpeed = v end
+})
+
+Sec_Jogador:Slider({
+Title="ForÃ§a do Pulo",
+Value={Min=50, Max=250, Default=50},
+Callback=function(v) jumpPower = v end
+})
+
+Sec_Jogador:Toggle({
+Title="Pulo Infinito",
+Default=false,
+Callback=function(s) infJump = s end
+})
+
+-- âœ… NOVA SEÃ‡ÃƒO: CONTROLE DA CÃ‚MERA
+local Sec_Camera = Aba_Diversao:Section({Title="Controle da CÃ¢mera"})
+
+Sec_Camera:Toggle({
+Title="Zoom Infinito",
+Default=false,
+Callback=function(s) ZoomInfinito = s end
+})
+
+Sec_Camera:Toggle({
+Title="CÃ¢mera Atravessa Parede",
+Default=false,
+Callback=function(s) CameraAtravessaParede = s end
+})
+
+Sec_Camera:Slider({
+Title="Campo de VisÃ£o (FOV)",
+Value={Min=70, Max=150, Default=70},
+Callback=function(v)
+    FOV_Atual = v
+    workspace.CurrentCamera.FieldOfView = v
+end
+})
+
+Sec_Camera:Slider({
+Title="Zoom MÃ­nimo",
+Value={Min=0.5, Max=10, Default=0.5},
+Callback=function(v) player.CameraMinZoomDistance = v end
+})
+
+Sec_Camera:Slider({
+Title="Zoom MÃ¡ximo",
+Value={Min=50, Max=500, Default=128},
+Callback=function(v) player.CameraMaxZoomDistance = v end
+})
+
+-- ===========================================
+-- ðŸŽ­ BOTÃƒO PARA EXECUTAR O SCRIPT DE ANIMAÃ‡Ã•ES
+-- COLOQUE ISSO DENTRO DA SUA ABA JOGADOR / ABA DIVERSÃƒO
+-- ===========================================
+local Sec_Diversao = Aba_Diversao:Section({Title="AnimaÃ§Ãµes Extras"})
+
+Sec_Diversao:Button({
+    Title = "ðŸŽ­ Carregar AnimaÃ§Ãµes",
+    Callback = function()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Bac0nHck/Scripts/refs/heads/main/BundleAnimations.lua"))()
+        end)
+    end
+})
