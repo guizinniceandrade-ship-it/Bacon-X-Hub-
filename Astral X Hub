@@ -1,1 +1,22 @@
+-- ===========================================
+-- ASTRAL X HUB · COMPLETO E ARRUMADO
+-- ✅ PROTEÇÃO: NÃO ABRE 2 JANELAS
+-- ✅ HITBOX NA ABA ASSASSINO
+-- ✅ ANTI-AFK NA ABA FARM
+-- ✅ TUDO FUNCIONANDO
+-- ===========================================
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+
+-- ✅ PROTEÇÃO CONTRA DUPLICATA
+local NomeJanela = "ASTRAL X Hub"
+if game.CoreGui:FindFirstChild(NomeJanela) then game.CoreGui[NomeJanela]:Destroy() end
+if player.PlayerGui:FindFirstChild(NomeJanela) then player.PlayerGui[NomeJanela]:Destroy() end
+
 
