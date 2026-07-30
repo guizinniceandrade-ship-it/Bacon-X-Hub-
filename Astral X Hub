@@ -438,9 +438,9 @@ Callback=function(v) player.CameraMaxZoomDistance = v end
 -- 🎭 BOTÃO PARA EXECUTAR O SCRIPT DE ANIMAÇÕES
 -- COLOQUE ISSO DENTRO DA SUA ABA JOGADOR / ABA DIVERSÃO
 -- ===========================================
-local Sec_Diversao = Aba_Diversao:Section({Title="Animações Extras"})
+local Sec_Diversao = Aba_Animacoes:Section({Title="Animações Extras"})
 
-Sec_Diversao:Button({
+Sec_Animacoes:Button({
     Title = "🎭 Carregar Animações",
     Callback = function()
         pcall(function()
