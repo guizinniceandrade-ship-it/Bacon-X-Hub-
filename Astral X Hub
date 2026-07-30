@@ -234,11 +234,8 @@ Value={Min=50, Max=500, Default=128},
 Callback=function(v) player.CameraMaxZoomDistance = v end
 })
 
--- ===========================================
--- 🎭 BOTÃO PARA EXECUTAR O SCRIPT DE ANIMAÇÕES
--- COLOQUE ISSO DENTRO DA SUA ABA JOGADOR / ABA DIVERSÃO
--- ===========================================
-local Sec_Diversao = Aba_Animacoes:Section({Title="Animações Extras"})
+-- ✅ SEÇÃO DE ANIMAÇÕES — CORRIGIDO!
+local Sec_Animacoes = Aba_Diversao:Section({Title="Animações Extras"})
 
 Sec_Animacoes:Button({
     Title = "🎭 Carregar Animações",
