@@ -214,7 +214,7 @@ Sec_Emotes_NaoOficial:Button({
     Callback = function()
         pcall(function()
             -- COLOQUE AQUI O LINK OU O CÓDIGO DO SEU SCRIPT DE EMOÇÕES
-            loadstring(game:HttpGet("COLOQUE_AQUI_O_LINK_DO_SEU_SCRIPT.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Bac0nHck/Scripts/refs/heads/main/BundleAnimations.lua"))()
         end)
     end
 })
