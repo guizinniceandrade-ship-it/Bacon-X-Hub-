@@ -170,7 +170,6 @@ end)
 local Aba_Xerife = Window:Tab({Title="Xerife"})
 local Sec_SilentAim = Aba_Xerife:Section({Title="🔇 Silent Aim & Tiro"})
 
--- VARIAVEIS
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
 
@@ -192,7 +191,7 @@ Sec_SilentAim:Slider({
     end
 })
 
--- SCRIPT DO SILENT AIM AJUSTADO
+-- ✅ SILENT AIM
 local GunHook
 GunHook = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
@@ -202,8 +201,20 @@ GunHook = hookmetamethod(game, "__namecall", function(self, ...)
         if typeof(self) == "Instance" then
             if self.Name == "Shoot" and method == "FireServer" then
                 if getgenv().SheriffAim and getgenv().GunAccuracy then
-                    if Murder then
-                        local Root = Players[tostring(Murder)].Character.PrimaryPart
+                    -- ✅ AGORA PEGA O ASSASSINO NA HORA DO TIRO, NÃO USA O ANTIGO
+                    local Alvo = nil
+                    pcall(function()
+                        local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+                        for Nome, Info in pairs(Dados or {}) do
+                            if Info.Role == "Murderer" then
+                                Alvo = Players:FindFirstChild(Nome)
+                                break
+                            end
+                        end
+                    end)
+
+                    if Alvo and Alvo.Character and Alvo.Character.PrimaryPart then
+                        local Root = Alvo.Character.PrimaryPart
                         local Veloc = Root.AssemblyLinearVelocity
                         local Pos = Root.Position +
                             (Veloc * Vector3.new(
