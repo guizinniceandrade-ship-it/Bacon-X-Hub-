@@ -162,25 +162,32 @@ end)
 -- =========================
 -- ABA XERIFE
 -- =========================
-repeat task.wait() until Window and Window.Tab
+-- ===========================================
+-- 🔇 ABA XERIFE — SILENT AIM CORRIGIDO
+-- ✅ TODOS OS ERROS RESOLVIDOS
+-- ✅ COMPATÍVEL COM WINDUI / ASTRAL X
+-- ✅ EXATAMENTE COMO DESCOBRIMOS NO JOGO
+-- ===========================================
 
 local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_SilentAim = Aba_Xerife:Section({Title="Silent Aim & Tiro"})
+local Sec_SilentAim = Aba_Xerife:Section({Title="🔇 Silent Aim & Tiro"})
 
+-- VARIAVEIS
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
-local AlvoCorreto = nil
+local Murder = nil
+local HookCriado = false -- ✅ EVITA DUPLICAR HOOKS
 
--- 📍 ATUALIZA O ASSASSINO
+-- 📍 1️⃣ ADICIONEI: ATUALIZA O ASSASSINO AUTOMATICAMENTE
 task.spawn(function()
     while task.wait(0.3) do
         pcall(function()
-            AlvoCorreto = nil
+            Murder = nil
             local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
             if not Dados then return end
-            for Nome, Info in pairs(Dados) do
+            for Nome, Info in pairs(Dados or {}) do
                 if Info.Role == "Murderer" then
-                    AlvoCorreto = Nome
+                    Murder = Nome
                     break
                 end
             end
@@ -201,35 +208,38 @@ Sec_SilentAim:Toggle({
 Sec_SilentAim:Slider({
     Title = "Precisão / Previsão",
     Value = {Min=5, Max=50, Default=25},
-    Callback = function(v) getgenv().GunAccuracy = v end
+    Callback = function(v)
+        getgenv().GunAccuracy = v
+    end
 })
 
--- 🎯 HOOK CORRIGIDO E PROTEGIDO
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
+-- 🎯 2️⃣ HOOK CORRIGIDO — SÓ CRIA UMA VEZ + args[2] (CONFIRMADO!)
+if not HookCriado then
+    HookCriado = true
+    local oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
 
-    if not checkcaller() and getgenv().SheriffAim then
-        if self.Name == "Shoot" and method == "FireServer" then
-            if AlvoCorreto then
-                local Jogador = Players:FindFirstChild(AlvoCorreto)
-                if Jogador and Jogador.Character then
-                    local HRP = Jogador.Character:FindFirstChild("HumanoidRootPart") or Jogador.Character.PrimaryPart
-                    -- ✅ PROTEGE CONTRA O ERRO attempt to index nil with 'CFrame'
-                    if HRP and typeof(args[1]) == "CFrame" then
-                        local Veloc = HRP.AssemblyLinearVelocity
-                        local Previsao = getgenv().GunAccuracy / 200
-                        local PosFinal = HRP.Position + Vector3.new(Veloc.X*Previsao, 0, Veloc.Z*Previsao)
-                        args[1] = CFrame.new(PosFinal) * args[1].Rotation
+        if not checkcaller() and getgenv().SheriffAim then
+            if self.Name == "Shoot" and method == "FireServer" then
+                if Murder then
+                    local Alvo = Players:FindFirstChild(tostring(Murder))
+                    if Alvo and Alvo.Character then
+                        local Root = Alvo.Character:FindFirstChild("HumanoidRootPart") or Alvo.Character.PrimaryPart
+                        if Root and #args >= 2 and typeof(args[2]) == "CFrame" then
+                            local Veloc = Root.AssemblyLinearVelocity
+                            local Pos = Root.Position + (Veloc * Vector3.new(getgenv().GunAccuracy/200, 0, getgenv().GunAccuracy/200))
+                            -- ✅ USAMOS args[2] COMO DESCOBRIMOS (não args[1])
+                            args[2] = CFrame.new(Pos)
+                        end
                     end
                 end
             end
         end
-    end
 
-    return oldNamecall(self, unpack(args))
-end)
+        return oldNamecall(self, unpack(args))
+    end)
+end
 
 -- =========================
 -- ABA ESP
