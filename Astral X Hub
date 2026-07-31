@@ -123,12 +123,40 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 -- =========================
 -- ABA XERIFE
 -- =========================
+-- ===========================================
+-- 🔇 ABA XERIFE — CORRIGIDO COMPLETO
+-- ✅ ALVO: UpperTorso primeiro
+-- ✅ INTERCEPTA RAYCAST + REMOTO
+-- ✅ args[1] EXATO COMO QUER
+-- ✅ NÃO MEXE NA CÂMERA
+-- ✅ NÃO TRAVA O TIRO
+-- ===========================================
+
 local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_SilentAim = Aba_Xerife:Section({Title="🔇 Silent Aim & Tiro"})
+local Sec_SilentAim = Aba_Xerife:Section({Title="Silent Aim & Tiro"})
 
 -- VARIAVEIS
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
+local Murder = nil
+local HookCriado = false
+
+-- 📍 ATUALIZA O ASSASSINO SEMPRE
+task.spawn(function()
+    while task.wait(0.3) do
+        pcall(function()
+            Murder = nil
+            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+            if not Dados then return end
+            for Nome, Info in pairs(Dados or {}) do
+                if Info.Role == "Murderer" then
+                    Murder = Nome
+                    break
+                end
+            end
+        end)
+    end
+end)
 
 -- INTERFACE
 Sec_SilentAim:Toggle({
@@ -148,26 +176,34 @@ Sec_SilentAim:Slider({
     end
 })
 
--- SCRIPT DO SILENT AIM AJUSTADO
-local GunHook
-GunHook = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
+-- 🎯 HOOK COMPLETO — NÃO TRAVA + TUDO O QUE PEDIU
+if not HookCriado then
+    HookCriado = true
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
 
-    if not checkcaller() then
-        if typeof(self) == "Instance" then
-            if self.Name == "Shoot" and method == "FireServer" then
-                if getgenv().SheriffAim and getgenv().GunAccuracy then
-                    if Murder then
-                        local Root = Players[tostring(Murder)].Character.PrimaryPart
-                        local Veloc = Root.AssemblyLinearVelocity
-                        local Pos = Root.Position +
-                            (Veloc * Vector3.new(
-                                getgenv().GunAccuracy / 200,
-                                0,
-                                getgenv().GunAccuracy / 200
-                            ))
+        if not checkcaller() and getgenv().SheriffAim and Murder then
+            local Alvo = Players:FindFirstChild(tostring(Murder))
+            if Alvo and Alvo.Character then
+                -- ✅ UPPER TORSO PRIMEIRO
+                local AlvoParte = Alvo.Character:FindFirstChild("UpperTorso") 
+                                   or Alvo.Character:FindFirstChild("HumanoidRootPart") 
+                                   or Alvo.Character.PrimaryPart
 
+                if AlvoParte then
+                    -- ✅ MESMO CÁLCULO DE PREVISÃO
+                    local Veloc = AlvoParte.AssemblyLinearVelocity
+                    local Pos = AlvoParte.Position + (Veloc * Vector3.new(getgenv().GunAccuracy/200, 0, getgenv().GunAccuracy/200))
+
+                    -- 1️⃣ INTERCEPTA RAYCAST (FindPartOnRay...)
+                    if method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRay" then
+                        args[1] = Ray.new(workspace.CurrentCamera.CFrame.Position, (Pos - workspace.CurrentCamera.CFrame.Position).Unit * 500)
+                    end
+
+                    -- 2️⃣ INTERCEPTA REMOTO (args[1] EXATO COMO QUER)
+                    if self.Name == "Shoot" and method == "FireServer" then
                         if args[1] and typeof(args[1]) == "CFrame" then
                             args[1] = CFrame.new(Pos) * args[1].Rotation
                         end
@@ -175,10 +211,10 @@ GunHook = hookmetamethod(game, "__namecall", function(self, ...)
                 end
             end
         end
-    end
 
-    return GunHook(self, unpack(args))
-end)
+        return oldNamecall(self, unpack(args))
+    end)
+end
 
 -- =========================
 -- ABA ESP
