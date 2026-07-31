@@ -1,10 +1,5 @@
 -- ===========================================
--- ASTRAL X HUB · COMPLETO E ARRUMADO
--- ✅ PROTEÇÃO: NÃO ABRE 2 JANELAS
--- ✅ HITBOX NA ABA ASSASSINO
--- ✅ ANTI-AFK NA ABA FARM
--- ✅ AUTO FARM COM TODAS AS VERIFICAÇÕES
--- ✅ TUDO FUNCIONANDO
+-- ASTRAL X HUB
 -- ===========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -165,14 +160,30 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =========================
--- ABA XERIFE · SILENT AIM PRONTO
+-- ABA XERIFE · VERSÃO CORRIGIDA PELO GEMINI + ATUALIZAÇÃO
 -- =========================
 local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_SilentAim = Aba_Xerife:Section({Title="🔇 Silent Aim & Tiro"})
+local Sec_SilentAim = Aba_Xerife:Section({Title="Silent Aim BRUTO"})
 
--- VARIAVEIS
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
+
+-- ✅ ATUALIZA O ASSASSINO SEMPRE
+task.spawn(function()
+    while task.wait(0.3) do
+        pcall(function()
+            Murder = nil
+            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+            if not Dados then return end
+            for Nome, Info in pairs(Dados) do
+                if Info.Role == "Murderer" then
+                    Murder = Nome
+                    break
+                end
+            end
+        end)
+    end
+end)
 
 -- INTERFACE
 Sec_SilentAim:Toggle({
@@ -192,36 +203,31 @@ Sec_SilentAim:Slider({
     end
 })
 
--- SCRIPT DO SILENT AIM AJUSTADO
-local GunHook
-GunHook = hookmetamethod(game, "__namecall", function(self, ...)
+-- ✅ HOOK CORRIGIDO SEGURO — EXATAMENTE COMO EXPLICOU
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
 
-    if not checkcaller() then
-        if typeof(self) == "Instance" then
-            if self.Name == "Shoot" and method == "FireServer" then
-                if getgenv().SheriffAim and getgenv().GunAccuracy then
-                    if Murder then
-                        local Root = Players[tostring(Murder)].Character.PrimaryPart
-                        local Veloc = Root.AssemblyLinearVelocity
-                        local Pos = Root.Position +
-                            (Veloc * Vector3.new(
-                                getgenv().GunAccuracy / 200,
-                                0,
-                                getgenv().GunAccuracy / 200
-                            ))
+    if not checkcaller() and method == "FireServer" and self.Name == "Shoot" then
+        if getgenv().SheriffAim and Murder then
+            local Alvo = Players[tostring(Murder)]
+            if Alvo and Alvo.Character then
+                local Root = Alvo.Character:FindFirstChild("HumanoidRootPart") or Alvo.Character.PrimaryPart
+                if Root then
+                    local Veloc = Root.AssemblyLinearVelocity
+                    local Previsao = getgenv().GunAccuracy / 200
+                    local Pos = Root.Position + Vector3.new(Veloc.X * Previsao, 0, Veloc.Z * Previsao)
 
-                        if args[1] and typeof(args[1]) == "CFrame" then
-                            args[1] = CFrame.new(Pos) * args[1].Rotation
-                        end
+                    if typeof(args[1]) == "CFrame" then
+                        args[1] = CFrame.new(Pos) * args[1].Rotation
                     end
                 end
             end
         end
     end
 
-    return GunHook(self, unpack(args))
+    return oldNamecall(self, unpack(args))
 end)
 
 -- =========================
