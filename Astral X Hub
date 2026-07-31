@@ -165,13 +165,33 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =========================
--- ABA XERIFE · VERSÃO CORRIGIDA (SEM ERRO)
+-- ABA XERIFE · ATUALIZAÇÃO AUTOMÁTICA SEMPRE
+-- ✅ ATUALIZA O ASSASSINO A CADA 0.3s MESMO DESLIGADO
+-- ✅ NÃO TRAVA O TIRO
+-- ✅ USA EXATAMENTE O SEU SISTEMA
 -- =========================
 local Aba_Xerife = Window:Tab({Title="Xerife"})
 local Sec_SilentAim = Aba_Xerife:Section({Title="🔇 Silent Aim & Tiro"})
 
+-- VARIAVEIS
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
+
+-- ✅ ATUALIZA O ASSASSINO SEMPRE — MESMO DESLIGADO
+task.spawn(function()
+    while task.wait(0.3) do
+        pcall(function()
+            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+            if not Dados then return end
+            for Nome, Info in pairs(Dados) do
+                if Info.Role == "Murderer" then
+                    Murder = Nome
+                    break
+                end
+            end
+        end)
+    end
+end)
 
 -- INTERFACE
 Sec_SilentAim:Toggle({
@@ -191,7 +211,7 @@ Sec_SilentAim:Slider({
     end
 })
 
--- ✅ SILENT AIM
+-- SCRIPT DO SILENT AIM
 local GunHook
 GunHook = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
@@ -201,30 +221,21 @@ GunHook = hookmetamethod(game, "__namecall", function(self, ...)
         if typeof(self) == "Instance" then
             if self.Name == "Shoot" and method == "FireServer" then
                 if getgenv().SheriffAim and getgenv().GunAccuracy then
-                    -- ✅ AGORA PEGA O ASSASSINO NA HORA DO TIRO, NÃO USA O ANTIGO
-                    local Alvo = nil
-                    pcall(function()
-                        local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
-                        for Nome, Info in pairs(Dados or {}) do
-                            if Info.Role == "Murderer" then
-                                Alvo = Players:FindFirstChild(Nome)
-                                break
+                    if Murder then
+                        local Alvo = Players:FindFirstChild(Murder)
+                        if Alvo and Alvo.Character and Alvo.Character.PrimaryPart then
+                            local Root = Alvo.Character.PrimaryPart
+                            local Veloc = Root.AssemblyLinearVelocity
+                            local Pos = Root.Position +
+                                (Veloc * Vector3.new(
+                                    getgenv().GunAccuracy / 200,
+                                    0,
+                                    getgenv().GunAccuracy / 200
+                                ))
+
+                            if args[1] and typeof(args[1]) == "CFrame" then
+                                args[1] = CFrame.new(Pos) * args[1].Rotation
                             end
-                        end
-                    end)
-
-                    if Alvo and Alvo.Character and Alvo.Character.PrimaryPart then
-                        local Root = Alvo.Character.PrimaryPart
-                        local Veloc = Root.AssemblyLinearVelocity
-                        local Pos = Root.Position +
-                            (Veloc * Vector3.new(
-                                getgenv().GunAccuracy / 200,
-                                0,
-                                getgenv().GunAccuracy / 200
-                            ))
-
-                        if args[1] and typeof(args[1]) == "CFrame" then
-                            args[1] = CFrame.new(Pos) * args[1].Rotation
                         end
                     end
                 end
