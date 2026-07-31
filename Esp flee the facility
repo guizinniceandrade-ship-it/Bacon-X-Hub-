@@ -12,32 +12,6 @@ if CoreGui:FindFirstChild("MM2_UltimateUI") then
     CoreGui.MM2_UltimateUI:Destroy()
 end
 
--- Tabela de Configurações
-local Config = {
-    -- ⚔️ ABA COMBATE
-    KillAura = false,
-    SilentAim = false,
-    AutoShoot = false,
-    HitboxExtender = false,
-    AutoGrabGun = false,
-    
-    -- 👁️ ABA VISUAIS
-    ESP_Chams = false,
-    ESP_Names = false,
-    ESP_Tracers = false,
-    
-    -- 🪙 ABA AUTO FARM
-    AutoFarm = false,
-    FarmSpeed = 25,
-    
-    -- ⚡ ABA JOGADOR
-    SpeedHack = false,
-    WalkSpeedValue = 24,
-    Noclip = false,
-    
-    AuraRange = 16
-}
-
 ------------------------------------------------------------------
 -- INTERFACE GRÁFICA
 ------------------------------------------------------------------
@@ -69,7 +43,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0.04, 0, 0.02, 0)
 Title.Size = UDim2.new(0.9, 0, 0, 30)
 Title.Font = Enum.Font.FredokaOne
-Title.Text = "⚡ Flame Hub | Estrutura"
+Title.Text = "Flame Hub"
 Title.TextColor3 = Color3.fromRGB(180, 120, 255)
 Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -306,3 +280,65 @@ CreateToggle(PlayerPage, "Atravessa Parede", "Noclip")
 -- ==================
 --  ABA JOGADOR
 -- ==================
+
+-- ==================
+--  ABA JOGADOR - COMPLETA
+--  VARIÁVEIS | BOTÕES | FUNÇÕES
+-- ==================
+
+-- 🔹 VARIÁVEIS (adicione dentro da tabela Config)
+local Config = {
+    -- ... (outras variáveis das outras abas)
+    
+    -- ABA JOGADOR
+    SpeedHack = false,
+    walkSpeed = 16,       -- Padrão
+    jumpPower = 50,       -- Padrão
+    infJump = false,
+    noclip = false
+}
+
+-- 🔹 BOTÕES E SLIDERS (adicione depois de criar as abas)
+CreateToggle(PlayerPage, "Aumenta Velocidade", "SpeedHack")
+CreateSlider(PlayerPage, "Velocidade", 16, 50, "walkSpeed")
+CreateSlider(PlayerPage, "Força do Pulo", 5, 50, "jumpPower")
+CreateToggle(PlayerPage, "Pulo Infinito", "infJump")
+CreateToggle(PlayerPage, "Noclip", "noclip")
+
+-- 🔹 FUNÇÕES FUNCIONAIS
+local RunService = game:GetService("RunService")
+
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("Humanoid") then return end
+
+    -- Velocidade
+    if Config.SpeedHack then
+        char.Humanoid.WalkSpeed = Config.walkSpeed
+    else
+        char.Humanoid.WalkSpeed = 16
+    end
+
+    -- Força do Pulo
+    char.Humanoid.JumpPower = Config.jumpPower
+
+    -- Pulo Infinito
+    if Config.infJump then
+        char.Humanoid.JumpPower = math.huge
+    end
+
+    -- Noclip
+    if Config.noclip then
+        for _, parte in pairs(char:GetChildren()) do
+            if parte:IsA("BasePart") then
+                parte.CanCollide = false
+            end
+        end
+    else
+        for _, parte in pairs(char:GetChildren()) do
+            if parte:IsA("BasePart") then
+                parte.CanCollide = true
+            end
+        end
+    end
+end)
