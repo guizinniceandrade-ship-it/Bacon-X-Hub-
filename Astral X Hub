@@ -160,21 +160,18 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =========================
--- ABA XERIFE · VERSÃO QUE VAI FUNCIONAR
--- ✅ GARANTE CARREGAMENTO DA JANELA
--- ✅ FORÇA A POSIÇÃO E TAMBÉM O ÂNGULO
--- ✅ MOSTRA NO CONSOLE O QUE ESTÁ FAZENDO
+-- ABA XERIFE
 -- =========================
 repeat task.wait() until Window and Window.Tab
 
 local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_SilentAim = Aba_Xerife:Section({Title="🔇 Silent Aim & Tiro"})
+local Sec_SilentAim = Aba_Xerife:Section({Title="Silent Aim & Tiro"})
 
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
 local AlvoCorreto = nil
 
--- ATUALIZA ASSASSINO
+-- 📍 ATUALIZA O ASSASSINO
 task.spawn(function()
     while task.wait(0.3) do
         pcall(function()
@@ -184,12 +181,14 @@ task.spawn(function()
             for Nome, Info in pairs(Dados) do
                 if Info.Role == "Murderer" then
                     AlvoCorreto = Nome
+                    break
                 end
             end
         end)
     end
 end)
 
+-- INTERFACE
 Sec_SilentAim:Toggle({
     Title = "Ativar Silent Aim",
     Default = false,
@@ -205,7 +204,7 @@ Sec_SilentAim:Slider({
     Callback = function(v) getgenv().GunAccuracy = v end
 })
 
--- HOOK COMPLETO
+-- 🎯 HOOK CORRIGIDO E PROTEGIDO
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
@@ -217,14 +216,12 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
                 local Jogador = Players:FindFirstChild(AlvoCorreto)
                 if Jogador and Jogador.Character then
                     local HRP = Jogador.Character:FindFirstChild("HumanoidRootPart") or Jogador.Character.PrimaryPart
-                    if HRP then
+                    -- ✅ PROTEGE CONTRA O ERRO attempt to index nil with 'CFrame'
+                    if HRP and typeof(args[1]) == "CFrame" then
                         local Veloc = HRP.AssemblyLinearVelocity
                         local Previsao = getgenv().GunAccuracy / 200
                         local PosFinal = HRP.Position + Vector3.new(Veloc.X*Previsao, 0, Veloc.Z*Previsao)
-                        
-                        -- ✅ AGORA FORÇA TAMBÉM O ÂNGULO PARA O ALVO
-                        args[1] = CFrame.new(Camera.CFrame.Position, PosFinal) * CFrame.new(0, 0, -2)
-                        print("🎯 ALVO AJUSTADO PARA:", AlvoCorreto)
+                        args[1] = CFrame.new(PosFinal) * args[1].Rotation
                     end
                 end
             end
@@ -233,7 +230,6 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
 
     return oldNamecall(self, unpack(args))
 end)
-
 
 -- =========================
 -- ABA ESP
