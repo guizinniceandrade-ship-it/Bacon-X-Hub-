@@ -1,7 +1,8 @@
--- [[ FLAME'S HUB - ESTRUTURA COM MARCAÇÕES ]] --
+-- [[ FLAME'S HUB - ESTRUTURA COMPLETA E ARRUMADA ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
 
@@ -11,6 +12,36 @@ local LocalPlayer = Players.LocalPlayer
 if CoreGui:FindFirstChild("MM2_UltimateUI") then
     CoreGui.MM2_UltimateUI:Destroy()
 end
+
+-- ==========================================
+--  TABELA DE CONFIGURAÇÃO (TUDO AQUI DE UMA VEZ)
+-- ==========================================
+local Config = {
+    -- ⚔️ ABA COMBATE
+    KillAura = false,
+    SilentAim = false,
+    AutoShoot = false,
+    HitboxExtender = false,
+    AutoGrabGun = false,
+    
+    -- 👁️ ABA VISUAIS
+    ESP_Chams = false,
+    ESP_Names = false,
+    ESP_Tracers = false,
+    
+    -- 🪙 ABA AUTO FARM
+    AutoFarm = false,
+    FarmSpeed = 25,
+    
+    -- ⚡ ABA JOGADOR
+    SpeedHack = false,
+    walkSpeed = 16,
+    jumpPower = 50,
+    infJump = false,
+    noclip = false,
+    
+    AuraRange = 16
+}
 
 ------------------------------------------------------------------
 -- INTERFACE GRÁFICA
@@ -228,7 +259,7 @@ local function CreateSlider(parentPage, text, minVal, maxVal, configKey)
 end
 
 ------------------------------------------------------------------
--- CRIAÇÃO DAS ABAS
+-- CRIAÇÃO DAS ABAS E BOTÕES
 ------------------------------------------------------------------
 local CombatPage = CreateTab("⚔️ Combat")
 local VisualsPage = CreateTab("👁️ Visuals")
@@ -239,25 +270,33 @@ Tabs["⚔️ Combat"].Btn.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
 Tabs["⚔️ Combat"].Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 Tabs["⚔️ Combat"].Page.Visible = true
 
+-- ⚔️ ABA COMBATE
 CreateToggle(CombatPage, "Kill Aura", "KillAura")
 CreateToggle(CombatPage, "Silent Aim", "SilentAim")
 CreateToggle(CombatPage, "Auto Shoot", "AutoShoot")
 CreateToggle(CombatPage, "Hitbox Extender", "HitboxExtender")
 CreateToggle(CombatPage, "Auto Pega Arma", "AutoGrabGun")
 
+-- 👁️ ABA VISUAIS
 CreateToggle(VisualsPage, "ESP Cores", "ESP_Chams")
 CreateToggle(VisualsPage, "ESP Nomes/Distância", "ESP_Names")
 CreateToggle(VisualsPage, "ESP Linhas", "ESP_Tracers")
 
+-- 🪙 ABA AUTO FARM
 CreateToggle(FarmPage, "Auto Farm Moedas", "AutoFarm")
 CreateSlider(FarmPage, "Velocidade Farm", 16, 50, "FarmSpeed")
 
+-- ⚡ ABA JOGADOR (TUDO AQUI)
 CreateToggle(PlayerPage, "Aumenta Velocidade", "SpeedHack")
-CreateToggle(PlayerPage, "Atravessa Parede", "Noclip")
+CreateSlider(PlayerPage, "Velocidade", 16, 50, "walkSpeed")
+CreateSlider(PlayerPage, "Força do Pulo", 5, 50, "jumpPower")
+CreateToggle(PlayerPage, "Pulo Infinito", "infJump")
+CreateToggle(PlayerPage, "Noclip", "noclip")
 
 ------------------------------------------------------------------
 -- ==================
 --  ABA COMBATE
+--  COLOQUE AQUI AS FUNÇÕES
 -- ==================
 
 
@@ -265,6 +304,7 @@ CreateToggle(PlayerPage, "Atravessa Parede", "Noclip")
 ------------------------------------------------------------------
 -- ==================
 --  ABA VISUAIS / ESP
+--  COLOQUE AQUI AS FUNÇÕES
 -- ==================
 
 
@@ -272,42 +312,15 @@ CreateToggle(PlayerPage, "Atravessa Parede", "Noclip")
 ------------------------------------------------------------------
 -- ==================
 --  ABA AUTO FARM
+--  COLOQUE AQUI AS FUNÇÕES
 -- ==================
 
 
 
 ------------------------------------------------------------------
 -- ==================
---  ABA JOGADOR
+--  ABA JOGADOR - FUNÇÕES FUNCIONAIS
 -- ==================
-
--- ==================
---  ABA JOGADOR - COMPLETA
---  VARIÁVEIS | BOTÕES | FUNÇÕES
--- ==================
-
--- 🔹 VARIÁVEIS (adicione dentro da tabela Config)
-local Config = {
-    -- ... (outras variáveis das outras abas)
-    
-    -- ABA JOGADOR
-    SpeedHack = false,
-    walkSpeed = 16,       -- Padrão
-    jumpPower = 50,       -- Padrão
-    infJump = false,
-    noclip = false
-}
-
--- 🔹 BOTÕES E SLIDERS (adicione depois de criar as abas)
-CreateToggle(PlayerPage, "Aumenta Velocidade", "SpeedHack")
-CreateSlider(PlayerPage, "Velocidade", 16, 50, "walkSpeed")
-CreateSlider(PlayerPage, "Força do Pulo", 5, 50, "jumpPower")
-CreateToggle(PlayerPage, "Pulo Infinito", "infJump")
-CreateToggle(PlayerPage, "Noclip", "noclip")
-
--- 🔹 FUNÇÕES FUNCIONAIS
-local RunService = game:GetService("RunService")
-
 RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("Humanoid") then return end
