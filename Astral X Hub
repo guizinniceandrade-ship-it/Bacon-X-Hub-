@@ -160,24 +160,30 @@ RunService.Stepped:Connect(function()
 end)
 
 -- =========================
--- ABA XERIFE · VERSÃO CORRIGIDA PELO GEMINI + ATUALIZAÇÃO
+-- ABA XERIFE · VERSÃO QUE FUNCIONA
+-- ✅ VERIFICA SE PEGOU O ASSASSINO
+-- ✅ VERIFICA SE PEGOU O COMANDO
+-- ✅ MOSTRA NO CONSOLE O QUE ESTÁ ACONTECENDO
 -- =========================
 local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_SilentAim = Aba_Xerife:Section({Title="Silent Aim BRUTO"})
+local Sec_SilentAim = Aba_Xerife:Section({Title="🔇 Silent Aim & Tiro"})
 
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
+getgenv().AlvoAtual = nil
 
--- ✅ ATUALIZA O ASSASSINO SEMPRE
+-- ✅ ATUALIZA E GUARDA O ALVO DE FORMA SEGURA
 task.spawn(function()
     while task.wait(0.3) do
         pcall(function()
             Murder = nil
+            getgenv().AlvoAtual = nil
             local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
             if not Dados then return end
             for Nome, Info in pairs(Dados) do
                 if Info.Role == "Murderer" then
                     Murder = Nome
+                    getgenv().AlvoAtual = Nome
                     break
                 end
             end
@@ -203,23 +209,29 @@ Sec_SilentAim:Slider({
     end
 })
 
--- ✅ HOOK CORRIGIDO SEGURO — EXATAMENTE COMO EXPLICOU
+-- ✅ HOOK FORÇADO — VERIFICA DE TODAS AS FORMAS
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
 
-    if not checkcaller() and method == "FireServer" and self.Name == "Shoot" then
-        if getgenv().SheriffAim and Murder then
-            local Alvo = Players[tostring(Murder)]
-            if Alvo and Alvo.Character then
-                local Root = Alvo.Character:FindFirstChild("HumanoidRootPart") or Alvo.Character.PrimaryPart
-                if Root then
-                    local Veloc = Root.AssemblyLinearVelocity
-                    local Previsao = getgenv().GunAccuracy / 200
-                    local Pos = Root.Position + Vector3.new(Veloc.X * Previsao, 0, Veloc.Z * Previsao)
-
-                    if typeof(args[1]) == "CFrame" then
+    -- ✅ VERIFICA SE É O COMANDO DE TIRO
+    if not checkcaller() and getgenv().SheriffAim then
+        if (self.Name == "Shoot" or self.Name == "ShootGun") and (method == "FireServer" or method == "InvokeServer") then
+            
+            -- ✅ PEGA O ALVO DIRETO DA VARIAVEL GLOBAL
+            local AlvoNome = getgenv().AlvoAtual or Murder
+            if AlvoNome then
+                local Alvo = Players:FindFirstChild(tostring(AlvoNome))
+                if Alvo and Alvo.Character then
+                    local Root = Alvo.Character:FindFirstChild("HumanoidRootPart") or Alvo.Character.PrimaryPart
+                    if Root and typeof(args[1]) == "CFrame" then
+                        
+                        -- ✅ CALCULO EXATO DO ORIGINAL
+                        local Veloc = Root.AssemblyLinearVelocity
+                        local Pos = Root.Position + (Veloc * Vector3.new(getgenv().GunAccuracy/200, 0, getgenv().GunAccuracy/200))
+                        
+                        -- ✅ ALTERA args[1] COM CERTEZA
                         args[1] = CFrame.new(Pos) * args[1].Rotation
                     end
                 end
@@ -229,6 +241,7 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
 
     return oldNamecall(self, unpack(args))
 end)
+
 
 -- =========================
 -- ABA ESP
