@@ -162,38 +162,12 @@ end)
 -- =========================
 -- ABA XERIFE
 -- =========================
--- ===========================================
--- 🔇 ABA XERIFE — SILENT AIM CORRIGIDO
--- ✅ TODOS OS ERROS RESOLVIDOS
--- ✅ COMPATÍVEL COM WINDUI / ASTRAL X
--- ✅ EXATAMENTE COMO DESCOBRIMOS NO JOGO
--- ===========================================
-
-local Aba_Xerife = Window:Tab({Title="Xerife"})
+Local Aba_Xerife = Window:Tab({Title="Xerife"})
 local Sec_SilentAim = Aba_Xerife:Section({Title="🔇 Silent Aim & Tiro"})
 
 -- VARIAVEIS
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
-local Murder = nil
-local HookCriado = false -- ✅ EVITA DUPLICAR HOOKS
-
--- 📍 1️⃣ ADICIONEI: ATUALIZA O ASSASSINO AUTOMATICAMENTE
-task.spawn(function()
-    while task.wait(0.3) do
-        pcall(function()
-            Murder = nil
-            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
-            if not Dados then return end
-            for Nome, Info in pairs(Dados or {}) do
-                if Info.Role == "Murderer" then
-                    Murder = Nome
-                    break
-                end
-            end
-        end)
-    end
-end)
 
 -- INTERFACE
 Sec_SilentAim:Toggle({
@@ -213,33 +187,37 @@ Sec_SilentAim:Slider({
     end
 })
 
--- 🎯 2️⃣ HOOK CORRIGIDO — SÓ CRIA UMA VEZ + args[2] (CONFIRMADO!)
-if not HookCriado then
-    HookCriado = true
-    local oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
+-- SCRIPT DO SILENT AIM AJUSTADO
+local GunHook
+GunHook = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
 
-        if not checkcaller() and getgenv().SheriffAim then
+    if not checkcaller() then
+        if typeof(self) == "Instance" then
             if self.Name == "Shoot" and method == "FireServer" then
-                if Murder then
-                    local Alvo = Players:FindFirstChild(tostring(Murder))
-                    if Alvo and Alvo.Character then
-                        local Root = Alvo.Character:FindFirstChild("HumanoidRootPart") or Alvo.Character.PrimaryPart
-                        if Root and #args >= 2 and typeof(args[2]) == "CFrame" then
-                            local Veloc = Root.AssemblyLinearVelocity
-                            local Pos = Root.Position + (Veloc * Vector3.new(getgenv().GunAccuracy/200, 0, getgenv().GunAccuracy/200))
-                            -- ✅ USAMOS args[2] COMO DESCOBRIMOS (não args[1])
-                            args[2] = CFrame.new(Pos)
+                if getgenv().SheriffAim and getgenv().GunAccuracy then
+                    if Murder then
+                        local Root = Players[tostring(Murder)].Character.PrimaryPart
+                        local Veloc = Root.AssemblyLinearVelocity
+                        local Pos = Root.Position +
+                            (Veloc * Vector3.new(
+                                getgenv().GunAccuracy / 200,
+                                0,
+                                getgenv().GunAccuracy / 200
+                            ))
+
+                        if args[1] and typeof(args[1]) == "CFrame" then
+                            args[1] = CFrame.new(Pos) * args[1].Rotation
                         end
                     end
                 end
             end
         end
+    end
 
-        return oldNamecall(self, unpack(args))
-    end)
-end
+    return GunHook(self, unpack(args))
+end)
 
 -- =========================
 -- ABA ESP
