@@ -127,36 +127,34 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 
 
-
 -- =========================
--- ABA XERIFE · CORRIGIDO: SÓ PEGA NO ASSASSINO DE VERDADE
+-- ABA XERIFE · SILENT AIM ADAPTADO
 -- =========================
-local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
+local Aba_Xerife = Window:Tab({Title="Xerife"})
 local Sec_Xerife = Aba_Xerife:Section({Title = "Mira & Tiro"})
 
-local Camera = Workspace.CurrentCamera
-
+-- ✅ CRIA AS VARIAVEIS
 if not _G.Sheriff then
     _G.Sheriff = {
-        AimbotPeito = false
+        SilentAim = false,
+        Previsao = 25
     }
 end
-local AlvoAssassino = nil
+local Murder = nil
+local GunHook = nil
 
--- 🔍 AGORA PEGA O ASSASSINO PELO SISTEMA OFICIAL DO JOGO
+-- 🔄 ATUALIZA ASSASSINO
 task.spawn(function()
     while task.wait(0.3) do
-        AlvoAssassino = nil
         pcall(function()
+            Murder = nil
             local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
             if not Dados then return end
             local Res = Dados:InvokeServer()
-            if not Res or type(Res) ~= "table" then return end
-            
-            -- ✅ SÓ QUEM TEM ROLE = Murderer
+            if not Res then return end
             for Nome, Info in pairs(Res) do
                 if Info and Info.Role == "Murderer" then
-                    AlvoAssassino = Players:FindFirstChild(Nome)
+                    Murder = Nome
                     break
                 end
             end
@@ -164,30 +162,53 @@ task.spawn(function()
     end
 end)
 
--- 🎯 AIMBOT - SÓ TRAVA NO ASSASSINO, SÓ COM ARMA NA MÃO
-RunService.RenderStepped:Connect(function()
-    if not _G.Sheriff.AimbotPeito then return end
-    if not AlvoAssassino or not AlvoAssassino.Character then return end
-    if not player.Character then return end
+-- 🛠️ SILENT AIM · CORRIGIDO PARA NÃO PARAR
+local function IniciarSilentAim()
+    if GunHook then return end
+    GunHook = hookmetamethod(game, "__index", function(self, indice)
+        local original = GunHook(self, indice)
 
-    -- ✅ SÓ FUNCIONA SE TIVER A ARMA NA MÃO
-    if not player.Character:FindFirstChild("Gun") then return end
+        if _G.Sheriff.SilentAim and indice == "FireServer" and typeof(self) == "Instance" then
+            if string.lower(self.Name) == "shoot" then
+                return function(remoto, ...)
+                    local args = {...}
+                    if Murder then
+                        local Alvo = Players:FindFirstChild(tostring(Murder))
+                        if Alvo and Alvo.Character then
+                            local Root = Alvo.Character.PrimaryPart
+                            if Root then
+                                local Veloc = Root.AssemblyLinearVelocity or Vector3.zero
+                                local Pos = Root.Position + (Veloc * Vector3.new(_G.Sheriff.Previsao/200, 0, _G.Sheriff.Previsao/200))
+                                
+                                if args[1] and typeof(args[1]) == "CFrame" then
+                                    args[1] = CFrame.new(Pos) * args[1].Rotation
+                                end
+                            end
+                        end
+                    end
+                    return original(remoto, unpack(args))
+                end
+            end
+        end
+        return original
+    end)
+end
 
-    -- MIRA NO PEITO
-    local Peito = AlvoAssassino.Character:FindFirstChild("UpperTorso") 
-               or AlvoAssassino.Character:FindFirstChild("Torso") 
-               or AlvoAssassino.Character.PrimaryPart
-    if not Peito then return end
-
-    Camera.CFrame = CFrame.new(Camera.CFrame.Position, Peito.Position)
-end)
-
--- 🔘 BOTÃO
+-- 🔘 BOTÕES NA ABA
 Sec_Xerife:Toggle({
-    Title = "🎯 Aimbot - Mira no Peito",
+    Title = "🔇 Silent Aim",
     Default = false,
     Callback = function(Estado)
-        _G.Sheriff.AimbotPeito = Estado
+        _G.Sheriff.SilentAim = Estado
+        IniciarSilentAim()
+    end
+})
+
+Sec_Xerife:Slider({
+    Title = "⚙️ Previsão de Movimento",
+    Value = {Min=5, Max=50, Default=25},
+    Callback = function(v)
+        _G.Sheriff.Previsao = v
     end
 })
 
