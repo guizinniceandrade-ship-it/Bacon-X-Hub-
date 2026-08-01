@@ -257,7 +257,7 @@ Sec_Jogador:Slider({Title="Velocidade de Andar", Value={Min=16, Max=250, Default
 Sec_Jogador:Slider({Title="Força do Pulo", Value={Min=50, Max=250, Default=50}, Callback=function(v) jumpPower = v end})
 Sec_Jogador:Toggle({Title="Pulo Infinito", Default=false, Callback=function(s) infJump = s end})
 
-local Sec_Emotes = Aba_LocalPlayer:Section({Title="Emoções"})
+local Sec_Emotes = Aba_LocalPlayer:Section({Title="Scripts de animações"})
 Sec_Emotes:Button({
     Title = "Executar Script de Emoções",
     Callback = function()
