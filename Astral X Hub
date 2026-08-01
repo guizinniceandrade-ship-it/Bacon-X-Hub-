@@ -125,30 +125,42 @@ local Window = WindUI:CreateWindow({
 local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 
--- =========================
--- ABA XERIFE
--- =========================
-local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_Xerife = Aba_Xerife:Section({Title = "Aimbot & Silent AII"})
 
--- ⚙️ VARIÁVEIS DO XERIFE
-getgenv().Sheriff = {
+
+-- =========================
+-- ABA XERIFE · CORRIGIDA PARA CELULAR
+-- =========================
+local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
+local Sec_Xerife = Aba_Xerife:Section({Title = "Aimbot & Mira"})
+
+-- ✅ DEFINI A CÂMERA QUE ESTAVA FALTANDO
+local Camera = Workspace.CurrentCamera
+
+-- ✅ TROQUEI getgenv POR _G (FUNCIONA EM TODOS OS EXECUTORES)
+_G.Sheriff = {
     AimbotAtivo = false,
     Suavidade = 25,
     AutoPegarArma = false
 }
 local AlvoAssassino = nil
 
--- 🔍 BUSCA AUTOMÁTICA DO ASSASSINO
+-- 🔍 BUSCA DO ASSASSINO (SEM InvokeServer QUE TRAVA NO CELULAR)
 task.spawn(function()
-    while task.wait(0.2) do
+    while task.wait(0.3) do
         AlvoAssassino = nil
         pcall(function()
-            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
-            if not Dados then return end
-            for Nome, Info in pairs(Dados or {}) do
-                if Info.Role == "Murderer" then
-                    AlvoAssassino = Players:FindFirstChild(Nome)
+            -- ✅ MÉTODO MAIS SEGURO: VERIFICA A ARMA/FACA DIRETO NO JOGADOR
+            for _,j in pairs(Players:GetPlayers()) do
+                if j==player or not j.Character then continue end
+                local temFaca = j.Character:FindFirstChild("Knife") 
+                             or j.Character:FindFirstChild("DisplayRefKnife")
+                local mochila = j:FindFirstChild("Backpack")
+                if not temFaca and mochila then
+                    temFaca = mochila:FindFirstChild("Knife") 
+                           or mochila:FindFirstChild("DisplayRefKnife")
+                end
+                if temFaca then
+                    AlvoAssassino = j
                     break
                 end
             end
@@ -156,9 +168,9 @@ task.spawn(function()
     end
 end)
 
--- 🎯 AIMBOT DE CÂMERA
+-- 🎯 AIMBOT DE CÂMERA (CORRIGIDO)
 RunService.RenderStepped:Connect(function()
-    if not getgenv().Sheriff.AimbotAtivo or not AlvoAssassino or not AlvoAssassino.Character then return end
+    if not _G.Sheriff.AimbotAtivo or not AlvoAssassino or not AlvoAssassino.Character then return end
     if not player.Character or not player.Character.PrimaryPart then return end
 
     local AlvoParte = AlvoAssassino.Character:FindFirstChild("Head") 
@@ -166,48 +178,51 @@ RunService.RenderStepped:Connect(function()
                    or AlvoAssassino.Character.PrimaryPart
     if not AlvoParte then return end
 
-    local Direcao = (AlvoParte.Position - Camera.CFrame.Position).Unit
-    local MiraFinal = CFrame.lookAt(Camera.CFrame.Position, Camera.CFrame.Position + Direcao)
-    Camera.CFrame = Camera.CFrame:Lerp(MiraFinal, getgenv().Sheriff.Suavidade / 100)
+    -- ✅ LÓGICA SIMPLES E FUNCIONAL EM QUALQUER VERSÃO
+    local MiraCorreta = CFrame.new(Camera.CFrame.Position, AlvoParte.Position)
+    Camera.CFrame = Camera.CFrame:Lerp(MiraCorreta, _G.Sheriff.Suavidade / 100)
 end)
 
--- 🧲 AUTO PEGAR ARMA
+-- 🧲 AUTO PEGAR ARMA (MELHORADO)
 local function PegarArma()
-    if not getgenv().Sheriff.AutoPegarArma then return end
+    if not _G.Sheriff.AutoPegarArma then return end
     if not player.Character or not player.Character.PrimaryPart then return end
 
     local PosOriginal = player.Character.PrimaryPart.CFrame
     local Arma = nil
 
-    for _, obj in pairs(Workspace:GetChildren()) do
-        if obj:IsA("Tool") and obj.Name:lower():find("gun") and not obj.Parent:IsA("Character") then
-            Arma = obj
-            break
+    -- ✅ BUSCA DO JEITO CERTO QUE O MM2 USA
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj.Name == "GunDrop" or (obj:IsA("Tool") and obj.Name:lower():find("gun")) then
+            if not obj.Parent:IsA("Character") then
+                Arma = obj
+                break
+            end
         end
     end
 
     if Arma then
-        Arma.Parent = player.Character
-        task.wait(0.03)
+        pcall(function() Arma.Parent = player.Character end)
+        task.wait(0.05)
         player.Character.PrimaryPart.CFrame = PosOriginal
     end
 end
 
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(1.2) do
         PegarArma()
     end
 end)
 
--- 🔘 CONTROLES NA ABA XERIFE
+-- 🔘 CONTROLES
 Sec_Xerife:Toggle({
-    Title = "🎯 Aimbot no Assassino",
+    Title = "Aimbot ( ainlock )",
     Default = false,
     Callback = function(Estado)
-        getgenv().Sheriff.AimbotAtivo = Estado
+        _G.Sheriff.AimbotAtivo = Estado
         WindUI:Notify({
             Title = "Aimbot",
-            Content = Estado and "✅ LIGADO — Mira só no Assassino" or "🔇 DESLIGADO",
+            Content = Estado and "✅ LIGADO " or "❌ DESLIGADO",
             Duration = 2
         })
     end
@@ -217,23 +232,22 @@ Sec_Xerife:Slider({
     Title = "Suavidade da Mira",
     Value = {Min = 10, Max = 50, Default = 25},
     Callback = function(Valor)
-        getgenv().Sheriff.Suavidade = Valor
+        _G.Sheriff.Suavidade = Valor
     end
 })
 
 Sec_Xerife:Toggle({
-    Title = "🧲 Auto Pegar Arma",
+    Title = "Auto Pegar Arma",
     Default = false,
     Callback = function(Estado)
-        getgenv().Sheriff.AutoPegarArma = Estado
+        _G.Sheriff.AutoPegarArma = Estado
         WindUI:Notify({
             Title = "Auto Pegar Arma",
-            Content = Estado and "✅ LIGADO — Pega e volta pro lugar" or "🔇 DESLIGADO",
+            Content = Estado and "✅ LIGADO" or "❌ DESLIGADO",
             Duration = 2
         })
     end
 })
-
 
 -- =========================
 -- ABA ESP
