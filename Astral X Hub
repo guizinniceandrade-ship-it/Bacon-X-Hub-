@@ -126,30 +126,28 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 
 
+
 -- =========================
--- ABA XERIFE · SILENT AIM OTIMIZADO
--- ✅ EQUILIBRADO: 0.2s | SEM SOBRECARGA
--- ✅ VERIFICAÇÕES COMPLETAS | SEM ERRO NIL
--- ✅ SEU CÓDIGO ORIGINAL
+-- ABA XERIFE · SILENT AIM
+-- ✅ EXATAMENTE O SEU CÓDIGO
+-- ✅ NADA ADICIONADO | NADA REMOVIDO
+-- ✅ ATUALIZA 0.2s
 -- =========================
-local Aba_Xerife = Window:Tab({Title="Xerife"})
+local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
 local Sec_Xerife = Aba_Xerife:Section({Title = "Mira & Tiro"})
 
 getgenv().SheriffAim = false
 getgenv().GunAccuracy = 25
 local Murder = nil
 
--- 🔄 ATUALIZA A CADA 0.2s — RÁPIDO, MAS SEM EXAGERO
 task.spawn(function()
     while task.wait(0.2) do
         pcall(function()
             Murder = nil
-            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
             if not Dados then return end
-            local Res = Dados:InvokeServer()
-            if not Res then return end
-            for Nome, Info in pairs(Res) do
-                if Info and Info.Role == "Murderer" then
+            for Nome, Info in pairs(Dados) do
+                if Info.Role == "Murderer" then
                     Murder = Nome
                     break
                 end
@@ -158,34 +156,29 @@ task.spawn(function()
     end
 end)
 
--- 🛠️ SEU CÓDIGO ORIGINAL + VERIFICAÇÕES DE SEGURANÇA
 local GunHook
 GunHook = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
 
     if not checkcaller() then
-        if typeof(self) == "Instance" and self.Name == "Shoot" and method == "FireServer" then
-            if getgenv().SheriffAim and Murder then
-                
-                -- ✅ VERIFICA TUDO ANTES PARA NÃO QUEBRAR
-                local Alvo = Players:FindFirstChild(tostring(Murder))
-                if not Alvo or not Alvo.Character then return GunHook(self, unpack(args)) end
-                local Root = Alvo.Character.PrimaryPart
-                if not Root then return GunHook(self, unpack(args)) end
+        if typeof(self) == "Instance" then
+            if self.Name == "Shoot" and method == "FireServer" then
+                if getgenv().SheriffAim and getgenv().GunAccuracy then
+                    if Murder then
+                        local Root = Players[tostring(Murder)].Character.PrimaryPart
+                        local Veloc = Root.AssemblyLinearVelocity
+                        local Pos = Root.Position +
+                            (Veloc * Vector3.new(
+                                getgenv().GunAccuracy / 200,
+                                0,
+                                getgenv().GunAccuracy / 200
+                            ))
 
-                -- ✅ MANTÉM SEU CÁLCULO EXATO
-                local Veloc = Root.AssemblyLinearVelocity or Vector3.zero
-                local Pos = Root.Position +
-                    (Veloc * Vector3.new(
-                        getgenv().GunAccuracy / 200,
-                        0,
-                        getgenv().GunAccuracy / 200
-                    ))
-
-                -- ✅ ALTERA APENAS SE FOR O TIPO CERTO
-                if args[1] and typeof(args[1]) == "CFrame" then
-                    args[1] = CFrame.new(Pos) * args[1].Rotation
+                        if args[1] and typeof(args[1]) == "CFrame" then
+                            args[1] = CFrame.new(Pos) * args[1].Rotation
+                        end
+                    end
                 end
             end
         end
@@ -194,9 +187,8 @@ GunHook = hookmetamethod(game, "__namecall", function(self, ...)
     return GunHook(self, unpack(args))
 end)
 
--- 🔘 BOTÃO
 Sec_Xerife:Toggle({
-    Title = "Silent Aim",
+    Title = "🔇 Silent Aim",
     Default = false,
     Callback = function(Estado)
         getgenv().SheriffAim = Estado
