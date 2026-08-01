@@ -124,38 +124,42 @@ local Window = WindUI:CreateWindow({
 -- =========================
 local Aba_Assassino = Window:Tab({Title="Assassino"})
 
+-- ===========================================
+-- SILENT AIM EXATO DO IGNITE HUB
+-- ✅ NENHUMA ALTERAÇÃO NA LÓGICA ORIGINAL
+-- ✅ PRONTO PARA COLOCAR NO SEU ASTRAL X
+-- ===========================================
+
 -- =========================
 -- ABA XERIFE
 -- =========================
--- ===========================================
--- 🔇 ABA XERIFE — CORRIGIDO COMPLETO
--- ✅ ALVO: UpperTorso primeiro
--- ✅ INTERCEPTA RAYCAST + REMOTO
--- ✅ args[1] EXATO COMO QUER
--- ✅ NÃO MEXE NA CÂMERA
--- ✅ NÃO TRAVA O TIRO
--- ===========================================
-
--- =========================
--- ABA XERIFE - OTIMIZADO PARA MOBILE
--- =========================
-local Aba_Xerife = Window:Tab({Title="Xerife"})
+local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
 local Sec_Silent = Aba_Xerife:Section({Title="Mira Automática"})
 
+-- VARIAVEIS EXATAS DO ORIGINAL
 local silentAimEnabled = false
+local aimbotEnabled = false
+local aimbotMode = "Murderer"
 local aimbotFOV = 100
+local aimbotSmoothing = 5
+local aimbotActive = false
 
--- BOTÃO
+-- BOTÕES EXATOS
 Sec_Silent:Toggle({
-    Title = "Silent Aim",
+    Title = "🔇 Silent Aim",
     Default = false,
-    Callback = function(estado)
-        silentAimEnabled = estado
-        WindUI:Notify({
-            Title = "Xerife",
-            Content = estado and "✅ ATIVADO" or "❌ DESATIVADO",
-            Duration = 1.5
-        })
+    Callback = function(s)
+        silentAimEnabled = s
+        WindUI:Notify({Title="Xerife", Content=s and "ATIVADO" or "DESATIVADO", Duration=1.5})
+    end
+})
+
+Sec_Silent:Toggle({
+    Title = "🎯 Aimbot",
+    Default = false,
+    Callback = function(s)
+        aimbotEnabled = s
+        WindUI:Notify({Title="Xerife", Content=s and "ATIVADO" or "DESATIVADO", Duration=1.5})
     end
 })
 
@@ -165,67 +169,195 @@ Sec_Silent:Slider({
     Callback = function(v) aimbotFOV = v end
 })
 
+Sec_Silent:Slider({
+    Title = "Suavidade",
+    Value = {Min=0, Max=10, Default=5},
+    Callback = function(v) aimbotSmoothing = v end
+})
+
 -- ===========================================
--- FUNÇÕES AUXILIARES
+-- FUNÇÕES AUXILIARES (EXATAS DO ORIGINAL)
 -- ===========================================
-local function getRole(p)
-    local c = p.Character
-    if not c then return nil end
-    local bk = p:FindFirstChild("Backpack")
-    if c:FindFirstChild("Knife") or (bk and bk:FindFirstChild("Knife")) then return "Murderer" end
-    if c:FindFirstChild("Gun") or (bk and bk:FindFirstChild("Gun")) then return "Sheriff" end
+local function getRole(player)
+    local character = player.Character
+    if not character then return nil end
+    local backpack = player:FindFirstChild("Backpack")
+    if character:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife")) then return "Murderer" end
+    if character:FindFirstChild("Gun") or (backpack and backpack:FindFirstChild("Gun")) then return "Sheriff" end
     return "Innocent"
 end
 
-local function getClosestPlayerToCursor(fov, filtro)
-    local cam = Workspace.CurrentCamera
-    local posToque = UIS:GetMouseLocation() -- Funciona com toque também
-    local alvo, dist = nil, fov
-    for _,j in pairs(Players:GetPlayers()) do
-        if j ~= player and j.Character then
-            local cargo = getRole(j)
-            if not (filtro == "Murderer" and cargo ~= "Murderer") then
-                local hrp = j.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local posTela, vis = cam:WorldToViewportPoint(hrp.Position)
-                    if vis then
-                        local d = math.sqrt((posTela.X - posToque.X)^2 + (posTela.Y - posToque.Y)^2)
-                        if d < dist then dist = d alvo = j end
+local function getClosestPlayerToCursor(fov, filterRole)
+    local camera = Workspace.CurrentCamera
+    local mouseLocation = UIS:GetMouseLocation()
+    local closestPlayer = nil
+    local closestDistance = fov
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= player and player.Character then
+            local role = getRole(player)
+            
+            if filterRole == "Murderer" and role ~= "Murderer" then goto continue end
+            if filterRole == "Sheriff" and role ~= "Sheriff" then goto continue end
+            
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
+                if onScreen then
+                    local vectorToObject = Vector2.new(screenPos.X - mouseLocation.X, screenPos.Y - mouseLocation.Y)
+                    local distanceToObject = math.sqrt(vectorToObject.X^2 + vectorToObject.Y^2)
+                    
+                    if distanceToObject < closestDistance then
+                        closestDistance = distanceToObject
+                        closestPlayer = player
                     end
                 end
             end
         end
+        ::continue::
     end
-    return alvo
+    
+    return closestPlayer, closestDistance
 end
 
--- ===========================================
--- SISTEMA PRINCIPAL
--- ===========================================
-task.spawn(function()
-    while true do
-        if silentAimEnabled then
-            local c = player.Character
-            if not c then task.wait() continue end
-            local gun = c:FindFirstChild("Gun")
-            if not gun then task.wait() continue end
-
-            local alvo = getClosestPlayerToCursor(aimbotFOV, "Murderer")
-            if alvo and alvo.Character then
-                local targetHRP = alvo.Character:FindFirstChild("HumanoidRootPart")
-                if targetHRP then
-                    -- ⚠️ NÃO TENTA MAIS ALTERAR O REMOTE (não funciona)
-                    -- Apenas deixa pronto: se um dia o executor permitir, já está preparado
-                    -- No momento, o melhor que funciona sem travar é avisar ou ajustar bem suave
-                    local cam = Workspace.CurrentCamera
-                    -- Suavidade MUITO baixa para não atrapalhar o toque
-                    cam.CFrame = cam.CFrame:Lerp(CFrame.new(cam.CFrame.Position, targetHRP.Position), 0.08)
+local function getClosestPlayerToPosition(position, maxDistance, filterRole)
+    local closestPlayer = nil
+    local closestDistance = maxDistance or math.huge
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= player and player.Character then
+            local role = getRole(player)
+            
+            if filterRole == "Murderer" and role ~= "Murderer" then goto continue end
+            if filterRole == "Sheriff" and role ~= "Sheriff" then goto continue end
+            
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local distance = (hrp.Position - position).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = player
                 end
             end
         end
-        task.wait()
+        ::continue::
+    end
+    
+    return closestPlayer, closestDistance
+end
+
+local function smoothAim(currentCFrame, targetCFrame, smoothing)
+    local currentPos = currentCFrame.Position
+    local targetPos = targetCFrame.Position
+    local direction = (targetPos - currentPos).Unit
+    local distance = (targetPos - currentPos).Magnitude
+    local step = distance / smoothing
+    
+    return CFrame.new(currentPos + direction * step, targetPos)
+end
+
+-- ===========================================
+-- SILENT AIM EXATO DO IGNITE
+-- ===========================================
+local function sheriffSilentAim()
+    if not silentAimEnabled then return end
+    if aimbotMode ~= "Sheriff" and aimbotMode ~= "Both" then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local gun = character:FindFirstChild("Gun")
+    if not gun then return end
+    
+    local target
+    if aimbotFOV < 360 then
+        target = getClosestPlayerToCursor(aimbotFOV, "Murderer")
+    else
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            target = getClosestPlayerToPosition(hrp.Position, aimbotFOV, "Murderer")
+        end
+    end
+    
+    if target and target.Character then
+        local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+        if targetHRP then
+            pcall(function()
+                local oldFire = gun:FindFirstChild("Remote")
+                if oldFire then
+                    if not gun._originalFire then
+                        gun._originalFire = oldFire.FireServer
+                    end
+                    
+                    oldFire.FireServer = function(remote, ...)
+                        gun._originalFire(remote, targetHRP.Position, ...)
+                    end
+                end
+            end)
+        end
+    end
+end
+
+-- ===========================================
+-- AIMBOT EXATO DO IGNITE
+-- ===========================================
+local function sheriffAimbot()
+    if not aimbotEnabled or not aimbotActive then return end
+    if aimbotMode ~= "Sheriff" and aimbotMode ~= "Both" then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local gun = character:FindFirstChild("Gun") or (player.Backpack and player.Backpack:FindFirstChild("Gun"))
+    if not gun then return end
+    
+    local target
+    if aimbotFOV < 360 then
+        target = getClosestPlayerToCursor(aimbotFOV, "Murderer")
+    else
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            target = getClosestPlayerToPosition(hrp.Position, aimbotFOV, "Murderer")
+        end
+    end
+    
+    if target and target.Character then
+        local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+        if targetHRP then
+            local camera = Workspace.CurrentCamera
+            local targetCF = CFrame.new(camera.CFrame.Position, targetHRP.Position)
+            
+            if aimbotSmoothing > 0 and aimbotSmoothing < 10 then
+                camera.CFrame = smoothAim(camera.CFrame, targetCF, aimbotSmoothing)
+            else
+                camera.CFrame = targetCF
+            end
+        end
+    end
+end
+
+-- ===========================================
+-- LOOP E COMANDOS (EXATOS)
+-- ===========================================
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 and aimbotEnabled then
+        aimbotActive = true
     end
 end)
+
+UIS.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aimbotActive = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    sheriffSilentAim()
+    sheriffAimbot()
+end)
+
 
 -- =========================
 -- ABA ESP
