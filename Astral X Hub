@@ -136,89 +136,96 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 -- ✅ NÃO TRAVA O TIRO
 -- ===========================================
 
+-- =========================
+-- ABA XERIFE - OTIMIZADO PARA MOBILE
+-- =========================
 local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_SilentAim = Aba_Xerife:Section({Title="Silent Aim & Tiro"})
+local Sec_Silent = Aba_Xerife:Section({Title="Mira Automática"})
 
--- VARIAVEIS
-getgenv().SheriffAim = false
-getgenv().GunAccuracy = 25
-local Murder = nil
-local HookCriado = false
+local silentAimEnabled = false
+local aimbotFOV = 100
 
--- 📍 ATUALIZA O ASSASSINO SEMPRE
-task.spawn(function()
-    while task.wait(0.3) do
-        pcall(function()
-            Murder = nil
-            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
-            if not Dados then return end
-            for Nome, Info in pairs(Dados or {}) do
-                if Info.Role == "Murderer" then
-                    Murder = Nome
-                    break
-                end
-            end
-        end)
-    end
-end)
-
--- INTERFACE
-Sec_SilentAim:Toggle({
-    Title = "Ativar Silent Aim",
+-- BOTÃO
+Sec_Silent:Toggle({
+    Title = "Silent Aim",
     Default = false,
-    Callback = function(s)
-        getgenv().SheriffAim = s
-        WindUI:Notify({Title="Silent Aim", Content = s and "✅ LIGADO" or "❌ DESLIGADO", Duration=2})
+    Callback = function(estado)
+        silentAimEnabled = estado
+        WindUI:Notify({
+            Title = "Xerife",
+            Content = estado and "✅ ATIVADO" or "❌ DESATIVADO",
+            Duration = 1.5
+        })
     end
 })
 
-Sec_SilentAim:Slider({
-    Title = "Precisão / Previsão",
-    Value = {Min=5, Max=50, Default=25},
-    Callback = function(v)
-        getgenv().GunAccuracy = v
-    end
+Sec_Silent:Slider({
+    Title = "Campo de Visão (FOV)",
+    Value = {Min=30, Max=360, Default=100},
+    Callback = function(v) aimbotFOV = v end
 })
 
--- 🎯 HOOK COMPLETO — NÃO TRAVA + TUDO O QUE PEDIU
-if not HookCriado then
-    HookCriado = true
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
+-- ===========================================
+-- FUNÇÕES AUXILIARES
+-- ===========================================
+local function getRole(p)
+    local c = p.Character
+    if not c then return nil end
+    local bk = p:FindFirstChild("Backpack")
+    if c:FindFirstChild("Knife") or (bk and bk:FindFirstChild("Knife")) then return "Murderer" end
+    if c:FindFirstChild("Gun") or (bk and bk:FindFirstChild("Gun")) then return "Sheriff" end
+    return "Innocent"
+end
 
-        if not checkcaller() and getgenv().SheriffAim and Murder then
-            local Alvo = Players:FindFirstChild(tostring(Murder))
-            if Alvo and Alvo.Character then
-                -- ✅ UPPER TORSO PRIMEIRO
-                local AlvoParte = Alvo.Character:FindFirstChild("UpperTorso") 
-                                   or Alvo.Character:FindFirstChild("HumanoidRootPart") 
-                                   or Alvo.Character.PrimaryPart
-
-                if AlvoParte then
-                    -- ✅ MESMO CÁLCULO DE PREVISÃO
-                    local Veloc = AlvoParte.AssemblyLinearVelocity
-                    local Pos = AlvoParte.Position + (Veloc * Vector3.new(getgenv().GunAccuracy/200, 0, getgenv().GunAccuracy/200))
-
-                    -- 1️⃣ INTERCEPTA RAYCAST (FindPartOnRay...)
-                    if method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRay" then
-                        args[1] = Ray.new(workspace.CurrentCamera.CFrame.Position, (Pos - workspace.CurrentCamera.CFrame.Position).Unit * 500)
-                    end
-
-                    -- 2️⃣ INTERCEPTA REMOTO (args[1] EXATO COMO QUER)
-                    if self.Name == "Shoot" and method == "FireServer" then
-                        if args[1] and typeof(args[1]) == "CFrame" then
-                            args[1] = CFrame.new(Pos) * args[1].Rotation
-                        end
+local function getClosestPlayerToCursor(fov, filtro)
+    local cam = Workspace.CurrentCamera
+    local posToque = UIS:GetMouseLocation() -- Funciona com toque também
+    local alvo, dist = nil, fov
+    for _,j in pairs(Players:GetPlayers()) do
+        if j ~= player and j.Character then
+            local cargo = getRole(j)
+            if not (filtro == "Murderer" and cargo ~= "Murderer") then
+                local hrp = j.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local posTela, vis = cam:WorldToViewportPoint(hrp.Position)
+                    if vis then
+                        local d = math.sqrt((posTela.X - posToque.X)^2 + (posTela.Y - posToque.Y)^2)
+                        if d < dist then dist = d alvo = j end
                     end
                 end
             end
         end
-
-        return oldNamecall(self, unpack(args))
-    end)
+    end
+    return alvo
 end
+
+-- ===========================================
+-- SISTEMA PRINCIPAL
+-- ===========================================
+task.spawn(function()
+    while true do
+        if silentAimEnabled then
+            local c = player.Character
+            if not c then task.wait() continue end
+            local gun = c:FindFirstChild("Gun")
+            if not gun then task.wait() continue end
+
+            local alvo = getClosestPlayerToCursor(aimbotFOV, "Murderer")
+            if alvo and alvo.Character then
+                local targetHRP = alvo.Character:FindFirstChild("HumanoidRootPart")
+                if targetHRP then
+                    -- ⚠️ NÃO TENTA MAIS ALTERAR O REMOTE (não funciona)
+                    -- Apenas deixa pronto: se um dia o executor permitir, já está preparado
+                    -- No momento, o melhor que funciona sem travar é avisar ou ajustar bem suave
+                    local cam = Workspace.CurrentCamera
+                    -- Suavidade MUITO baixa para não atrapalhar o toque
+                    cam.CFrame = cam.CFrame:Lerp(CFrame.new(cam.CFrame.Position, targetHRP.Position), 0.08)
+                end
+            end
+        end
+        task.wait()
+    end
+end)
 
 -- =========================
 -- ABA ESP
