@@ -129,7 +129,7 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 
 -- =========================
--- ABA XERIFE · AIMBOT SÓ COM ARMA NA MÃO
+-- ABA XERIFE · CORRIGIDO: SÓ PEGA NO ASSASSINO DE VERDADE
 -- =========================
 local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
 local Sec_Xerife = Aba_Xerife:Section({Title = "Mira & Tiro"})
@@ -143,22 +143,20 @@ if not _G.Sheriff then
 end
 local AlvoAssassino = nil
 
--- 🔍 BUSCA O ASSASSINO
+-- 🔍 AGORA PEGA O ASSASSINO PELO SISTEMA OFICIAL DO JOGO
 task.spawn(function()
     while task.wait(0.3) do
         AlvoAssassino = nil
         pcall(function()
-            for _,j in pairs(Players:GetPlayers()) do
-                if j == player or not j.Character then continue end
-                local temFaca = j.Character:FindFirstChild("Knife") 
-                             or j.Character:FindFirstChild("DisplayRefKnife")
-                local mochila = j:FindFirstChild("Backpack")
-                if not temFaca and mochila then
-                    temFaca = mochila:FindFirstChild("Knife") 
-                           or mochila:FindFirstChild("DisplayRefKnife")
-                end
-                if temFaca then
-                    AlvoAssassino = j
+            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+            if not Dados then return end
+            local Res = Dados:InvokeServer()
+            if not Res or type(Res) ~= "table" then return end
+            
+            -- ✅ SÓ QUEM TEM ROLE = Murderer
+            for Nome, Info in pairs(Res) do
+                if Info and Info.Role == "Murderer" then
+                    AlvoAssassino = Players:FindFirstChild(Nome)
                     break
                 end
             end
@@ -166,30 +164,27 @@ task.spawn(function()
     end
 end)
 
--- 🎯 AIMBOT - SÓ TRAVA SE TIVER A ARMA EQUIPADA
+-- 🎯 AIMBOT - SÓ TRAVA NO ASSASSINO, SÓ COM ARMA NA MÃO
 RunService.RenderStepped:Connect(function()
-    -- Se desligado / sem assassino / sem personagem: NADA
     if not _G.Sheriff.AimbotPeito then return end
     if not AlvoAssassino or not AlvoAssassino.Character then return end
     if not player.Character then return end
 
-    -- ✅ A REGRA PRINCIPAL: SÓ FAZ ALGO SE TIVER "Gun" DENTRO DO SEU PERSONAGEM
-    local ArmaNaMao = player.Character:FindFirstChild("Gun")
-    if not ArmaNaMao then return end -- Se não tiver arma na mão → PARA TUDO
+    -- ✅ SÓ FUNCIONA SE TIVER A ARMA NA MÃO
+    if not player.Character:FindFirstChild("Gun") then return end
 
-    -- Mira no peito
+    -- MIRA NO PEITO
     local Peito = AlvoAssassino.Character:FindFirstChild("UpperTorso") 
                or AlvoAssassino.Character:FindFirstChild("Torso") 
                or AlvoAssassino.Character.PrimaryPart
     if not Peito then return end
 
-    -- Trava a mira
     Camera.CFrame = CFrame.new(Camera.CFrame.Position, Peito.Position)
 end)
 
 -- 🔘 BOTÃO
 Sec_Xerife:Toggle({
-    Title = "🎯 Aimbot - Só com Arma",
+    Title = "🎯 Aimbot - Mira no Peito",
     Default = false,
     Callback = function(Estado)
         _G.Sheriff.AimbotPeito = Estado
