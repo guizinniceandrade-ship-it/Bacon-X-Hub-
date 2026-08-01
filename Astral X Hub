@@ -124,29 +124,24 @@ local Window = WindUI:CreateWindow({
 -- =========================
 local Aba_Assassino = Window:Tab({Title="Assassino"})
 
--- ===========================================
--- SILENT AIM EXATO DO IGNITE HUB
--- ✅ NENHUMA ALTERAÇÃO NA LÓGICA ORIGINAL
--- ✅ PRONTO PARA COLOCAR NO SEU ASTRAL X
--- ===========================================
 
 -- =========================
--- ABA XERIFE
+-- ABA XERIFE · CORRIGIDO PARA MOBILE
 -- =========================
 local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
 local Sec_Silent = Aba_Xerife:Section({Title="Mira Automática"})
 
--- VARIAVEIS EXATAS DO ORIGINAL
+-- VARIÁVEIS
 local silentAimEnabled = false
 local aimbotEnabled = false
+local aimbotFocusActive = true -- Mantém ativo no mobile sem precisar de botão direito
 local aimbotMode = "Murderer"
-local aimbotFOV = 100
+local aimbotFOV = 120
 local aimbotSmoothing = 5
-local aimbotActive = false
 
--- BOTÕES EXATOS
+-- BOTÕES
 Sec_Silent:Toggle({
-    Title = "🔇 Silent Aim",
+    Title = "🔇 Silent Aim (Ataque Direto)",
     Default = false,
     Callback = function(s)
         silentAimEnabled = s
@@ -155,7 +150,7 @@ Sec_Silent:Toggle({
 })
 
 Sec_Silent:Toggle({
-    Title = "🎯 Aimbot",
+    Title = "🎯 Aimbot (Câmera)",
     Default = false,
     Callback = function(s)
         aimbotEnabled = s
@@ -163,9 +158,17 @@ Sec_Silent:Toggle({
     end
 })
 
+Sec_Silent:Toggle({
+    Title = "🟢 Foco Ativo (Mobile)",
+    Default = true,
+    Callback = function(s)
+        aimbotFocusActive = s
+    end
+})
+
 Sec_Silent:Slider({
     Title = "Campo de Visão (FOV)",
-    Value = {Min=30, Max=360, Default=100},
+    Value = {Min=30, Max=360, Default=120},
     Callback = function(v) aimbotFOV = v end
 })
 
@@ -176,74 +179,73 @@ Sec_Silent:Slider({
 })
 
 -- ===========================================
--- FUNÇÕES AUXILIARES (EXATAS DO ORIGINAL)
+-- FUNÇÕES AUXILIARES
 -- ===========================================
-local function getRole(player)
-    local character = player.Character
+local function getRole(jogador)
+    local character = jogador.Character
     if not character then return nil end
-    local backpack = player:FindFirstChild("Backpack")
+    local backpack = jogador:FindFirstChild("Backpack")
     if character:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife")) then return "Murderer" end
     if character:FindFirstChild("Gun") or (backpack and backpack:FindFirstChild("Gun")) then return "Sheriff" end
     return "Innocent"
 end
 
-local function getClosestPlayerToCursor(fov, filterRole)
+local function getClosestPlayerToCenter(fov, filterRole)
     local camera = Workspace.CurrentCamera
-    local mouseLocation = UIS:GetMouseLocation()
+    local viewportSize = camera.ViewportSize
+    local centerScreen = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
     local closestPlayer = nil
     local closestDistance = fov
     
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= player and player.Character then
-            local role = getRole(player)
+    for _, jogador in ipairs(Players:GetPlayers()) do
+        if jogador ~= player and jogador.Character then
+            local role = getRole(jogador)
             
-            if filterRole == "Murderer" and role ~= "Murderer" then goto continue end
-            if filterRole == "Sheriff" and role ~= "Sheriff" then goto continue end
+            if filterRole == "Murderer" and role ~= "Murderer" then continue end
+            if filterRole == "Sheriff" and role ~= "Sheriff" then continue end
             
-            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            local hrp = jogador.Character:FindFirstChild("HumanoidRootPart")
             if hrp then
                 local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
                 if onScreen then
-                    local vectorToObject = Vector2.new(screenPos.X - mouseLocation.X, screenPos.Y - mouseLocation.Y)
-                    local distanceToObject = math.sqrt(vectorToObject.X^2 + vectorToObject.Y^2)
+                    local vectorToObject = Vector2.new(screenPos.X - centerScreen.X, screenPos.Y - centerScreen.Y)
+                    local distanceToObject = vectorToObject.Magnitude
                     
                     if distanceToObject < closestDistance then
                         closestDistance = distanceToObject
-                        closestPlayer = player
+                        closestPlayer = jogador
                     end
                 end
             end
         end
-        ::continue::
     end
     
-    return closestPlayer, closestDistance
+    return closestPlayer
 end
 
 local function getClosestPlayerToPosition(position, maxDistance, filterRole)
     local closestPlayer = nil
     local closestDistance = maxDistance or math.huge
     
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= player and player.Character then
-            local role = getRole(player)
+    for _, jogador in ipairs(Players:GetPlayers()) do
+        if jogador ~= player and jogador.Character then
+            local role = getRole(jogador)
             
-            if filterRole == "Murderer" and role ~= "Murderer" then goto continue end
-            if filterRole == "Sheriff" and role ~= "Sheriff" then goto continue end
+            if filterRole == "Murderer" and role ~= "Murderer" then continue end
+            if filterRole == "Sheriff" and role ~= "Sheriff" then continue end
             
-            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            local hrp = jogador.Character:FindFirstChild("HumanoidRootPart")
             if hrp then
                 local distance = (hrp.Position - position).Magnitude
                 if distance < closestDistance then
                     closestDistance = distance
-                    closestPlayer = player
+                    closestPlayer = jogador
                 end
             end
         end
-        ::continue::
     end
     
-    return closestPlayer, closestDistance
+    return closestPlayer
 end
 
 local function smoothAim(currentCFrame, targetCFrame, smoothing)
@@ -251,17 +253,17 @@ local function smoothAim(currentCFrame, targetCFrame, smoothing)
     local targetPos = targetCFrame.Position
     local direction = (targetPos - currentPos).Unit
     local distance = (targetPos - currentPos).Magnitude
-    local step = distance / smoothing
+    local divisor = math.max(smoothing, 1)
+    local step = distance / divisor
     
     return CFrame.new(currentPos + direction * step, targetPos)
 end
 
 -- ===========================================
--- SILENT AIM EXATO DO IGNITE
+-- SILENT AIM
 -- ===========================================
 local function sheriffSilentAim()
     if not silentAimEnabled then return end
-    if aimbotMode ~= "Sheriff" and aimbotMode ~= "Both" then return end
     
     local character = player.Character
     if not character then return end
@@ -269,26 +271,17 @@ local function sheriffSilentAim()
     local gun = character:FindFirstChild("Gun")
     if not gun then return end
     
-    local target
-    if aimbotFOV < 360 then
-        target = getClosestPlayerToCursor(aimbotFOV, "Murderer")
-    else
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            target = getClosestPlayerToPosition(hrp.Position, aimbotFOV, "Murderer")
-        end
-    end
+    local target = getClosestPlayerToCenter(aimbotFOV, "Murderer")
     
     if target and target.Character then
         local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
         if targetHRP then
             pcall(function()
-                local oldFire = gun:FindFirstChild("Remote")
-                if oldFire then
+                local oldFire = gun:FindFirstChild("Remote") or gun:FindFirstChild("Shoot")
+                if oldFire and oldFire:IsA("RemoteEvent") then
                     if not gun._originalFire then
                         gun._originalFire = oldFire.FireServer
                     end
-                    
                     oldFire.FireServer = function(remote, ...)
                         gun._originalFire(remote, targetHRP.Position, ...)
                     end
@@ -297,6 +290,43 @@ local function sheriffSilentAim()
         end
     end
 end
+
+-- ===========================================
+-- AIMBOT (CÂMERA)
+-- ===========================================
+local function sheriffAimbot()
+    if not aimbotEnabled or not aimbotFocusActive then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local gun = character:FindFirstChild("Gun") or (player.Backpack and player.Backpack:FindFirstChild("Gun"))
+    if not gun then return end
+    
+    local target = getClosestPlayerToCenter(aimbotFOV, "Murderer")
+    
+    if target and target.Character then
+        local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+        if targetHRP then
+            local camera = Workspace.CurrentCamera
+            local targetCF = CFrame.new(camera.CFrame.Position, targetHRP.Position)
+            
+            if aimbotSmoothing > 0 and aimbotSmoothing < 10 then
+                camera.CFrame = smoothAim(camera.CFrame, targetCF, aimbotSmoothing)
+            else
+                camera.CFrame = targetCF
+            end
+        end
+    end
+end
+
+-- ===========================================
+-- LOOP PRINCIPAL
+-- ===========================================
+RunService.RenderStepped:Connect(function()
+    sheriffSilentAim()
+    sheriffAimbot()
+end)
 
 -- ===========================================
 -- AIMBOT EXATO DO IGNITE
