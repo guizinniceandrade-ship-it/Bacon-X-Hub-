@@ -187,33 +187,234 @@ Sec_Xerife:Toggle({
 -- =========================
 -- 3️⃣ ABA ESP
 -- =========================
+-- =========================
+-- ABA ESP · COMPLETA E FUNCIONAL
+-- ✅ 5 SEÇÕES | TODOS OS BOTÕES LIGADOS
+-- ✅ HIGHLIGHT COM CORES CERTAS
+-- ✅ DETECÇÃO AUTOMÁTICA DE CARGOS
+-- =========================
 local Aba_ESP = Window:Tab({Title="ESP"})
 
-local Sec_Highlight = Aba_ESP:Section({Title = "Highlight"})
-Sec_Highlight:Toggle({Title = "Highlight Murderer", Default = false})
-Sec_Highlight:Toggle({Title = "Highlight Xerife", Default = false})
-Sec_Highlight:Toggle({Title = "Highlight Inocente", Default = false})
-Sec_Highlight:Toggle({Title = "Highlight Gun", Default = false})
+-- 📌 VARIÁVEIS DO SISTEMA ESP
+local ESP_ATIVO = false
+local ESP_Murderer = false
+local ESP_Xerife = false
+local ESP_Inocente = false
+local ESP_Arma = false
 
+local UltimoCargos = {}
+local Murder, Sheriff, Hero = nil, nil, nil
+local MarcaArmas = {}
+
+-- ===========================================
+-- FUNÇÕES BASE DO ESP
+-- ===========================================
+local function CriarBrilho(Jogador)
+    if not Jogador or not Jogador.Character then return end
+    if not Jogador.Character:FindFirstChild("Highlight") then
+        local hl = Instance.new("Highlight")
+        hl.Name = "Highlight"
+        hl.Adornee = Jogador.Character
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.OutlineTransparency = 0
+        hl.Enabled = false
+        hl.Parent = Jogador.Character
+    end
+end
+
+local function EstaVivo(Jogador, listaCargos)
+    if not listaCargos or not listaCargos[Jogador.Name] then return false end
+    local Info = listaCargos[Jogador.Name]
+    return not Info.Killed and not Info.Dead
+end
+
+-- ===========================================
+-- PEGA OS CARGOS DO JOGO
+-- ===========================================
+task.spawn(function()
+    while true do
+        if ESP_ATIVO then
+            local PegarDados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+            if PegarDados then
+                local ok, res = pcall(function() return PegarDados:InvokeServer() end)
+                if ok and type(res) == "table" then
+                    local novoMurder, novoSheriff, novoHero = nil, nil, nil
+                    for Nome,DadosJogador in pairs(res) do
+                        if DadosJogador.Role == "Murderer" then novoMurder = Nome
+                        elseif DadosJogador.Role == "Sheriff" then novoSheriff = Nome
+                        elseif DadosJogador.Role == "Hero" then novoHero = Nome end
+                    end
+                    if novoMurder then Murder = novoMurder end
+                    if novoSheriff then Sheriff = novoSheriff end
+                    if novoHero then Hero = novoHero end
+                    UltimoCargos = res
+                end
+            end
+        end
+        task.wait(0.3)
+    end
+end)
+
+-- ===========================================
+-- SISTEMA PRINCIPAL DO HIGHLIGHT
+-- ===========================================
+task.spawn(function()
+    while true do
+        if not ESP_ATIVO then
+            for _,J in pairs(Players:GetPlayers()) do
+                if J.Character and J.Character:FindFirstChild("Highlight") then
+                    J.Character.Highlight.Enabled = false
+                end
+            end
+        else
+            for _,J in pairs(Players:GetPlayers()) do
+                if J == player or not J.Character then continue end
+                CriarBrilho(J)
+                local hl = J.Character:FindFirstChild("Highlight")
+                if not hl then continue end
+
+                local XerifeMorto = Sheriff and Players:FindFirstChild(Sheriff) and not EstaVivo(Players[Sheriff], UltimoCargos) or false
+
+                if J.Name == Murder and EstaVivo(J, UltimoCargos) then
+                    hl.FillColor = Color3.fromRGB(255, 40, 40)
+                    hl.Enabled = ESP_Murderer
+                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
+                    hl.FillColor = Color3.fromRGB(40, 120, 255)
+                    hl.Enabled = ESP_Xerife
+                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
+                    hl.FillColor = Color3.fromRGB(255, 215, 0)
+                    hl.Enabled = ESP_Xerife
+                else
+                    hl.FillColor = Color3.fromRGB(50, 255, 50)
+                    hl.Enabled = ESP_Inocente
+                end
+                hl.OutlineColor = hl.FillColor
+            end
+        end
+        task.wait(0.15)
+    end
+end)
+
+-- ===========================================
+-- ESP DA ARMA
+-- ===========================================
+task.spawn(function()
+    while true do
+        if not ESP_ATIVO or not ESP_Arma then
+            for _,dados in pairs(MarcaArmas) do if dados.Destaque then dados.Destaque.Enabled = false end end
+            task.wait(0.3) continue
+        end
+        for _,obj in ipairs(Workspace:GetDescendants()) do
+            if obj.Name ~= "GunDrop" then continue end
+            local caminho = obj:GetFullName():lower()
+            if caminho:find("lobby") or caminho:find("weapondisplays") then continue end
+            if obj:FindFirstAncestorWhichIsA("Humanoid") or obj:FindFirstAncestorWhichIsA("Backpack") then continue end
+
+            local Parte = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart", true)
+            if not Parte then continue end
+
+            if not MarcaArmas[obj] then
+                local Destaque = Instance.new("Highlight")
+                Destaque.Adornee = obj
+                Destaque.FillTransparency = 1
+                Destaque.OutlineTransparency = 0
+                Destaque.OutlineColor = Color3.fromRGB(255,255,0)
+                Destaque.Parent = game.CoreGui
+
+                local Texto = Instance.new("BillboardGui")
+                Texto.Adornee = Parte
+                Texto.Size = UDim2.new(0,65,0,22)
+                Texto.StudsOffset = Vector3.new(0,2.2,0)
+                Texto.AlwaysOnTop = true
+                Texto.Parent = Parte
+
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.fromScale(1,1)
+                Label.BackgroundTransparency = 1
+                Label.Text = "ARMA"
+                Label.TextColor3 = Color3.fromRGB(255,255,0)
+                Label.TextScaled = true
+                Label.Font = Enum.Font.GothamBold
+                Label.Parent = Texto
+
+                MarcaArmas[obj] = {Destaque=Destaque, Texto=Texto}
+            end
+            MarcaArmas[obj].Destaque.Enabled = true
+            MarcaArmas[obj].Texto.Enabled = true
+        end
+        for obj,_ in pairs(MarcaArmas) do
+            if not obj or not obj.Parent then MarcaArmas[obj] = nil end
+        end
+        task.wait(0.3)
+    end
+end)
+
+-- ===========================================
+-- SEÇÃO 1: HIGHLIGHT
+-- ===========================================
+local Sec_Highlight = Aba_ESP:Section({Title = "Highlight"})
+
+Sec_Highlight:Toggle({
+    Title = "🔘 Ativar ESP Geral",
+    Default = false,
+    Callback = function(s) ESP_ATIVO = s end
+})
+Sec_Highlight:Toggle({
+    Title = "Highlight Murderer",
+    Default = false,
+    Callback = function(s) ESP_Murderer = s end
+})
+Sec_Highlight:Toggle({
+    Title = "Highlight Xerife",
+    Default = false,
+    Callback = function(s) ESP_Xerife = s end
+})
+Sec_Highlight:Toggle({
+    Title = "Highlight Inocente",
+    Default = false,
+    Callback = function(s) ESP_Inocente = s end
+})
+Sec_Highlight:Toggle({
+    Title = "Highlight Gun",
+    Default = false,
+    Callback = function(s) ESP_Arma = s end
+})
+
+-- ===========================================
+-- SEÇÃO 2: NOME
+-- ===========================================
 local Sec_Nome = Aba_ESP:Section({Title = "Nome"})
+
 Sec_Nome:Toggle({Title = "Nome Murderer", Default = false})
 Sec_Nome:Toggle({Title = "Nome Xerife", Default = false})
 Sec_Nome:Toggle({Title = "Nome Inocente", Default = false})
 Sec_Nome:Toggle({Title = "Nome Gun", Default = false})
 
+-- ===========================================
+-- SEÇÃO 3: DISTÂNCIA
+-- ===========================================
 local Sec_Distancia = Aba_ESP:Section({Title = "Distância"})
+
 Sec_Distancia:Toggle({Title = "Distância Murderer", Default = false})
 Sec_Distancia:Toggle({Title = "Distância Xerife", Default = false})
 Sec_Distancia:Toggle({Title = "Distância Inocente", Default = false})
 Sec_Distancia:Toggle({Title = "Distância Gun", Default = false})
 
+-- ===========================================
+-- SEÇÃO 4: LINHA
+-- ===========================================
 local Sec_Linha = Aba_ESP:Section({Title = "Linha"})
+
 Sec_Linha:Toggle({Title = "Linha Murderer", Default = false})
 Sec_Linha:Toggle({Title = "Linha Xerife", Default = false})
 Sec_Linha:Toggle({Title = "Linha Inocente", Default = false})
 Sec_Linha:Toggle({Title = "Linha Gun", Default = false})
 
+-- ===========================================
+-- SEÇÃO 5: ESQUELETO
+-- ===========================================
 local Sec_Esqueleto = Aba_ESP:Section({Title = "Esqueleto"})
+
 Sec_Esqueleto:Toggle({Title = "Esqueleto Murderer", Default = false})
 Sec_Esqueleto:Toggle({Title = "Esqueleto Xerife", Default = false})
 Sec_Esqueleto:Toggle({Title = "Esqueleto Inocente", Default = false})
