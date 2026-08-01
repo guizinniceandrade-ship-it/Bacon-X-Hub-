@@ -198,11 +198,15 @@ Sec_Xerife:Toggle({
 -- =========================
 -- ABA ESP
 -- =========================
-local Aba_ESP = Window:Tab({Title="ESP"})
-local Sec_ESP = Aba_ESP:Section({Title = "Configurações do ESP"})
+Aba_ESP:Section({Title = "Highlight"})
 
-Sec_ESP:Toggle({Title = "Mostrar Jogadores", Default = false, Callback = function(s) ESP_ATIVO = s end})
-Sec_ESP:Toggle({Title = "Marcar Armas", Default = true, Callback = function(s) ESP_Arma = s end})
+Aba_ESP:Section({Title = "Nome"})
+
+Aba_ESP:Section({Title = "Distância"})
+
+Aba_ESP:Section({Title = "Linha"})
+
+Aba_ESP:Section({Title = "Esqueleto"})
 
 -- =========================
 -- ABA FARM
