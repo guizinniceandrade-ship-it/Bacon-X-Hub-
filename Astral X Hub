@@ -127,47 +127,27 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 
 
--- =========================
--- ABA XERIFE · SISTEMA COMPLETO ADAPTADO
--- ✅ USA O MÉTODO ORIGINAL DO JOGO (SEM ERROS)
--- ✅ AUTO PEGAR ARMA / AUTO TIRO / TELEPORTE
--- ✅ SÓ FUNCIONA SE FOR XERIFE
--- =========================
-local Aba_Xerife = Window:Tab({Title="Xerife"})
-local Sec_Xerife = Aba_Xerife:Section({Title = "Aimbot & Tiro Automático"})
 
--- ✅ CRIA TODAS AS VARIÁVEIS
+-- =========================
+-- ABA XERIFE · AIMBOT SÓ COM ARMA NA MÃO
+-- =========================
+local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
+local Sec_Xerife = Aba_Xerife:Section({Title = "Mira & Tiro"})
+
+local Camera = Workspace.CurrentCamera
+
 if not _G.Sheriff then
     _G.Sheriff = {
-        AutoPegarArma = false,
-        AutoTiro = false,
-        Teleportar = false,
-        Suavidade = 25
+        AimbotPeito = false
     }
 end
-
 local AlvoAssassino = nil
-local MeuCargo = nil
-local shootOffset = 0
-local pingMultiplier = 1
-local tpOffset = Vector3.new(0, 2, 3)
-local murderTpConnection = nil
 
--- 🔍 ATUALIZA CARGOS E ALVO
+-- 🔍 BUSCA O ASSASSINO
 task.spawn(function()
     while task.wait(0.3) do
         AlvoAssassino = nil
-        MeuCargo = nil
         pcall(function()
-            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
-            if Dados then
-                local Res = Dados:InvokeServer()
-                if Res and Res[player.Name] then
-                    MeuCargo = Res[player.Name].Role
-                end
-            end
-
-            -- BUSCA ASSASSINO PELA FACA
             for _,j in pairs(Players:GetPlayers()) do
                 if j == player or not j.Character then continue end
                 local temFaca = j.Character:FindFirstChild("Knife") 
@@ -186,122 +166,34 @@ task.spawn(function()
     end
 end)
 
--- 🎯 FUNÇÃO PRINCIPAL: ATIRA NO ASSASSINO (MÉTODO ORIGINAL DO JOGO)
-local function AtirarNoAssassino()
-    -- VERIFICAÇÕES DE SEGURANÇA
-    if not player.Character then return end
-    if MeuCargo ~= "Sheriff" then return end
+-- 🎯 AIMBOT - SÓ TRAVA SE TIVER A ARMA EQUIPADA
+RunService.RenderStepped:Connect(function()
+    -- Se desligado / sem assassino / sem personagem: NADA
+    if not _G.Sheriff.AimbotPeito then return end
     if not AlvoAssassino or not AlvoAssassino.Character then return end
+    if not player.Character then return end
 
-    -- PEGA E EQUIPA A ARMA
-    local Arma = player.Character:FindFirstChild("Gun") or player.Backpack:FindFirstChild("Gun")
-    if not Arma then return end
-    if Arma.Parent ~= player.Character then
-        Arma.Parent = player.Character
-        task.wait(0.1)
-    end
+    -- ✅ A REGRA PRINCIPAL: SÓ FAZ ALGO SE TIVER "Gun" DENTRO DO SEU PERSONAGEM
+    local ArmaNaMao = player.Character:FindFirstChild("Gun")
+    if not ArmaNaMao then return end -- Se não tiver arma na mão → PARA TUDO
 
-    -- DISPARA USANDO O SISTEMA INTERNO DO JOGO
-    Arma = player.Character:FindFirstChild("Gun")
-    if Arma and Arma:FindFirstChild("KnifeLocal") then
-        local AlvoParte = AlvoAssassino.Character:FindFirstChild("HumanoidRootPart")
-        if AlvoParte then
-            local PosFinal = AlvoParte.Position
-            local HumAlvo = AlvoAssassino.Character:FindFirstChild("Humanoid")
+    -- Mira no peito
+    local Peito = AlvoAssassino.Character:FindFirstChild("UpperTorso") 
+               or AlvoAssassino.Character:FindFirstChild("Torso") 
+               or AlvoAssassino.Character.PrimaryPart
+    if not Peito then return end
 
-            -- AJUSTA MIRA PELO MOVIMENTO
-            if shootOffset ~= 0 and HumAlvo then
-                local DirMov = HumAlvo.MoveDirection
-                if DirMov.Magnitude > 0 then
-                    PosFinal = PosFinal + (DirMov.Unit * (shootOffset + pingMultiplier * 0.5))
-                end
-            end
-
-            -- EXECUTA O TIRO SEM ERROS
-            pcall(function()
-                Arma.KnifeLocal.CreateBeam.RemoteFunction:InvokeServer(1, PosFinal, "AH2")
-            end)
-        end
-    end
-end
-
--- 🧲 AUTO PEGAR ARMA
-local function PegarArma()
-    if not _G.Sheriff.AutoPegarArma then return end
-    if not player.Character or not player.Character:FindFirstChild("Humanoid") then return end
-    if player.Character.Humanoid.Health <= 0 then return end
-    if MeuCargo ~= "Sheriff" then return end
-
-    local Arma = nil
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj.Name == "GunDrop" or (obj:IsA("Tool") and obj.Name:lower():find("gun")) then
-            if not obj.Parent:IsA("Character") then
-                Arma = obj
-                break
-            end
-        end
-    end
-    if Arma then pcall(function() Arma.Parent = player.Character end) end
-end
-
--- 🚀 LOOP DO AUTO TIRO
-task.spawn(function()
-    while task.wait(0.25) do
-        if _G.Sheriff.AutoTiro then
-            AtirarNoAssassino()
-        end
-    end
+    -- Trava a mira
+    Camera.CFrame = CFrame.new(Camera.CFrame.Position, Peito.Position)
 end)
 
--- 🚀 LOOP DO AUTO PEGAR ARMA
-task.spawn(function()
-    while task.wait(1.2) do
-        PegarArma()
+-- 🔘 BOTÃO
+Sec_Xerife:Toggle({
+    Title = "🎯 Aimbot - Só com Arma",
+    Default = false,
+    Callback = function(Estado)
+        _G.Sheriff.AimbotPeito = Estado
     end
-end)
-
--- 🚀 LOOP DO TELEPORTE
-RunService.Heartbeat:Connect(function()
-    if not _G.Sheriff.Teleportar then return end
-    if not player.Character or not AlvoAssassino or not AlvoAssassino.Character then return end
-    local MeuHRP = player.Character:FindFirstChild("HumanoidRootPart")
-    local AlvoHRP = AlvoAssassino.Character:FindFirstChild("HumanoidRootPart")
-    if MeuHRP and AlvoHRP then
-        MeuHRP.CFrame = AlvoHRP.CFrame + tpOffset
-        MeuHRP.Velocity = Vector3.zero
-    end
-end)
-
--- =========================
--- BOTÕES NA INTERFACE
--- =========================
-Sec_Xerife:Toggle({
-    Title = "Auto Pegar Arma",
-    Default = false,
-    Callback = function(e) _G.Sheriff.AutoPegarArma = e end
-})
-
-Sec_Xerife:Toggle({
-    Title = "Auto Tiro no Assassino",
-    Default = false,
-    Callback = function(e) _G.Sheriff.AutoTiro = e end
-})
-
-Sec_Xerife:Button({
-    Title = "Atirar Agora",
-    Callback = AtirarNoAssassino
-})
-
-Sec_Xerife:Toggle({
-    Title = "Teleportar até ele",
-    Default = false,
-    Callback = function(e) _G.Sheriff.Teleportar = e end
-})
-
-Sec_Xerife:Slider({
-    Title = "Ajuste de Mira",
-    Value = {Min = -10, Max = 10, Default = 0},
-    Callback = function(v) shootOffset = v end
 })
 
 -- =========================
