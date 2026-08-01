@@ -1,9 +1,7 @@
--- ==============================
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/guizinniceandrade-ship-it/Bacon-X-Hub-/refs/heads/main/Astral%20X%20Hub", true))()
--- ==============================
-
 -- ===========================================
--- ASTRAL X HUB
+-- ASTRAL X HUB · COM PROTEÇÃO DE DUPLICATA
+-- ✅ NÃO ABRE JANELA DUPLA MESMO EXECUTANDO 2x
+-- ✅ ORDEM DAS ABAS: Assassino → Xerife → ESP → Auto Farm → Local Player → Trollagem → Teleporte
 -- ===========================================
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -14,10 +12,14 @@ local UIS = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 
--- ✅ PROTEÇÃO CONTRA DUPLICATA
+-- 🛡️ PROTEÇÃO TOTAL: NÃO PERMITE JANELA DUPLA
 local NomeJanela = "ASTRAL X Hub"
 if game.CoreGui:FindFirstChild(NomeJanela) then game.CoreGui[NomeJanela]:Destroy() end
 if player.PlayerGui:FindFirstChild(NomeJanela) then player.PlayerGui[NomeJanela]:Destroy() end
+-- Evita também restos de versões antigas
+for _, pasta in pairs(game.CoreGui:GetChildren()) do
+    if pasta.Name == "AstralX" then pasta:Destroy() end
+end
 
 -- ===========================================
 -- FUNÇÕES AUXILIARES
@@ -86,17 +88,6 @@ local walkSpeed = 16
 local jumpPower = 50
 local infJump = false
 
-local ESP_ATIVO = false
-local ESP_Arma = true
-local UltimoCargos = {}
-local Murder, Sheriff, Hero = nil, nil, nil
-
-local ZoomInfinito = false
-local CameraAtravessaParede = false
-local FOV_Atual = 70
-local ZoomMin_Padrao = 0.5
-local ZoomMax_Padrao = 128
-
 local CONFIG_FARM = {velocidade = 25, limite = 40, alcance_maximo = 999}
 local AutoFarmAtivo = false
 local collectedCoins = {}
@@ -120,20 +111,14 @@ local Window = WindUI:CreateWindow({
 })
 
 -- =========================
--- ABA ASSASSINO
+-- 1️⃣ ABA ASSASSINO
 -- =========================
 local Aba_Assassino = Window:Tab({Title="Assassino"})
 
-
-
-
 -- =========================
--- ABA XERIFE · SILENT AIM
--- ✅ EXATAMENTE O SEU CÓDIGO
--- ✅ NADA ADICIONADO | NADA REMOVIDO
--- ✅ ATUALIZA 0.2s
+-- 2️⃣ ABA XERIFE · SILENT AIM
 -- =========================
-local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
+local Aba_Xerife = Window:Tab({Title="Xerife"})
 local Sec_Xerife = Aba_Xerife:Section({Title = "Mira & Tiro"})
 
 getgenv().SheriffAim = false
@@ -166,8 +151,12 @@ GunHook = hookmetamethod(game, "__namecall", function(self, ...)
             if self.Name == "Shoot" and method == "FireServer" then
                 if getgenv().SheriffAim and getgenv().GunAccuracy then
                     if Murder then
-                        local Root = Players[tostring(Murder)].Character.PrimaryPart
-                        local Veloc = Root.AssemblyLinearVelocity
+                        local Alvo = Players:FindFirstChild(tostring(Murder))
+                        if not Alvo or not Alvo.Character then return GunHook(self, unpack(args)) end
+                        local Root = Alvo.Character.PrimaryPart
+                        if not Root then return GunHook(self, unpack(args)) end
+                        
+                        local Veloc = Root.AssemblyLinearVelocity or Vector3.zero
                         local Pos = Root.Position +
                             (Veloc * Vector3.new(
                                 getgenv().GunAccuracy / 200,
@@ -188,7 +177,7 @@ GunHook = hookmetamethod(game, "__namecall", function(self, ...)
 end)
 
 Sec_Xerife:Toggle({
-    Title = "🔇 Silent Aim",
+    Title = "Silent Aim",
     Default = false,
     Callback = function(Estado)
         getgenv().SheriffAim = Estado
@@ -196,22 +185,44 @@ Sec_Xerife:Toggle({
 })
 
 -- =========================
--- ABA ESP
+-- 3️⃣ ABA ESP
 -- =========================
-Aba_ESP:Section({Title = "Highlight"})
+local Aba_ESP = Window:Tab({Title="ESP"})
 
-Aba_ESP:Section({Title = "Nome"})
+local Sec_Highlight = Aba_ESP:Section({Title = "Highlight"})
+Sec_Highlight:Toggle({Title = "Highlight Murderer", Default = false})
+Sec_Highlight:Toggle({Title = "Highlight Xerife", Default = false})
+Sec_Highlight:Toggle({Title = "Highlight Inocente", Default = false})
+Sec_Highlight:Toggle({Title = "Highlight Gun", Default = false})
 
-Aba_ESP:Section({Title = "Distância"})
+local Sec_Nome = Aba_ESP:Section({Title = "Nome"})
+Sec_Nome:Toggle({Title = "Nome Murderer", Default = false})
+Sec_Nome:Toggle({Title = "Nome Xerife", Default = false})
+Sec_Nome:Toggle({Title = "Nome Inocente", Default = false})
+Sec_Nome:Toggle({Title = "Nome Gun", Default = false})
 
-Aba_ESP:Section({Title = "Linha"})
+local Sec_Distancia = Aba_ESP:Section({Title = "Distância"})
+Sec_Distancia:Toggle({Title = "Distância Murderer", Default = false})
+Sec_Distancia:Toggle({Title = "Distância Xerife", Default = false})
+Sec_Distancia:Toggle({Title = "Distância Inocente", Default = false})
+Sec_Distancia:Toggle({Title = "Distância Gun", Default = false})
 
-Aba_ESP:Section({Title = "Esqueleto"})
+local Sec_Linha = Aba_ESP:Section({Title = "Linha"})
+Sec_Linha:Toggle({Title = "Linha Murderer", Default = false})
+Sec_Linha:Toggle({Title = "Linha Xerife", Default = false})
+Sec_Linha:Toggle({Title = "Linha Inocente", Default = false})
+Sec_Linha:Toggle({Title = "Linha Gun", Default = false})
+
+local Sec_Esqueleto = Aba_ESP:Section({Title = "Esqueleto"})
+Sec_Esqueleto:Toggle({Title = "Esqueleto Murderer", Default = false})
+Sec_Esqueleto:Toggle({Title = "Esqueleto Xerife", Default = false})
+Sec_Esqueleto:Toggle({Title = "Esqueleto Inocente", Default = false})
+Sec_Esqueleto:Toggle({Title = "Esqueleto Gun", Default = false})
 
 -- =========================
--- ABA FARM
+-- 4️⃣ ABA AUTO FARM
 -- =========================
-local Aba_Farm = Window:Tab({Title="Farm"})
+local Aba_Farm = Window:Tab({Title="Auto Farm"})
 local Sec_Farm = Aba_Farm:Section({Title = "Auto Farm MM2"})
 
 Sec_Farm:Toggle({
@@ -237,23 +248,18 @@ Sec_Farm:Button({
 })
 
 -- =========================
--- ABA JOGADOR
+-- 5️⃣ ABA LOCAL PLAYER
 -- =========================
-local Aba_Diversao = Window:Tab({Title="Jogador"})
-local Sec_Jogador = Aba_Diversao:Section({Title="Controle do Jogador"})
+local Aba_LocalPlayer = Window:Tab({Title="Local Player"})
+local Sec_Jogador = Aba_LocalPlayer:Section({Title="Controle do Jogador"})
 
 Sec_Jogador:Slider({Title="Velocidade de Andar", Value={Min=16, Max=250, Default=16}, Callback=function(v) walkSpeed = v end})
 Sec_Jogador:Slider({Title="Força do Pulo", Value={Min=50, Max=250, Default=50}, Callback=function(v) jumpPower = v end})
 Sec_Jogador:Toggle({Title="Pulo Infinito", Default=false, Callback=function(s) infJump = s end})
 
--- ===========================================
--- 🎭 SESSÃO: SCRIPT DE EMOÇÕES NÃO OFICIAL
--- ===========================================
-local Sec_Emotes_NaoOficial = Aba_Diversao:Section({Title="Script de Emoções Não Oficial"})
-
--- BOTÃO QUE EXECUTA O SEU SCRIPT
-Sec_Emotes_NaoOficial:Button({
-    Title = "▶️ Executar Script",
+local Sec_Emotes = Aba_LocalPlayer:Section({Title="Emoções"})
+Sec_Emotes:Button({
+    Title = "Executar Script de Emoções",
     Callback = function()
         pcall(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/Bac0nHck/Scripts/refs/heads/main/BundleAnimations.lua"))()
@@ -262,7 +268,13 @@ Sec_Emotes_NaoOficial:Button({
 })
 
 -- =========================
--- ABA TELEPORTE
+-- 6️⃣ ABA TROLLAGEM
+-- =========================
+local Aba_Trollagem = Window:Tab({Title="Trollagem"})
+Aba_Trollagem:Section({Title = "Ferramentas"})
+
+-- =========================
+-- 7️⃣ ABA TELEPORTE
 -- =========================
 local Aba_Teleporte = Window:Tab({Title="Teleporte"})
 local Sec_Tele = Aba_Teleporte:Section({Title = "MM2"})
@@ -270,140 +282,7 @@ Sec_Tele:Button({Title = "Ir para o Lobby", Callback = IrLobby})
 Sec_Tele:Button({Title = "Ir para a Partida", Callback = IrPartida})
 
 -- ===========================================
--- SISTEMA ESP COMPLETO
--- ===========================================
-local function CriarBrilho(Jogador)
-    if not Jogador or not Jogador.Character then return end
-    if not Jogador.Character:FindFirstChild("Highlight") then
-        local hl = Instance.new("Highlight")
-        hl.Name = "Highlight"
-        hl.Adornee = Jogador.Character
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.OutlineTransparency = 0
-        hl.Enabled = false
-        hl.Parent = Jogador.Character
-    end
-end
-
-local function EstaVivo(Jogador, listaCargos)
-    if not listaCargos or not listaCargos[Jogador.Name] then return false end
-    local Info = listaCargos[Jogador.Name]
-    return not Info.Killed and not Info.Dead
-end
-
-task.spawn(function()
-    while true do
-        if ESP_ATIVO then
-            local PegarDados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
-            if PegarDados then
-                local ok, res = pcall(function() return PegarDados:InvokeServer() end)
-                if ok and type(res) == "table" then
-                    local novoMurder, novoSheriff, novoHero = nil, nil, nil
-                    for Nome,DadosJogador in pairs(res) do
-                        if DadosJogador.Role == "Murderer" then novoMurder = Nome
-                        elseif DadosJogador.Role == "Sheriff" then novoSheriff = Nome
-                        elseif DadosJogador.Role == "Hero" then novoHero = Nome end
-                    end
-                    if novoMurder then Murder = novoMurder end
-                    if novoSheriff then Sheriff = novoSheriff end
-                    if novoHero then Hero = novoHero end
-                    UltimoCargos = res
-                end
-            end
-        end
-        task.wait(0.3)
-    end
-end)
-
-task.spawn(function()
-    while true do
-        if not ESP_ATIVO then
-            for _,J in pairs(Players:GetPlayers()) do
-                if J.Character and J.Character:FindFirstChild("Highlight") then
-                    J.Character.Highlight.Enabled = false
-                end
-            end
-        else
-            for _,J in pairs(Players:GetPlayers()) do
-                if J == player or not J.Character then continue end
-                CriarBrilho(J)
-                local hl = J.Character:FindFirstChild("Highlight")
-                if not hl then continue end
-
-                local XerifeMorto = Sheriff and Players:FindFirstChild(Sheriff) and not EstaVivo(Players[Sheriff], UltimoCargos) or false
-
-                if J.Name == Murder and EstaVivo(J, UltimoCargos) then
-                    hl.FillColor = Color3.fromRGB(255, 40, 40)
-                elseif J.Name == Sheriff and EstaVivo(J, UltimoCargos) then
-                    hl.FillColor = Color3.fromRGB(40, 120, 255)
-                elseif J.Name == Hero and EstaVivo(J, UltimoCargos) and XerifeMorto then
-                    hl.FillColor = Color3.fromRGB(255, 215, 0)
-                else
-                    hl.FillColor = Color3.fromRGB(50, 255, 50)
-                end
-                hl.OutlineColor = hl.FillColor
-                hl.Enabled = true
-            end
-        end
-        task.wait(0.15)
-    end
-end)
-
--- ESP ARMAS
-local MarcaArmas = {}
-task.spawn(function()
-    while true do
-        if not ESP_ATIVO or not ESP_Arma then
-            for _,dados in pairs(MarcaArmas) do if dados.Destaque then dados.Destaque.Enabled = false end end
-            task.wait(0.3) continue
-        end
-        for _,obj in ipairs(Workspace:GetDescendants()) do
-            if obj.Name ~= "GunDrop" then continue end
-            local caminho = obj:GetFullName():lower()
-            if caminho:find("lobby") or caminho:find("weapondisplays") then continue end
-            if obj:FindFirstAncestorWhichIsA("Humanoid") or obj:FindFirstAncestorWhichIsA("Backpack") then continue end
-
-            local Parte = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart", true)
-            if not Parte then continue end
-
-            if not MarcaArmas[obj] then
-                local Destaque = Instance.new("Highlight")
-                Destaque.Adornee = obj
-                Destaque.FillTransparency = 1
-                Destaque.OutlineTransparency = 0
-                Destaque.OutlineColor = Color3.fromRGB(255,255,0)
-                Destaque.Parent = game.CoreGui
-
-                local Texto = Instance.new("BillboardGui")
-                Texto.Adornee = Parte
-                Texto.Size = UDim2.new(0,65,0,22)
-                Texto.StudsOffset = Vector3.new(0,2.2,0)
-                Texto.AlwaysOnTop = true
-                Texto.Parent = Parte
-
-                local Label = Instance.new("TextLabel")
-                Label.Size = UDim2.fromScale(1,1)
-                Label.BackgroundTransparency = 1
-                Label.Text = "ARMA"
-                Label.TextColor3 = Color3.fromRGB(255,255,0)
-                Label.TextScaled = true
-                Label.Font = Enum.Font.GothamBold
-                Label.Parent = Texto
-
-                MarcaArmas[obj] = {Destaque=Destaque, Texto=Texto}
-            end
-            MarcaArmas[obj].Destaque.Enabled = true
-            MarcaArmas[obj].Texto.Enabled = true
-        end
-        for obj,_ in pairs(MarcaArmas) do
-            if not obj or not obj.Parent then MarcaArmas[obj] = nil end
-        end
-        task.wait(0.3)
-    end
-end)
-
--- ===========================================
--- AUTO FARM COM TODAS AS VERIFICAÇÕES
+-- AUTO FARM COMPLETO
 -- ===========================================
 local function EmPartida()
     local char = player.Character
