@@ -126,103 +126,108 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 
 
-
 -- =========================
--- ABA XERIFE · CORRIGIDA PARA CELULAR
+-- ABA XERIFE · COMPLETA E CORRIGIDA
 -- =========================
-local Aba_Xerife = Window:Tab({Title="🔫 Xerife"})
+local Aba_Xerife = Window:Tab({Title="Xerife"})
 local Sec_Xerife = Aba_Xerife:Section({Title = "Aimbot & Mira"})
 
--- ✅ DEFINI A CÂMERA QUE ESTAVA FALTANDO
+-- ✅ DEFINI A CÂMERA
 local Camera = Workspace.CurrentCamera
 
--- ✅ TROQUEI getgenv POR _G (FUNCIONA EM TODOS OS EXECUTORES)
+-- ✅ CONFIGURAÇÕES GERAIS
 _G.Sheriff = {
     AimbotAtivo = false,
     Suavidade = 25,
     AutoPegarArma = false
 }
-local AlvoAssassino = nil
 
--- 🔍 BUSCA DO ASSASSINO (SEM InvokeServer QUE TRAVA NO CELULAR)
-task.spawn(function()
-    while task.wait(0.3) do
-        AlvoAssassino = nil
-        pcall(function()
-            -- ✅ MÉTODO MAIS SEGURO: VERIFICA A ARMA/FACA DIRETO NO JOGADOR
-            for _,j in pairs(Players:GetPlayers()) do
-                if j==player or not j.Character then continue end
-                local temFaca = j.Character:FindFirstChild("Knife") 
-                             or j.Character:FindFirstChild("DisplayRefKnife")
-                local mochila = j:FindFirstChild("Backpack")
-                if not temFaca and mochila then
-                    temFaca = mochila:FindFirstChild("Knife") 
-                           or mochila:FindFirstChild("DisplayRefKnife")
-                end
-                if temFaca then
-                    AlvoAssassino = j
-                    break
-                end
-            end
-        end)
-    end
-end)
-
--- 🎯 AIMBOT DE CÂMERA (CORRIGIDO)
+-- ===========================================
+-- 🎯 AIMBOT · USA EXATAMENTE OS DADOS DO ESP
+-- ===========================================
 RunService.RenderStepped:Connect(function()
-    if not _G.Sheriff.AimbotAtivo or not AlvoAssassino or not AlvoAssassino.Character then return end
+    if not _G.Sheriff.AimbotAtivo then return end
+    if not Murder then return end -- Se o ESP não achou, não mira
+    local Alvo = Players:FindFirstChild(Murder)
+    if not Alvo or not Alvo.Character then return end
     if not player.Character or not player.Character.PrimaryPart then return end
 
-    local AlvoParte = AlvoAssassino.Character:FindFirstChild("Head") 
-                   or AlvoAssassino.Character:FindFirstChild("UpperTorso") 
-                   or AlvoAssassino.Character.PrimaryPart
+    local AlvoParte = Alvo.Character:FindFirstChild("Head") 
+                   or Alvo.Character:FindFirstChild("UpperTorso") 
+                   or Alvo.Character.PrimaryPart
     if not AlvoParte then return end
 
-    -- ✅ LÓGICA SIMPLES E FUNCIONAL EM QUALQUER VERSÃO
     local MiraCorreta = CFrame.new(Camera.CFrame.Position, AlvoParte.Position)
     Camera.CFrame = Camera.CFrame:Lerp(MiraCorreta, _G.Sheriff.Suavidade / 100)
 end)
 
--- 🧲 AUTO PEGAR ARMA (MELHORADO)
+-- ===========================================
+-- 🧲 AUTO PEGAR ARMA · SÓ FUNCIONA SE FOR XERIFE E ESTIVER NA PARTIDA
+-- ===========================================
 local function PegarArma()
     if not _G.Sheriff.AutoPegarArma then return end
-    if not player.Character or not player.Character.PrimaryPart then return end
 
-    local PosOriginal = player.Character.PrimaryPart.CFrame
-    local Arma = nil
+    -- ✅ VERIFICA SE VOCÊ ESTÁ VIVO E TEM PERSONAGEM
+    local MeuPersonagem = player.Character
+    if not MeuPersonagem then return end
+    local MinhaVida = MeuPersonagem:FindFirstChild("Humanoid")
+    if not MinhaVida or MinhaVida.Health <= 0 then return end
 
-    -- ✅ BUSCA DO JEITO CERTO QUE O MM2 USA
+    -- ✅ VERIFICA SE VOCÊ É REALMENTE O XERIFE
+    local SouXerife = false
+    pcall(function()
+        local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
+        if Dados and Dados[player.Name] then
+            SouXerife = (Dados[player.Name].Role == "Sheriff")
+        end
+    end)
+    if not SouXerife then return end -- Se não for Xerife, não faz nada
+
+    -- ✅ GUARDA SUA POSIÇÃO EXATA
+    local PosOriginal = MeuPersonagem.PrimaryPart.CFrame
+    local ArmaEncontrada = nil
+
+    -- ✅ BUSCA A ARMA NO MAPA
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj.Name == "GunDrop" or (obj:IsA("Tool") and obj.Name:lower():find("gun")) then
             if not obj.Parent:IsA("Character") then
-                Arma = obj
+                ArmaEncontrada = obj
                 break
             end
         end
     end
 
-    if Arma then
-        pcall(function() Arma.Parent = player.Character end)
-        task.wait(0.05)
-        player.Character.PrimaryPart.CFrame = PosOriginal
+    -- ✅ SE ACHAR: VAI PEGA E VOLTA RÁPIDO DEMAIS
+    if ArmaEncontrada then
+        local ParteArma = ArmaEncontrada:IsA("BasePart") and ArmaEncontrada or ArmaEncontrada:FindFirstChildWhichIsA("BasePart", true)
+        if not ParteArma then return end
+
+        MeuPersonagem.PrimaryPart.CFrame = ParteArma.CFrame + Vector3.new(0, 2, 0)
+        task.wait(0.01)
+        pcall(function() ArmaEncontrada.Parent = MeuPersonagem end)
+        task.wait(0.01)
+        MeuPersonagem.PrimaryPart.CFrame = PosOriginal
     end
 end
 
+-- EXECUTA A VERIFICAÇÃO DE 0.5s EM 0.5s
 task.spawn(function()
-    while task.wait(1.2) do
+    while task.wait(0.5) do
         PegarArma()
     end
 end)
 
--- 🔘 CONTROLES
+-- ===========================================
+-- 🔘 INTERFACE E BOTÕES
+-- ===========================================
 Sec_Xerife:Toggle({
-    Title = "Aimbot ( ainlock )",
+    Title = "Aimbot (Aimlock)",
     Default = false,
     Callback = function(Estado)
         _G.Sheriff.AimbotAtivo = Estado
         WindUI:Notify({
-            Title = "Aimbot",
-            Content = Estado and "✅ LIGADO " or "❌ DESLIGADO",
+            Title = "Xerife",
+            Content = Estado and "✅ LIGADO" or "❌ DESLIGADO",
             Duration = 2
         })
     end
@@ -237,17 +242,18 @@ Sec_Xerife:Slider({
 })
 
 Sec_Xerife:Toggle({
-    Title = "Auto Pegar Arma",
+    Title = "Auto Grab Gun ( TP )",
     Default = false,
     Callback = function(Estado)
         _G.Sheriff.AutoPegarArma = Estado
         WindUI:Notify({
-            Title = "Auto Pegar Arma",
+            Title = "Xerife",
             Content = Estado and "✅ LIGADO" or "❌ DESLIGADO",
             Duration = 2
         })
     end
 })
+
 
 -- =========================
 -- ABA ESP
