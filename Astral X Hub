@@ -128,32 +128,26 @@ local Aba_Assassino = Window:Tab({Title="Assassino"})
 
 
 -- =========================
--- ABA XERIFE · SILENT AIM ADAPTADO
+-- ABA XERIFE · SILENT AIM 20x POR SEGUNDO
+-- ✅ SEU CÓDIGO ORIGINAL
+-- ✅ EXATAMENTE 20 ATUALIZAÇÕES/S
 -- =========================
 local Aba_Xerife = Window:Tab({Title="Xerife"})
 local Sec_Xerife = Aba_Xerife:Section({Title = "Mira & Tiro"})
 
--- ✅ CRIA AS VARIAVEIS
-if not _G.Sheriff then
-    _G.Sheriff = {
-        SilentAim = false,
-        Previsao = 25
-    }
-end
+getgenv().SheriffAim = false
+getgenv().GunAccuracy = 25
 local Murder = nil
-local GunHook = nil
 
--- 🔄 ATUALIZA ASSASSINO
+-- 🔄 AGORA EXATAMENTE 20 VEZES POR SEGUNDO
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.05) do
         pcall(function()
             Murder = nil
-            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true)
+            local Dados = ReplicatedStorage:FindFirstChild("GetPlayerData", true):InvokeServer()
             if not Dados then return end
-            local Res = Dados:InvokeServer()
-            if not Res then return end
-            for Nome, Info in pairs(Res) do
-                if Info and Info.Role == "Murderer" then
+            for Nome, Info in pairs(Dados) do
+                if Info.Role == "Murderer" then
                     Murder = Nome
                     break
                 end
@@ -162,53 +156,42 @@ task.spawn(function()
     end
 end)
 
--- 🛠️ SILENT AIM · CORRIGIDO PARA NÃO PARAR
-local function IniciarSilentAim()
-    if GunHook then return end
-    GunHook = hookmetamethod(game, "__index", function(self, indice)
-        local original = GunHook(self, indice)
+local GunHook
+GunHook = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
 
-        if _G.Sheriff.SilentAim and indice == "FireServer" and typeof(self) == "Instance" then
-            if string.lower(self.Name) == "shoot" then
-                return function(remoto, ...)
-                    local args = {...}
+    if not checkcaller() then
+        if typeof(self) == "Instance" then
+            if self.Name == "Shoot" and method == "FireServer" then
+                if getgenv().SheriffAim and getgenv().GunAccuracy then
                     if Murder then
-                        local Alvo = Players:FindFirstChild(tostring(Murder))
-                        if Alvo and Alvo.Character then
-                            local Root = Alvo.Character.PrimaryPart
-                            if Root then
-                                local Veloc = Root.AssemblyLinearVelocity or Vector3.zero
-                                local Pos = Root.Position + (Veloc * Vector3.new(_G.Sheriff.Previsao/200, 0, _G.Sheriff.Previsao/200))
-                                
-                                if args[1] and typeof(args[1]) == "CFrame" then
-                                    args[1] = CFrame.new(Pos) * args[1].Rotation
-                                end
-                            end
+                        local Root = Players[tostring(Murder)].Character.PrimaryPart
+                        local Veloc = Root.AssemblyLinearVelocity
+                        local Pos = Root.Position +
+                            (Veloc * Vector3.new(
+                                getgenv().GunAccuracy / 200,
+                                0,
+                                getgenv().GunAccuracy / 200
+                            ))
+
+                        if args[1] and typeof(args[1]) == "CFrame" then
+                            args[1] = CFrame.new(Pos) * args[1].Rotation
                         end
                     end
-                    return original(remoto, unpack(args))
                 end
             end
         end
-        return original
-    end)
-end
+    end
 
--- 🔘 BOTÕES NA ABA
+    return GunHook(self, unpack(args))
+end)
+
 Sec_Xerife:Toggle({
-    Title = "🔇 Silent Aim",
+    Title = "Silent Aim",
     Default = false,
     Callback = function(Estado)
-        _G.Sheriff.SilentAim = Estado
-        IniciarSilentAim()
-    end
-})
-
-Sec_Xerife:Slider({
-    Title = "⚙️ Previsão de Movimento",
-    Value = {Min=5, Max=50, Default=25},
-    Callback = function(v)
-        _G.Sheriff.Previsao = v
+        getgenv().SheriffAim = Estado
     end
 })
 
