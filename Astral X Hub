@@ -41,7 +41,6 @@ local Aba_Xerife = Window:Tab({Title="Xerife"})
 Aba_Xerife:Section({Title = "Mira & Tiro"})
 
 local Aba_Farm = Window:Tab({Title="Auto Farm"})
-Aba_Farm:Section({Title = "Auto Farm MM2"})
 
 local Aba_ESP = Window:Tab({Title="ESP"})
 
