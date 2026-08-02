@@ -573,6 +573,53 @@ task.spawn(function()
     end
 end)
 
+-- ===================================================
+-- 🗺️ SISTEMA DE LOCALIZAÇÃO DO LOBBY E MAPA
+-- ===================================================
+
+local function EncontrarLobby()
+    -- Tenta achar o Spawn do Lobby ou qualquer parte de spawn no Lobby
+    local workspaceChildren = Workspace:GetChildren()
+    for _, obj in ipairs(workspaceChildren) do
+        if obj.Name:lower():find("lobby") and obj:IsA("BasePart") then
+            return obj.CFrame + Vector3.new(0, 3, 0)
+        end
+    end
+    
+    -- Se não achar por nome exato, procura pastas comuns
+    local mapa = Workspace:FindFirstChild("Map") or Workspace:FindFirstChild("Lobby")
+    if mapa then
+        local spawnLobby = mapa:FindFirstChild("SpawnLocation", true) or mapa:FindFirstChild("Spawn", true)
+        if spawnLobby and spawnLobby:IsA("BasePart") then
+            return spawnLobby.CFrame + Vector3.new(0, 3, 0)
+        end
+    end
+    
+    return POS_LOBBY_PADRAO + Vector3.new(0, 5, 0)
+end
+
+local function EncontrarPartida()
+    -- Procura o container principal do mapa da rodada no Murder Mystery 2
+    for _, v in ipairs(Workspace:GetChildren()) do
+        if v:IsA("Model") and v.Name ~= "Terrain" and v ~= player.Character then
+            -- Verifica se o modelo parece ser um mapa (tem muitas peças ou objetos filhos)
+            if #v:GetChildren() > 20 then
+                local spawnMapa = v:FindFirstChild("SpawnLocation", true) or v:FindFirstChild("Spawn", true)
+                if spawnMapa and spawnMapa:IsA("BasePart") then
+                    return spawnMapa.CFrame + Vector3.new(0, 3, 0)
+                end
+                
+                -- Se não achar spawn, pega a primeira peça válida do mapa para jogar o player perto
+                for _, part in ipairs(v:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Transparency < 1 then
+                        return part.CFrame + Vector3.new(0, 5, 0)
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
 
 -- ======================
 -- TELEPORTE PLAYER SISTEMA 
