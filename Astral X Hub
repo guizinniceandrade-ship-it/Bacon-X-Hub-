@@ -413,7 +413,7 @@ Sec_Local:Slider({
     Default = 16,
     Min = 16,
     Max = 50,
-    Increment = 1,
+    Step = 1,
     Callback = function(v)
         SpeedAtivo = v
     end
@@ -421,10 +421,10 @@ Sec_Local:Slider({
 
 Sec_Local:Slider({
     Title = "Pulo (Jump Power)",
-    Default = 50,
+    Default = 5,
     Min = 5,
     Max = 50,
-    Increment = 1,
+    Step = 1,
     Callback = function(v)
         JumpAtivo = v
     end
