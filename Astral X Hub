@@ -64,7 +64,13 @@ local CONFIG_FARM = {
 -- =========================
 local ListaNomesDropdown = {}
 local JogadorSelecionadoTP = nil
-local DropdownJogadores
+local DropdownJogadore
+
+-- =========================
+-- VARIÁVEIS TELEPORTE LOBBY / MAPA
+-- =========================
+-- Coordenadas padrão de fallback caso o spawn exato não seja encontrado
+local POS_LOBBY_PADRAO = CFrame.new(-113, 14, 5) 
 
 -- =========================
 -- VARIÁVEIS LOCAL PLAYER
@@ -599,6 +605,40 @@ end
 
 Players.PlayerAdded:Connect(AtualizarLista)
 Players.PlayerRemoving:Connect(AtualizarLista)
+
+-- =========================
+-- SEÇÃO: TELEPORTE LOBBY & MAPA
+-- =========================
+local Sec_TeleLobby = Aba_Tele:Section({Title = "teleporte lobby & Mapa"})
+
+-- Botão para ir ao Lobby
+Sec_TeleLobby:Button({
+    Title = "Tp Lobby",
+    Callback = function()
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local destinoLobby = EncontrarLobby()
+            char:PivotTo(destinoLobby)
+        end
+    end
+})
+
+-- Botão para ir para a Partida (Mapa)
+Sec_TeleLobby:Button({
+    Title = "Tp Map",
+    Callback = function()
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local destinoMapa = EncontrarPartida()
+            if destinoMapa then
+                char:PivotTo(destinoMapa)
+            else
+                -- Caso não ache a partida ativa, avisa ou joga para uma posição segura padrão
+                char:PivotTo(CFrame.new(0, 50, 0))
+            end
+        end
+    end
+})
 
 -- =========================
 -- SEÇÃO: FARM / Cframe:Lerp + char:PivotTo
