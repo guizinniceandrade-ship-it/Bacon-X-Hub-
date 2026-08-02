@@ -501,8 +501,8 @@ Sec_Camera:Slider({
 -- =========================
 local Sec_Animacao = Aba_Local:Section({Title = "Scripts de animação"})
 
-Sec_Animacoes:Button({
-    Title = " Bundle Animations",
+Sec_Animacao:Button({
+    Title = "Bundle Animations",
     Callback = function()
         pcall(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/Bac0nHck/Scripts/refs/heads/main/BundleAnimations.lua"))()
