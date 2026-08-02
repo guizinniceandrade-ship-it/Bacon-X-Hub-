@@ -566,6 +566,33 @@ task.spawn(function()
     end
 end)
 
+
+-- ======================
+-- TELEPORTE PLAYER SISTEMA 
+-- ======================
+local function PegarListaJogadores()
+    local lista = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player then
+            table.insert(lista, p.Name)
+        end
+    end
+    return lista
+end
+
+local function AtualizarLista()
+    local novaLista = PegarListaJogadores()
+    ListaNomesDropdown = novaLista
+    pcall(function() DropdownJogadores:SetValues(novaLista) end)
+    if JogadorSelecionadoTP and not table.find(novaLista, JogadorSelecionadoTP) then
+        JogadorSelecionadoTP = nil
+        pcall(function() DropdownJogadores:SetValue("") end)
+    end
+end
+
+Players.PlayerAdded:Connect(AtualizarLista)
+Players.PlayerRemoving:Connect(AtualizarLista)
+
 -- =========================
 -- SEÇÃO: FARM / Cframe:Lerp + char:PivotTo
 -- =========================
@@ -597,7 +624,7 @@ local Sec_Teleporte = Aba_Tele:Section({Title = "Teleporte para Player"})
 
 local DropdownJogadores = Sec_Teleporte:Dropdown({
     Title = "Escolhe alguém",
-    Values = {},
+    Values = PegarListaJogadores(),
     Default = "",
     Callback = function(escolha)
         JogadorSelecionadoTP = escolha
@@ -617,25 +644,6 @@ Sec_Teleporte:Button({
         end
     end
 })
-
-local function AtualizarListaJogadores()
-    local listaNova = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= player then
-            table.insert(listaNova, p.Name)
-        end
-    end
-    ListaNomesDropdown = listaNova
-    pcall(function() DropdownJogadores:SetValues(listaNova) end)
-    if JogadorSelecionadoTP and not table.find(listaNova, JogadorSelecionadoTP) then
-        JogadorSelecionadoTP = nil
-        pcall(function() DropdownJogadores:SetValue("") end)
-    end
-end
-
-Players.PlayerAdded:Connect(AtualizarListaJogadores)
-Players.PlayerRemoving:Connect(AtualizarListaJogadores)
-AtualizarListaJogadores()
 
 -- =========================
 -- ABA LOCAL PLAYER
