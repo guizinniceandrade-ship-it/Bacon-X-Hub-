@@ -410,18 +410,18 @@ end)
 RunService.RenderStepped:Connect(function()
     local cam = Workspace.CurrentCamera
     
-    -- Zoom Infinito
+    -- Zoom Infinito corrigido
     if ZoomInifinitoAtivo then
         player.CameraMaxZoomDistance = 999999
     else
-        player.CameraMaxZoomDistance = 400 -- Padrão do jogo
+        player.CameraMaxZoomDistance = 12.5 -- Padrão original seguro do Roblox
     end
 
-    -- Câmera Atravessar Paredes (Camera Noclip)
+    -- Câmera Atravessar Paredes (Modo Classic impede a câmera de dar zoom forçado ao bater na parede)
     if CameraNoclipAtivo then
-        cam.CFrame = cam.CFrame
-        -- Ignora as peças do próprio personagem para a câmera não dar zoom forçado
-        cam.CameraSubject = player.Character and player.Character:FindFirstChild("Humanoid")
+        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Classic
+    else
+        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
     end
 
     -- FOV
