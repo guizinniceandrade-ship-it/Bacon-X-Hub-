@@ -463,7 +463,7 @@ Sec_Local:Toggle({
     Title = "Atravessar Paredes (Noclip)", 
     Default = false, 
     Callback = function(s) 
-        CameraAtravessaParede = s 
+        NoclipAtivo = s 
     end
 })
 
@@ -484,7 +484,7 @@ Sec_Camera:Toggle({
     Title = "Camera atravessar paredes",
     Default = false,
     Callback = function(s)
-        CameraNoclipAtivo = s
+        CameraAtravessaParede = s
     end
 })
 
