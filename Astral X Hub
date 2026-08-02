@@ -369,18 +369,12 @@ end)
 -- ===================================================
 -- 🏃‍♂️ CONTROLE LOCAL PLAYER (SPEED, JUMP, INF JUMP, NOCLIP)
 -- ===================================================
-
--- Velocidade e Pulo
 RunService.RenderStepped:Connect(function()
     local char = player.Character
     if char and char:FindFirstChild("Humanoid") then
         local humanoid = char.Humanoid
-        if SpeedAtivo ~= 16 then
-            humanoid.WalkSpeed = SpeedAtivo
-        end
-        if JumpAtivo ~= 50 then
-            humanoid.JumpPower = JumpAtivo
-        end
+        humanoid.WalkSpeed = SpeedAtivo
+        humanoid.JumpPower = JumpAtivo
     end
 
     -- Noclip (Atravessar paredes)
@@ -393,56 +387,40 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Pulo Infinito
-game:GetService("UserInputService").JumpRequest:Connect(function()
-    if InfJumpAtivo then
-        local char = player.Character
-        if char and char:FindFirstChildOfClass("Humanoid") then
-            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end
-end)
-
 -- =========================
 -- ABA LOCAL PLAYER
 -- =========================
 local Sec_Local = Aba_Local:Section({Title = "Controle de personagem"})
 
 Sec_Local:Slider({
-    Title = "Velocidade (Speed)",
-    Default = 16,
-    Min = 16,
-    Max = 50,
-    Step = 1,
-    Callback = function(v)
-        SpeedAtivo = v
+    Title = "Velocidade (Speed)", 
+    Value = {Min = 16, Max = 50, Default = 16}, 
+    Callback = function(v) 
+        SpeedAtivo = v 
     end
 })
 
 Sec_Local:Slider({
-    Title = "Pulo (Jump Power)",
-    Default = 5,
-    Min = 5,
-    Max = 50,
-    Step = 1,
-    Callback = function(v)
-        JumpAtivo = v
+    Title = "Pulo (Jump Power)", 
+    Value = {Min = 50, Max = 50, Default = 50}, 
+    Callback = function(v) 
+        JumpAtivo = v 
     end
 })
 
 Sec_Local:Toggle({
-    Title = "Pulo Infinito (Infinite Jump)",
-    Default = false,
-    Callback = function(s)
-        InfJumpAtivo = s
+    Title = "Pulo Infinito (Infinite Jump)", 
+    Default = false, 
+    Callback = function(s) 
+        InfJumpAtivo = s 
     end
 })
 
 Sec_Local:Toggle({
-    Title = "Atravessar Paredes (Noclip)",
-    Default = false,
-    Callback = function(s)
-        NoclipAtivo = s
+    Title = "Atravessar Paredes (Noclip)", 
+    Default = false, 
+    Callback = function(s) 
+        NoclipAtivo = s 
     end
 })
 
