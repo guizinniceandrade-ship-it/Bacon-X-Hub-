@@ -69,8 +69,8 @@ local DropdownJogadore
 -- =========================
 -- VARIÁVEIS TELEPORTE LOBBY / MAPA
 -- =========================
--- Coordenadas padrão de fallback caso o spawn exato não seja encontrado
-local POS_LOBBY_PADRAO = CFrame.new(-113, 14, 5) 
+local MapaAtual = nil
+local LobbyEncontrado = nil
 
 -- =========================
 -- VARIÁVEIS LOCAL PLAYER
@@ -604,6 +604,50 @@ end
 
 Players.PlayerAdded:Connect(AtualizarLista)
 Players.PlayerRemoving:Connect(AtualizarLista)
+
+-- ========================
+-- TELEPORTE MAPA E LOBBY
+-- ========================
+
+-- Busca o mapa da partida
+local function PegarMapa()
+    for _, v in ipairs(Workspace:GetChildren()) do
+        if v:IsA("Model") then
+            local nome = v.Name:lower()
+            if (v:FindFirstChild("Spawns", true) or v:FindFirstChild("PlayerSpawns", true)) 
+            and not nome:find("lobby") then
+                return v
+            end
+        end
+    end
+end
+
+-- Busca o lobby
+local function PegarLobby()
+    for _, v in ipairs(Workspace:GetChildren()) do
+        if v:IsA("Model") and v.Name:lower():find("lobby") then
+            return v
+        end
+    end
+end
+
+-- Pega um ponto seguro para não ficar preso
+local function PegarPontoSeguro(modelo)
+    if not modelo then return nil end
+    if modelo.PrimaryPart then return modelo.PrimaryPart.CFrame end
+    local parte = modelo:FindFirstChildWhichIsA("BasePart", true)
+    return parte and parte.CFrame or nil
+end
+
+-- Função de teleporte
+local function TeleportarPara(modelo)
+    if not modelo then return end
+    local ponto = PegarPontoSeguro(modelo)
+    local char = player.Character
+    if ponto and char and char:FindFirstChild("HumanoidRootPart") then
+        char:PivotTo(ponto + Vector3.new(0, 4, 0))
+    end
+end
 
 -- =========================
 -- SEÇÃO: FARM / Cframe:Lerp + char:PivotTo
