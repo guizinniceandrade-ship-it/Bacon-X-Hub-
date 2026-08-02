@@ -387,6 +387,18 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- Pulo Infinito (Adicionar esta parte para funcionar)
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if InfJumpAtivo then
+        local char = player.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+
+
 -- =========================
 -- ABA LOCAL PLAYER
 -- =========================
@@ -402,7 +414,7 @@ Sec_Local:Slider({
 
 Sec_Local:Slider({
     Title = "Pulo (Jump Power)", 
-    Value = {Min = 50, Max = 50, Default = 50}, 
+    Value = {Min = 50, Max = 250, Default = 50}, -- Corrigido o Max para 250 para poder mover
     Callback = function(v) 
         JumpAtivo = v 
     end
