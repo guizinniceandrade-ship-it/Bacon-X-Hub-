@@ -65,7 +65,7 @@ local NoclipAtivo = false
 -- ABA LOCAL PLAYER: CAMERA
 -- =========================
 local ZoomInifinitoAtivo = false
-local CameraNoclipAtivo = false
+local CameraAtravessaParede = false
 local FovValor = 70
 
 -- =========================
@@ -418,11 +418,11 @@ RunService.RenderStepped:Connect(function()
     end
 
     -- Câmera atravessa paredes
-    if CameraNoclipAtivo then
-        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Classic
-    else
-        player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
-    end
+   if CameraAtravessaParede then
+         player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
+     else
+         player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
+     end
 
     -- Campo de visão
     if FovValor then
@@ -463,7 +463,7 @@ Sec_Local:Toggle({
     Title = "Atravessar Paredes (Noclip)", 
     Default = false, 
     Callback = function(s) 
-        NoclipAtivo = s 
+        CameraAtravessaParede = s 
     end
 })
 
