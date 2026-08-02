@@ -496,6 +496,26 @@ Sec_Camera:Slider({
     end
 })
 
+-- =========================
+-- SEÇÃO: SCRIPTS DE ANIMAÇÃO
+-- =========================
+local Sec_Animacao = Aba_Local:Section({Title = "Scripts de animação"})
+
+Sec_Animacao:Toggle({
+    Title = "Bundle Animations", 
+    Default = false, 
+    Callback = function(s) 
+        if s then
+            -- Executa o script de animações quando ligado
+            pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/Bac0nHck/Scripts/refs/heads/main/BundleAnimations.lua"))()
+            end)
+        else
+            -- Aviso ou recarregamento caso queira desligar (a maioria dos scripts de bundle não desliga sozinho, mas o botão fica funcional)
+        end
+    end
+})
+
 -- ===================================================
 -- 🎛️ SEÇÕES E TOGGLES DA ABA ESP
 -- ===================================================
