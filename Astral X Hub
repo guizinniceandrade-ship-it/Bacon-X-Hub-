@@ -644,30 +644,36 @@ Sec_FarmLerp:Slider({
 -- =========================
 -- ABA TELEPORTE
 -- =========================
+-- Primeiro cria a seção
 local Sec_Teleporte = Aba_Tele:Section({Title = "Teleporte para Player"})
 
+-- Depois cria o dropdown JÁ COM A LISTA CARREGADA
+DropdownJogadores = Sec_Teleporte:Dropdown({
+    Title = "Escolhe alguém",
+    Values = PegarListaJogadores(),
+    Default = "",
+    Callback = function(escolha)
+        JogadorSelecionadoTP = escolha
+    end
+})
+
+-- Por último o botão de teleporte
 Sec_Teleporte:Button({
     Title = "Teleporte para o Jogador",
     Callback = function()
-
-        if not JogadorSelecionadoTP then
-            return
-        end
-
+        if not JogadorSelecionadoTP then return end
         local alvo = Players:FindFirstChild(JogadorSelecionadoTP)
-
-        if alvo
-        and alvo.Character
-        and alvo.Character:FindFirstChild("HumanoidRootPart")
-        and player.Character
-        and player.Character:FindFirstChild("HumanoidRootPart") then
-
-            player.Character:PivotTo(
-                alvo.Character.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
-            )
+        if alvo and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
+            local eu = player.Character
+            if eu and eu:FindFirstChild("HumanoidRootPart") then
+                eu:PivotTo(alvo.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0))
+            end
         end
     end
 })
+
+-- Chama a primeira atualização DEPOIS de tudo criado
+AtualizarLista()
 
 -- =========================
 -- ABA LOCAL PLAYER
