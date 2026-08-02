@@ -417,20 +417,12 @@ RunService.RenderStepped:Connect(function()
         player.CameraMaxZoomDistance = 12.5 -- Padrão original seguro do Roblox
     end
 
-    -- Câmera Atravessar Paredes (Ignora obstruções das paredes)
-    if CameraNoclipAtivo then
-        cam.CameraType = Enum.CameraType.Custom
-        -- Desativa o raio de colisão padrão da câmera do Roblox com o mapa
-        pcall(function()
-            player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Classic
-        end)
-        -- Força a transparência das peças que encostarem na câmera (opcional para sumir com a parede)
-        for _, part in ipairs(Workspace:GetPartsInPart(cam)) do
-            if part and not part:IsDescendantOf(player.Character) and part.Transparency < 1 then
-                -- Aqui ela ignora a colisão visual se necessário
-            end
-        end
-    end
+    -- Câmera Atravessa Parede
+if CameraAtravessaParede then
+    player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Classic
+else
+    player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
+end
 
     -- FOV
     if FovValor then
