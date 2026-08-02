@@ -46,13 +46,17 @@ Aba_Farm:Section({Title = "Auto Farm MM2"})
 local Aba_ESP = Window:Tab({Title="ESP"})
 
 local Aba_Local = Window:Tab({Title="Local Player"})
-Aba_Local:Section({Title="Controle do Jogador"})
 
 local Aba_Troll = Window:Tab({Title="Trollagem"})
 Aba_Troll:Section({Title = "Ferramentas"})
 
 local Aba_Tele = Window:Tab({Title="Teleporte"})
 Aba_Tele:Section({Title = "MM2"})
+
+-- =========================
+-- VARIAVEIS DO LOCAL PLAYER
+-- =========================
+
 
 -- =========================
 -- VARIÁVEIS DO ESP E CARGOS
@@ -358,6 +362,49 @@ task.spawn(function()
         task.wait(0.4)
     end
 end)
+
+-- =========================
+-- ABA LOCAL PLAYER
+-- =========================
+local Sec_Local = Aba_Local:Section({Title = "Controle de personagem"})
+
+Sec_Local:Slider({
+    Title = "Velocidade (Speed)",
+    Default = 16,
+    Min = 16,
+    Max = 50,
+    Increment = 1,
+    Callback = function(v)
+        SpeedAtivo = v
+    end
+})
+
+Sec_Local:Slider({
+    Title = "Pulo (Jump Power)",
+    Default = 50,
+    Min = 5,
+    Max = 50,
+    Increment = 1,
+    Callback = function(v)
+        JumpAtivo = v
+    end
+})
+
+Sec_Local:Toggle({
+    Title = "Pulo Infinito (Infinite Jump)",
+    Default = false,
+    Callback = function(s)
+        InfJumpAtivo = s
+    end
+})
+
+Sec_Local:Toggle({
+    Title = "Atravessar Paredes (Noclip)",
+    Default = false,
+    Callback = function(s)
+        NoclipAtivo = s
+    end
+})
 
 -- ===================================================
 -- 🎛️ SEÇÕES E TOGGLES DA ABA ESP
