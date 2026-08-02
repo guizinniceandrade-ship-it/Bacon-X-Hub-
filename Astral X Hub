@@ -510,14 +510,6 @@ Sec_Animacoes:Button({
     end
 })
 
-Sec_Animacoes:Button({
-    Title = "Noth Script",
-    Callback = function()
-        pcall(function()
-            👉🏻
-        end)
-    end
-})
 -- ===================================================
 -- 🎛️ SEÇÕES E TOGGLES DA ABA ESP
 -- ===================================================
