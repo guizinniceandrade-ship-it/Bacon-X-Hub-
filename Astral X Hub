@@ -65,7 +65,7 @@ local NoclipAtivo = false
 -- ABA LOCAL PLAYER: CAMERA
 -- =========================
 local ZoomInifinitoAtivo = false
-local CameraNoclipAtivo = false
+local CameraAtravessaParede = false
 local FovValor = 70
 
 -- =========================
