@@ -155,7 +155,7 @@ task.spawn(function()
 end)
 
 -- ===================================================
--- 🎨 SELETOR DE COR E ATIVAÇÕES POR CARGO (CORRIGIDO PARA FIM DE PARTIDA)
+-- 🎨 SELETOR DE COR E ATIVAÇÕES — CORRIGIDO
 -- ===================================================
 local function PegarEstiloCargo(Jogador)
     local rodadaAtiva = false
@@ -185,7 +185,8 @@ local function PegarEstiloCargo(Jogador)
         return Color3.fromRGB(255, 40, 40), HL_Murder, Dist_Murder, Nome_Murder, Linha_Murder
     elseif Jogador.Name == Sheriff and vivo then
         return Color3.fromRGB(40, 120, 255), HL_Xerife, Dist_Xerife, Nome_Xerife, Linha_Xerife
-    elseif Jogador.Name == Hero and vivo and xerifeMorto then
+    -- ✅ AQUI ESTAVA O ERRO: AGORA SÓ MARCA SE HERO EXISTIR E FOR ELE
+    elseif Hero and Jogador.Name == Hero and vivo and xerifeMorto then
         return Color3.fromRGB(255, 215, 0), HL_Heroi, Dist_Heroi, Nome_Heroi, Linha_Heroi
     else
         return Color3.fromRGB(50, 255, 50), HL_Inocente, Dist_Inocente, Nome_Inocente, Linha_Inocente
