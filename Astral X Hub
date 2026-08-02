@@ -622,6 +622,8 @@ Sec_FarmLerp:Slider({
 -- =========================
 -- SEÇÃO: TELEPORTE PARA PLAYER
 -- =========================
+local Sec_Teleporte = Aba_Tele:Section({Title = "Teleporte para Player"})
+
 local Sec_Teleporte = Sec_Teleporte:Dropdown({
     Title = "Escolhe alguém",
     Values = {},
