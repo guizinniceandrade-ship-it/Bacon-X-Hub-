@@ -60,6 +60,12 @@ local CONFIG_FARM = {
 }
 
 -- =========================
+-- VARIÁVEIS TELEPORTE PLAYER
+-- =========================
+local JogadorSelecionadoTP = nil
+local ListaNomesDropdown = {}
+
+-- =========================
 -- VARIÁVEIS LOCAL PLAYER
 -- =========================
 local SpeedAtivo = 16
@@ -560,6 +566,25 @@ task.spawn(function()
     end
 end)
 
+-- ===================================================
+-- 🌐 SISTEMA DE ATUALIZAÇÃO DA LISTA E TELEPORTE
+-- ===================================================
+
+-- Função para atualizar a lista de jogadores do servidor
+local function AtualizarListaJogadores()
+    table.clear(ListaNomesDropdown)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player then
+            table.insert(ListaNomesDropdown, p.Name)
+        end
+    end
+end
+
+-- Atualiza automaticamente quando alguém entra ou sai do servidor
+Players.PlayerAdded:Connect(AtualizarListaJogadores)
+Players.PlayerRemoving:Connect(AtualizarListaJogadores)
+AtualizarListaJogadores()
+
 -- =========================
 -- SEÇÃO: FARM / Cframe:Lerp + char:PivotTo
 -- =========================
@@ -581,6 +606,48 @@ Sec_FarmLerp:Slider({
     Value = {Min = 10, Max = 40, Default = 22},
     Callback = function(v) 
         CONFIG_FARM.velocidade = v 
+    end
+})
+
+-- =========================
+-- SEÇÃO: TELEPORTE PARA PLAYER
+-- =========================
+local Sec_Teleporte = Aba_Tele:Section({Title = "Teleporte para Player"})
+
+-- Dropdown que abre a lista com os nomes e atualiza sozinho
+local DropdownJogadores = Sec_Teleporte:Dropdown({
+    Title = "Escolhe alguém",
+    Values = ListaNomesDropdown,
+    Default = "",
+    Callback = function(escolha)
+        JogadorSelecionadoTP = escolha
+    end
+})
+
+-- Atualizador automático do dropdown em segundo plano
+task.spawn(function()
+    while true do
+        AtualizarListaJogadores()
+        pcall(function()
+            DropdownJogadores:SetValues(ListaNomesDropdown)
+        end)
+        task.wait(2)
+    end
+end)
+
+-- Botão de Teleporte para o nome escolhido
+Sec_Teleporte:Button({
+    Title = "Teleporte para o Jogador",
+    Callback = function()
+        if JogadorSelecionadoTP then
+            local alvoPlayer = Players:FindFirstChild(JogadorSelecionadoTP)
+            if alvoPlayer and alvoPlayer.Character and alvoPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local meuChar = player.Character
+                if meuChar and meuChar:FindFirstChild("HumanoidRootPart") then
+                    meuChar:PivotTo(alvoPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0))
+                end
+            end
+        end
     end
 })
 
