@@ -65,7 +65,7 @@ local NoclipAtivo = false
 -- ABA LOCAL PLAYER: CAMERA
 -- =========================
 local ZoomInifinitoAtivo = false
-local CameraAtravessaParede = false
+local CameraNoclipAtivo = false
 local FovValor = 70
 
 -- =========================
@@ -418,7 +418,7 @@ RunService.RenderStepped:Connect(function()
     end
 
     -- Câmera Atravessa Parede
-if CameraAtravessaParede then
+if CameraNoclipAtivo then
     player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Classic
 else
     player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
