@@ -62,8 +62,8 @@ local CONFIG_FARM = {
 -- =========================
 -- VARIÁVEIS TELEPORTE PLAYER
 -- =========================
-local JogadorSelecionadoTP = nil
 local ListaNomesDropdown = {}
+local JogadorSelecionadoTP = nil
 
 -- =========================
 -- VARIÁVEIS LOCAL PLAYER
@@ -626,40 +626,24 @@ Sec_FarmLerp:Slider({
 -- =========================
 -- SEÇÃO: TELEPORTE PARA PLAYER
 -- =========================
-local Sec_Teleporte = Aba_Tele:Section({Title = "Teleporte para Player"})
-
--- Dropdown que abre a lista com os nomes e atualiza sozinho
 local DropdownJogadores = Sec_Teleporte:Dropdown({
     Title = "Escolhe alguém",
-    Values = ListaNomesDropdown,
+    Values = {},
     Default = "",
     Callback = function(escolha)
         JogadorSelecionadoTP = escolha
     end
 })
 
--- Atualizador automático do dropdown em segundo plano
-task.spawn(function()
-    while true do
-        AtualizarListaJogadores()
-        pcall(function()
-            DropdownJogadores:SetValues(ListaNomesDropdown)
-        end)
-        task.wait(2)
-    end
-end)
-
--- Botão de Teleporte para o nome escolhido
 Sec_Teleporte:Button({
     Title = "Teleporte para o Jogador",
     Callback = function()
-        if JogadorSelecionadoTP then
-            local alvoPlayer = Players:FindFirstChild(JogadorSelecionadoTP)
-            if alvoPlayer and alvoPlayer.Character and alvoPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local meuChar = player.Character
-                if meuChar and meuChar:FindFirstChild("HumanoidRootPart") then
-                    meuChar:PivotTo(alvoPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0))
-                end
+        if not JogadorSelecionadoTP then return end
+        local alvo = Players:FindFirstChild(JogadorSelecionadoTP)
+        if alvo and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
+            local eu = player.Character
+            if eu and eu:FindFirstChild("HumanoidRootPart") then
+                eu:PivotTo(alvo.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0))
             end
         end
     end
