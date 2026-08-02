@@ -570,34 +570,30 @@ end)
 -- 🌐 SISTEMA DE ATUALIZAÇÃO DA LISTA E TELEPORTE
 -- ===================================================
 local function AtualizarListaJogadores()
-    table.clear(ListaNomesDropdown)
+    local listaNova = {}
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= player then
-            table.insert(ListaNomesDropdown, p.Name)
+            table.insert(listaNova, p.Name)
         end
     end
 
-    -- Apaga a escolha se a pessoa não está mais aqui
-    if JogadorSelecionadoTP then
-        if not table.find(ListaNomesDropdown, JogadorSelecionadoTP) then
-            JogadorSelecionadoTP = nil
-            -- Força o dropdown a ficar vazio também
-            pcall(function() DropdownJogadores:SetValue("") end)
-        end
+    ListaNomesDropdown = listaNova
+
+    pcall(function()
+        DropdownJogadores:SetValues(listaNova)
+    end)
+
+    if JogadorSelecionadoTP and not table.find(listaNova, JogadorSelecionadoTP) then
+        JogadorSelecionadoTP = nil
+        pcall(function()
+            DropdownJogadores:SetValue("")
+        end)
     end
 end
 
 Players.PlayerAdded:Connect(AtualizarListaJogadores)
 Players.PlayerRemoving:Connect(AtualizarListaJogadores)
 AtualizarListaJogadores()
-
-task.spawn(function()
-    while true do
-        AtualizarListaJogadores()
-        pcall(function() DropdownJogadores:SetValues(ListaNomesDropdown) end)
-        task.wait(1.5)
-    end
-end)
 
 -- =========================
 -- SEÇÃO: FARM / Cframe:Lerp + char:PivotTo
