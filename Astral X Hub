@@ -62,6 +62,7 @@ local CONFIG_FARM = {
 -- =========================
 -- VARIÁVEIS TELEPORTE PLAYER
 -- =========================
+local ListaNomesDropdown = {}
 local JogadorSelecionadoTP = nil
 local DropdownJogadores
 
