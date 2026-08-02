@@ -62,6 +62,13 @@ local InfJumpAtivo = false
 local NoclipAtivo = false
 
 -- =========================
+-- ABA LOCAL PLAYER: CAMERA
+-- =========================
+local ZoomInifinitoAtivo = false
+local CameraNoclipAtivo = false
+local FovValor = 70
+
+-- =========================
 -- VARIÁVEIS DO ESP E CARGOS
 -- =========================
 local HL_Murder = false
@@ -397,7 +404,31 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
     end
 end)
 
+-- ===================================================
+-- 🎥 LÓGICA DE CÂMERA (ZOOM INFINITO, NOCLIP E FOV)
+-- ===================================================
+RunService.RenderStepped:Connect(function()
+    local cam = Workspace.CurrentCamera
+    
+    -- Zoom Infinito
+    if ZoomInifinitoAtivo then
+        player.CameraMaxZoomDistance = 999999
+    else
+        player.CameraMaxZoomDistance = 400 -- Padrão do jogo
+    end
 
+    -- Câmera Atravessar Paredes (Camera Noclip)
+    if CameraNoclipAtivo then
+        cam.CFrame = cam.CFrame
+        -- Ignora as peças do próprio personagem para a câmera não dar zoom forçado
+        cam.CameraSubject = player.Character and player.Character:FindFirstChild("Humanoid")
+    end
+
+    -- FOV
+    if FovValor then
+        cam.FieldOfView = FovValor
+    end
+end)
 
 -- =========================
 -- ABA LOCAL PLAYER
@@ -433,6 +464,35 @@ Sec_Local:Toggle({
     Default = false, 
     Callback = function(s) 
         NoclipAtivo = s 
+    end
+})
+
+-- =========================
+-- SEÇÃO: CONFIGURAÇÃO DE CÂMERA PLAYER
+-- =========================
+local Sec_Camera = Aba_Local:Section({Title = "Configuração de câmera player"})
+
+Sec_Camera:Toggle({
+    Title = "Câmera sem limite", 
+    Default = false, 
+    Callback = function(s) 
+        ZoomInifinitoAtivo = s 
+    end
+})
+
+Sec_Camera:Toggle({
+    Title = "Camera atravessar paredes", 
+    Default = false, 
+    Callback = function(s) 
+        CameraNoclipAtivo = s 
+    end
+})
+
+Sec_Camera:Slider({
+    Title = "FOV", 
+    Value = {Min = 70, Max = 150, Default = 70}, 
+    Callback = function(v) 
+        FovValor = v 
     end
 })
 
