@@ -569,7 +569,6 @@ end)
 -- ===================================================
 -- 🌐 SISTEMA DE ATUALIZAÇÃO DA LISTA E TELEPORTE
 -- ===================================================
-
 local function AtualizarListaJogadores()
     table.clear(ListaNomesDropdown)
     for _, p in ipairs(Players:GetPlayers()) do
@@ -577,8 +576,14 @@ local function AtualizarListaJogadores()
             table.insert(ListaNomesDropdown, p.Name)
         end
     end
-    if JogadorSelecionadoTP and not table.find(ListaNomesDropdown, JogadorSelecionadoTP) then
-        JogadorSelecionadoTP = nil
+
+    -- Apaga a escolha se a pessoa não está mais aqui
+    if JogadorSelecionadoTP then
+        if not table.find(ListaNomesDropdown, JogadorSelecionadoTP) then
+            JogadorSelecionadoTP = nil
+            -- Força o dropdown a ficar vazio também
+            pcall(function() DropdownJogadores:SetValue("") end)
+        end
     end
 end
 
@@ -590,7 +595,7 @@ task.spawn(function()
     while true do
         AtualizarListaJogadores()
         pcall(function() DropdownJogadores:SetValues(ListaNomesDropdown) end)
-        task.wait(2)
+        task.wait(1.5)
     end
 end)
 
