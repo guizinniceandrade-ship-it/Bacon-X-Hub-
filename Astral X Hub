@@ -35,10 +35,8 @@ local Window = WindUI:CreateWindow({
 -- ORDEM DAS ABAS
 -- =========================
 local Aba_Assassino = Window:Tab({Title="Assassino"})
-Aba_Assassino:Section({Title = "Ferramentas"})
 
 local Aba_Xerife = Window:Tab({Title="Xerife"})
-Aba_Xerife:Section({Title = "Mira & Tiro"})
 
 local Aba_Farm = Window:Tab({Title="Auto Farm"})
 
@@ -47,10 +45,8 @@ local Aba_ESP = Window:Tab({Title="ESP"})
 local Aba_Local = Window:Tab({Title="Local Player"})
 
 local Aba_Troll = Window:Tab({Title="Trollagem"})
-Aba_Troll:Section({Title = "Ferramentas"})
 
 local Aba_Tele = Window:Tab({Title="Teleporte"})
-Aba_Tele:Section({Title = "MM2"})
 
 -- =========================
 -- VARIÁVEIS AUTO FARM (LERP)
