@@ -572,50 +572,32 @@ end)
 -- ======================
 local function PegarListaJogadores()
     local lista = {}
-
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= player then
             table.insert(lista, p.Name)
         end
     end
-
-    table.sort(lista)
     return lista
 end
 
-local function CriarDropdown()
+local function AtualizarLista()
+    local novaLista = PegarListaJogadores()
+    ListaNomesDropdown = novaLista
 
-    if DropdownJogadores then
-        pcall(function()
-            DropdownJogadores:Destroy()
-        end)
+    -- Tenta todas as formas que o WindUI aceita
+    pcall(function() DropdownJogadores:SetValues(novaLista) end)
+    pcall(function() DropdownJogadores:Update(novaLista) end)
+    pcall(function() DropdownJogadores:Refresh(novaLista) end)
+
+    -- Apaga a escolha se a pessoa saiu
+    if JogadorSelecionadoTP and not table.find(novaLista, JogadorSelecionadoTP) then
+        JogadorSelecionadoTP = nil
+        pcall(function() DropdownJogadores:SetValue("") end)
     end
-
-    DropdownJogadores = Sec_Teleporte:Dropdown({
-        Title = "Escolhe alguém",
-        Values = PegarListaJogadores(),
-        Default = "",
-        Callback = function(nome)
-            JogadorSelecionadoTP = nome
-        end
-    })
 end
 
-CriarDropdown()
-
-Players.PlayerAdded:Connect(function()
-    task.wait(0.2)
-    CriarDropdown()
-end)
-
-Players.PlayerRemoving:Connect(function(jogador)
-    if JogadorSelecionadoTP == jogador.Name then
-        JogadorSelecionadoTP = nil
-    end
-
-    task.wait(0.2)
-    CriarDropdown()
-end)
+Players.PlayerAdded:Connect(AtualizarLista)
+Players.PlayerRemoving:Connect(AtualizarLista)
 
 -- =========================
 -- SEÇÃO: FARM / Cframe:Lerp + char:PivotTo
