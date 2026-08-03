@@ -1,30 +1,74 @@
--- local _=({...})[1]or _G[('\73\110\105\116\105\97\108\105\122\97\116\111')]lo
--- cal _x1_=function(...)local _=...end local _x2_='\65\83\84\82\65\76\32\88\32\72\85\66'local _x3_={_x2_,'\77\79\68\69\32\70\85\84\85\82\79','\
--- 83\79\6D\32\78\6F\6D\65'}local _x4_=function(a,b,c)return a..b..c end local _x5_=_x4_('\76\6F\61\64\115\116\114\105\110\103','(',')')local _x6_={[0]='\97\104\117\65\115\116\114\97\108\88\72\117\98','\98\97\99\111\110\120\104\117\98','\116\101\115\116\101\115\116\101'}local _x7_=function()return _x6_[math.random(0,2)]end local _x8_='\48\51\52\55\57\49\50\51'local _x9_='\112\114\111\116\101\103\97\100\111\32\112\97\114\97\32\99\111\100\105\103\111\32\101\109\98\97\114\97\108\104\97\100\111'local _x10_=function()_x1_(_x9_)end local _x11_='\115\111\66\114\108\111\120\67\111\100\101\80\114\111\116\101\103\97\100\111'local _x12_={_x11_,_x8_,_x7_()}local _x13_=#_x12_+#_x3_local _x14_=string.rep('\88\121\122',_x13_)local _x15_=loadstring or _ local _x16_='\115\111\6D\32\116\101\120\116\111\32\113\117\101\32\110\97\100\97\32\118\101\114\32\110\97\111'local _x17_=function()return _x14_.._x16_end local _x18_=_x17_()local _x19_='\65\115\116\114\97\108\88\72\117\98\86\101\114\115\105\111\110'local _x20_=_x19_.._x8_.._x18_
--- local _=({...})[1]or _G[('\73\1
--- 10\105\116\105\97\108\105\122\97\116\111')]local _x1_
--- =function(...)local _=...end local _x2_='\65\83\84\82\65\76\32\88\32\72\85\66'local _x3_={_x2_,'\77\79\68\69\32\70\85\84\85\82\79','\83\79\6D\32\78\6F\6D\65'}local _x4_=function(a,b,c)return a..b..c end local _x5_=_x4_('\76\6F\61\64\115\116\114\105\110\103','(',')')local _x6_={[0]='\97\104\117\65\115\116\114\97\108\88\72\117\98','\98\97\99\111\110\120\104\117\98','\116\101\115\116\101\115\116\101'}local _x7_=function()return _x6_[math.random(0,2)]end local _x8_='\48\51\52\55\57\49\50\51'local _x9_='\112\114\111\116\101\103\97\100\111\32\112\97\114\97\32\99\111\100\105\103\111\32\101\109\98\97\114\97\108\104\97\100\111'local _x10_=function()_x1_(_x9_)end local _x11_='\115\111\66\114\108\111\120\67\111\100\101\80\114\111\116\101\103\97\100\111'local _x12_={_x11_,_x8_,_x7_()}local _x13_=#_x12_+#_x3_local _x14_=string.rep('\88\121\122',_x13_)local _x15_=loadstring or _ local _x16_='\115\111\6D\32\116\101\120\116\111\32\113\117\101\32\110\97\100\97\32\118\101\114\32\110\97\111'local _x17_=function()return _x14_.._x16_end local _x18_=_x17_()local _x19_='\65\115\116\114\97\108\88\72\117\98\86\101\114\115\105\111\110'local _x20_=_x19_.._x8_.._x18_
-   loadstring(game:HttpGet("https://raw.githubusercontent.com/guizinniceandrade-ship-it/Bacon-X-Hub-/refs/heads/main/Astral%20X%20Hub", true))()
--- local _=({...})[1]or _G[('\73\110\105\116\105\97\108\105\122\97\116\111')]local _x1_=function(...)local _=...end local _x2_='\65\83\84\82\65\76\32\88\32\72\85\66'local _x3_={_x2_,'\77\79\68\69\32\70\85\84\85\82\79','\83\79\6D\32\78\6F\6D\65'}local _x4_=function(a,b,c)return a..b..c end local _x5_=_x4_('\76\6F\61\64\115\116\114\105\110\103','(',')')local _x6_={[0]='\97\104\117\65\115\116\114\97\108\88\72\117\98','\98\97\99\111\110\120\104\117\98','\116\101\115\116\101\115\116\101'}local _x7_=function()return _x6_[math.random(0,2)]end local _x8_='\48\51\52\55\57\49\50\51'local _x9_='\112\114\111\116\101\103\97\100\111\32\112\97\114\97\32\99\111\100\105\103\111\32\101\109\98\97\114\97\108\104\97\100\111'local _x10_=function()_x1_(_x9_)end local _x11_='\115\111\66\114\108\111\120\67\111\100\101\80\114\111\116\101\103\97\100\111'local _x12_={_x11_,_x8_,_x7_()}local _x13_=#_x12_+#_x3_local _x14_=string.rep('\88\121\122',_x13_)local _x15_=loadstring or _ local _x16_='\115\111\6D\32\116\101\120\116\111\32\113\117\101\32\110\97\100\97\32\118\101\114\32\110\97\111'local _x17_=function()return _x14_.._x16_end local _x18_=_x17_()local _x19_='\65\115\116\114\97\108\88\72\117\98\86\101\114\115\105\111\110'local _x20_=_x19_.._x8_.._x18_
--- local _=({...})[1]or _G[('\73\110\105\116\105\97\108\105\122\97\116\111')]local _x1_=function(...)local _=...end local _x2_='\65\83\84\82\65\76\32\88\32\72\85\66'local _x3_={_x2_,'\77\79\68\69\32\70\85\84\85\82\79','\83\79\6D\32\78\6F\6D\65'}local _x4_=function(a,b,c)return a..b..c end local _x5_=_x4_('\76\6F\61\64\115\116\114\105\110\103','(',')')local _x6_={[0]='\97\104\117\65\115\116\114\97\108\88\72\117\98','\98\97\99\111\110\120\104\117\98','\116\101\115\116\101\115\116\101'}local _x7_=function()return _x6_[math.random(0,2)]end local _x8_='\48\51\52\55\57\49\50\51'local _x9_='\112\114\111\116\101\103\97\100\111\32\112\97\114\97\32\99\111\100\105\103\111\32\101\109\98\97\114\97\108\104\97\100\111'local _x10_=function()_x1_(_x9_)end local _x11_='\115\111\66\114\108\111\120\67\111\100\101\80\114\111\116\101\103\97\100\111'local _x12_={_x11_,_x8_,_x7_()}local _x13_=#_x12_+#_x3_local _x14_=string.rep('\88\121\122',_x13_)local _x15_=loadstring or _ local _x16_='\115\111\6D\32\116\101\120\116\111\32\113\117\101\32\110\97\100\97\32\118\101\114\32\110\97\111'local _x17_=function()return _x14_.._x16_end local _x18_=_x17_()local _x19_='\65\115\116\114\97\108\88\72\117\98\86\101\114\115\105\111\110'local _x20_=_x19_.._x8_.._x18_
--- local _ = ({...})[1] or _G[('\73\110\105\116\105\97\108\105\122\97\116\111')]
--- local _x1_ = function(...)local _ = ... end
--- ocal _x2_ = '\65\83\84\82\65\76\32\88\32\72\85\66'
--- local _x3_ = {_x2_, '\77\79\68\69\32\70\85\84\85\82\79', '\83\79\6D\32\78\6F\6D\65'}
--- al _x4_ = function(a,b,c) return a..b..c end
--- ocal _x5_ = _x4_('\76\6F\61\64\115\116\114\105\110\103','(', '\103\97\109\109\97\109\101\58\72\116\116\112\71\101\116\40\41\41\40\41')
--- l _x6_ = {[0]='\97\104\117\65\115\116\114\97\108\88\72\117\98', '\98\97\99\111\110\120\104\117\98', '\116\101\115\116\101\115\116\101'}
--- cl _x7_ = function() return _x6_[math.random(0,2)] end
--- cal _x8_ = '\48\51\52\55\57\49\50\51'
--- cal _x9_ = '\112\114\111\116\101\103\97\100\111\32\112\97\114\97\32\99\111\100\105\103\111\32\101\109\98\97\114\97\108\104\97\100\111'
--- local _x10_ = function() _x1_(_x9_) end
--- local _x11_ = '\115\111\66\114\108\111\120\67\111\100\101\80\114\111\116\101\103\97\100\111'
--- local _x12_ = {_x11_, _x8_, _x7_()}
--- local _x13_ = #_x12_ + #_x3_
--- local _x14_ = string.rep('\88\121\122', _x13_)
--- local _x15_ = loadstring or _
--- local _x16_ = '\115\111\6D\32\116\101\120\116\111\32\113\117\101\32\110\97\100\97\32\118\101\114\32\110\97\111'
--- local _x17_ = function() return _x14_.._x16_ end
--- local _x18_ = _x17_()
--- local _x19_ = '\65\115\116\114\97\108\88\72\117\98\86\101\114\115\105\111\110'
--- local _x20_ = _x19_.._x8_.._x18_
+-- Protected by Mnx Obfuscator | Public Enemy
+local gA8KAWxQqX=bit32.bxor(163,139)
+local oBoGE6RU_mLVPD=#"xweIaAE"
+local cZ4f5H0d1=math.abs(-83)
+local xgbfs7l61tb=math.abs(-48)
+local o7kfGYxoLYTj=826
+do local _=nil end
+if false then error("") end
+local gvHqjDfPdL=math.floor(4)
+local z5B0ZWu_kj=tostring(49)
+if false then error("") end
+for _=1,0 do end
+local iq_vOETBvCbb2O04={"23aedfae2222fd922e26db01329dda8ccac0a8de4663c916a2ef3108b3a22d91d05c6149f04fa376abcee95f4763aeb91804265e56f0c0d37237814c3dc318161204f302a2c","2a5"}
+local avKXuuJunzk={1,2}
+local hkpWan5hIf8AQcgTU={"22e21554510c9efb9901a5ec709a8555e42a998c13596c3b5229d44408bf6bfb04987d0a6e59bf71b1cb789b3cdb8781f6641e8fc817a7dd21bc632ab7e88cbc226910dfafa","3"}
+local aT7qMWGT9c4_lfQ={1,2}
+local wtfYietPkKOU9MGR={}
+for yfGg0vOCcZ1p04o4q=1,#avKXuuJunzk do wtfYietPkKOU9MGR[avKXuuJunzk[yfGg0vOCcZ1p04o4q]]=iq_vOETBvCbb2O04[yfGg0vOCcZ1p04o4q] end
+wtfYietPkKOU9MGR=table.concat(wtfYietPkKOU9MGR)
+local fQH52H2pSX2erjk={}
+for yfGg0vOCcZ1p04o4q=1,#aT7qMWGT9c4_lfQ do fQH52H2pSX2erjk[aT7qMWGT9c4_lfQ[yfGg0vOCcZ1p04o4q]]=hkpWan5hIf8AQcgTU[yfGg0vOCcZ1p04o4q] end
+fQH52H2pSX2erjk=table.concat(fQH52H2pSX2erjk)
+local zTVz4GszzsHAx={}
+for yfGg0vOCcZ1p04o4q=1,#wtfYietPkKOU9MGR,2 do
+  zTVz4GszzsHAx[#zTVz4GszzsHAx+1]=tonumber(string.sub(wtfYietPkKOU9MGR,yfGg0vOCcZ1p04o4q,yfGg0vOCcZ1p04o4q+1),16)
+end
+local aALFw4FVJ={128,29,75,26,157,116,127,211,147,127,166,164,38,67,20,203,191,220,132,159,172,184,20,90,213,244,113,152,5,71,75,112}
+for yfGg0vOCcZ1p04o4q=1,#zTVz4GszzsHAx do
+  zTVz4GszzsHAx[yfGg0vOCcZ1p04o4q]=bit32.bxor(zTVz4GszzsHAx[yfGg0vOCcZ1p04o4q],aALFw4FVJ[(yfGg0vOCcZ1p04o4q-1)%#aALFw4FVJ+1])
+end
+local hUs5xS84XWJp7={}
+for yfGg0vOCcZ1p04o4q=1,#fQH52H2pSX2erjk,2 do
+  hUs5xS84XWJp7[#hUs5xS84XWJp7+1]=tonumber(string.sub(fQH52H2pSX2erjk,yfGg0vOCcZ1p04o4q,yfGg0vOCcZ1p04o4q+1),16)
+end
+local lh9bf_k5Rd={223,203,69,72,185,226,209,103,82,97,63,84,96,222,192,174,248,4,74,250,163,165,250,248,92,110,112,34,238,238,36,172}
+for yfGg0vOCcZ1p04o4q=1,#hUs5xS84XWJp7 do
+  hUs5xS84XWJp7[yfGg0vOCcZ1p04o4q]=bit32.bxor(hUs5xS84XWJp7[yfGg0vOCcZ1p04o4q],lh9bf_k5Rd[(yfGg0vOCcZ1p04o4q-1)%#lh9bf_k5Rd+1])
+end
+local jEtrK4VYP8={}
+for yfGg0vOCcZ1p04o4q=1,math.max(#zTVz4GszzsHAx,#hUs5xS84XWJp7) do
+  if zTVz4GszzsHAx[yfGg0vOCcZ1p04o4q] then jEtrK4VYP8[#jEtrK4VYP8+1]=zTVz4GszzsHAx[yfGg0vOCcZ1p04o4q] end
+  if hUs5xS84XWJp7[yfGg0vOCcZ1p04o4q] then jEtrK4VYP8[#jEtrK4VYP8+1]=hUs5xS84XWJp7[yfGg0vOCcZ1p04o4q] end
+end
+local hGudyDlk2d={}
+local nIOjDKjWZbfl6=593810620
+for yfGg0vOCcZ1p04o4q=#jEtrK4VYP8-1,1,-1 do
+  nIOjDKjWZbfl6=(nIOjDKjWZbfl6*1664525+1013904223)%4294967296
+  local bd8nJRBbjHSHPaR1ju=nIOjDKjWZbfl6%(yfGg0vOCcZ1p04o4q+1)+1
+  hGudyDlk2d[#hGudyDlk2d+1]={yfGg0vOCcZ1p04o4q+1,bd8nJRBbjHSHPaR1ju}
+end
+for yfGg0vOCcZ1p04o4q=#hGudyDlk2d,1,-1 do
+  local ayVYck_DRtg9SiF=hGudyDlk2d[yfGg0vOCcZ1p04o4q]
+  local d0PSZhoWbTl=jEtrK4VYP8[ayVYck_DRtg9SiF[1]]
+  jEtrK4VYP8[ayVYck_DRtg9SiF[1]]=jEtrK4VYP8[ayVYck_DRtg9SiF[2]]
+  jEtrK4VYP8[ayVYck_DRtg9SiF[2]]=d0PSZhoWbTl
+end
+local rQjF29Q1eg={57,202,7,36,178,137,15,167,5,49,116,52,247,42,194,38,179,149,214,75,211,192,32,184,87,68,54,238,150,131,105,103}
+local jlUpPydXI7WDZJ5rts={}
+for yfGg0vOCcZ1p04o4q=1,#jEtrK4VYP8 do
+  jlUpPydXI7WDZJ5rts[yfGg0vOCcZ1p04o4q]=string.char(bit32.bxor(jEtrK4VYP8[yfGg0vOCcZ1p04o4q],rQjF29Q1eg[(yfGg0vOCcZ1p04o4q-1)%#rQjF29Q1eg+1]))
+end
+local gLHFOWIeT4n5g=table.concat(jlUpPydXI7WDZJ5rts)
+local tnXvNAJI4AuDcz=#"jkWVXw5"
+local n4HUInn0z=bit32.bxor(104,102)
+local iPiz6U8EjTnL9Hs=math.floor(7)
+for _=1,0 do end
+do local _=nil end
+if false then error("") end
+local vPC56o2ZDuMnR,ql3EwOEsA_Vi2Y=loadstring(gLHFOWIeT4n5g)
+if vPC56o2ZDuMnR then
+  vPC56o2ZDuMnR()
+else
+  error("Mnx | Public Enemy : "..tostring(ql3EwOEsA_Vi2Y))
+end
