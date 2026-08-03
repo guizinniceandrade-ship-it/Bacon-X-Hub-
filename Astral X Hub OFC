@@ -1,1 +1,3 @@
-https://raw.githubusercontent.com/guizinniceandrade-ship-it/Bacon-X-Hub-/refs/heads/main/Astral%20X%20Hub
+--
+loadstring(game:HttpGet("https://raw.githubusercontent.com/guizinniceandrade-ship-it/Bacon-X-Hub-/refs/heads/main/Astral%20X%20Hub", true))()
+
